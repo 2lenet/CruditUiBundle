@@ -1,10 +1,10 @@
 # UiBundle
 
-Design system commun des bundles 2LE (CruditBundle, DashboardBundle) : tokens, CSS de base, composants Twig, contrôleurs Stimulus, icônes, langues et RTL.
+Shared design system of the 2LE bundles (CruditBundle, DashboardBundle): tokens, base CSS, Twig components, Stimulus controllers, icons, languages and RTL.
 
-UiBundle ne connaît ni `CrudConfig`, ni les bricks, ni le menu de Crudit. Voir `doc/plan-migration.md` du projet crudit-v2 (§1, §6).
+UiBundle knows nothing about `CrudConfig`, bricks or the Crudit menu.
 
-> État : squelette (lot 0.3). Pas encore de composant.
+> Status: skeleton, no component yet.
 
 ## Installation
 
@@ -17,16 +17,18 @@ composer require 2lenet/ui-bundle
 ```yaml
 lle_ui:
     icons:
-        load_fontawesome: true   # false si le projet charge sa propre librairie d'icônes
-        map:                     # remplacement d'icônes
+        load_fontawesome: true   # false when the project loads its own icon library
+        map:                     # icon replacements
             'fa-solid fa-trash': 'xx xx-trash'
 ```
 
-## Développement
+## Development
 
 ```bash
-make install       # composer install et npm install
-make build-assets  # compile le CSS dans assets/dist
-make lint          # phpcs et phpstan
-make test          # phpunit
+composer install
+vendor/bin/phpcs
+vendor/bin/phpstan analyse -c phpstan.neon
+vendor/bin/phpunit
+
+cd assets && npm install && npm run build   # compiles the CSS into assets/dist
 ```
