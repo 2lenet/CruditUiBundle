@@ -6,7 +6,23 @@
     "private": true,
     "type": "module",
     "symfony": {
-        "controllers": {},
+        "controllers": {
+            "dropdown": {
+                "main": "dist/controllers/dropdown_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true,
+                "autoimport": {
+                    "@2lenet/ui-bundle/dist/ui.css": true
+                }
+            },
+            "lazy-demo": {
+                "main": "dist/controllers/lazy_demo_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
+                "enabled": true
+            }
+        },
         "importmap": {
             "@hotwired/stimulus": "^3.0.0"
         }
@@ -19,7 +35,7 @@
         "sass": "^1.80.0"
     },
     "scripts": {
-        "build": "sass --no-source-map --style=compressed styles:dist",
-        "watch": "sass --no-source-map --watch styles:dist"
+        "build": "sass --no-source-map --style=compressed styles/ui.scss:dist/ui.css",
+        "watch": "sass --no-source-map --watch styles/ui.scss:dist/ui.css"
     }
 }
