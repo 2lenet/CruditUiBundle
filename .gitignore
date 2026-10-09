@@ -1,0 +1,8 @@
+/vendor/
+/composer.lock
+/assets/node_modules/
+/var/
+.phpcs-cache
+/.phpunit.cache/
+.idea/
+/config/reference.php

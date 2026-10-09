@@ -1,0 +1,25 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    php:
+        name: "PHP ${{ matrix.php_version }}"
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php_version: ['8.4']
+        steps:
+            -   uses: actions/checkout@v4
+            -   uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php_version }}
+                    tools: composer:v2
+            -   run: composer install --no-interaction --no-progress
+            -   run: vendor/bin/phpcs
+            -   run: vendor/bin/phpstan analyse -c phpstan.neon --no-progress
+            -   run: vendor/bin/phpunit
