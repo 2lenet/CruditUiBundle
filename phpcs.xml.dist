@@ -35,7 +35,7 @@
     <rule ref="PSR12"/>
 
     <file>src/</file>
-    <file>tests/</file>
+    <file>tests/phpunit/</file>
     <file>config/</file>
     <exclude-pattern>config/reference.php</exclude-pattern>
 

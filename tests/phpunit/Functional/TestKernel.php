@@ -39,7 +39,7 @@ class TestKernel extends Kernel
 
     public function getProjectDir(): string
     {
-        return \dirname(__DIR__, 2);
+        return \dirname(__DIR__, 3);
     }
 
     public function getCacheDir(): string

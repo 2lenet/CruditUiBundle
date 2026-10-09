@@ -53,6 +53,6 @@ class LleUiBundleTest extends TestCase
         $repository = $testContainer->get('asset_mapper.repository');
         $paths = $repository->allDirectories();
 
-        self::assertSame(LleUiBundle::ASSETS_PACKAGE, $paths[\dirname(__DIR__, 2) . '/assets/dist'] ?? null);
+        self::assertSame(LleUiBundle::ASSETS_PACKAGE, $paths[\dirname(__DIR__, 3) . '/assets/dist'] ?? null);
     }
 }

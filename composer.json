@@ -44,7 +44,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Lle\\UiBundle\\Tests\\": "tests/"
+            "Lle\\UiBundle\\Tests\\": "tests/phpunit/"
         }
     },
     "config": {

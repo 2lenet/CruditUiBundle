@@ -1,10 +1,24 @@
-# UiBundle
+<h1 align="center">UiBundle</h1>
 
-Shared design system of the 2LE bundles (CruditBundle, DashboardBundle): tokens, base CSS, Twig components, Stimulus controllers, icons, languages and RTL.
+<p align="center">
+    <a href="https://github.com/2lenet/UiBundle/actions" target="_blank">
+        <img src="https://github.com/2lenet/UiBundle/actions/workflows/phpstan.yml/badge.svg" alt="PHPStan status">
+    </a>
+    <a href="https://github.com/2lenet/UiBundle/actions" target="_blank">
+        <img src="https://github.com/2lenet/UiBundle/actions/workflows/phpunit.yml/badge.svg" alt="PHPUnit status">
+    </a>
+    <a href="https://github.com/2lenet/UiBundle/actions" target="_blank">
+        <img src="https://github.com/2lenet/UiBundle/actions/workflows/validate.yml/badge.svg" alt="PHPCS status">
+    </a>
+</p>
 
-UiBundle knows nothing about `CrudConfig`, bricks or the Crudit menu.
+The design system shared by the 2LE bundles ([Crudit Bundle](https://github.com/2lenet/CruditBundle),
+[Dashboard Bundle](https://github.com/2lenet/DashboardBundle)): design tokens, base CSS, Twig components,
+Stimulus controllers, icons, languages and right-to-left support.
 
-> Status: skeleton, no component yet.
+The bundle knows nothing about Crudit (`CrudConfig`, bricks, menu): it can be used on its own.
+
+> The bundle is under construction: for now it only provides its configuration and the assets package.
 
 ## Installation
 
@@ -12,23 +26,8 @@ UiBundle knows nothing about `CrudConfig`, bricks or the Crudit menu.
 composer require 2lenet/ui-bundle
 ```
 
-## Configuration
+Afterwards, visit the [documentation](docs/index.md) to set up and use UiBundle.
 
-```yaml
-lle_ui:
-    icons:
-        load_fontawesome: true   # false when the project loads its own icon library
-        map:                     # icon replacements
-            'fa-solid fa-trash': 'xx xx-trash'
-```
+## Licence
 
-## Development
-
-```bash
-composer install
-vendor/bin/phpcs
-vendor/bin/phpstan analyse -c phpstan.neon
-vendor/bin/phpunit
-
-cd assets && npm install && npm run build   # compiles the CSS into assets/dist
-```
+UiBundle is released under the terms of the [MIT License](LICENSE).
