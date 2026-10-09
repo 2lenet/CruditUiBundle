@@ -15,12 +15,6 @@
                 "autoimport": {
                     "@2lenet/ui-bundle/dist/ui.css": true
                 }
-            },
-            "lazy-demo": {
-                "main": "dist/controllers/lazy_demo_controller.js",
-                "webpackMode": "lazy",
-                "fetch": "lazy",
-                "enabled": true
             }
         },
         "importmap": {
