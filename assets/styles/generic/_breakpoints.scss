@@ -1,0 +1,9 @@
+@use 'sass:map';
+@use '../settings/breakpoints' as *;
+
+// The breakpoints as CSS variables, so that the JavaScript uses the same values as the stylesheets.
+:root {
+    @each $name, $value in $breakpoints {
+        --breakpoint-#{$name}: #{$value};
+    }
+}

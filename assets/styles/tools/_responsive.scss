@@ -1,0 +1,29 @@
+@use 'sass:map';
+@use 'sass:string';
+@use '../settings/breakpoints' as *;
+
+// @include media('>md') { … }  from md (included) and up
+// @include media('<md') { … }  below md
+@mixin media($query) {
+    $operator: string.slice($query, 1, 1);
+    $name: string.slice($query, 2);
+
+    @if not map.has-key($breakpoints, $name) {
+        @error '`#{$name}` is not a breakpoint (#{map.keys($breakpoints)})';
+    }
+
+    $value: map.get($breakpoints, $name);
+
+    @if $operator == '>' {
+        @media (min-width: $value) {
+            @content;
+        }
+    } @else if $operator == '<' {
+        // `<md` stops just before `>md`: the two ranges do not overlap.
+        @media (max-width: $value - 0.02px) {
+            @content;
+        }
+    } @else {
+        @error 'The operator of `#{$query}` must be `<` or `>`';
+    }
+}

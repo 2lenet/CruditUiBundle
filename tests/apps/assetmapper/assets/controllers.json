@@ -3,10 +3,7 @@
         "@2lenet/ui-bundle": {
             "dropdown": {
                 "enabled": true,
-                "fetch": "eager",
-                "autoimport": {
-                    "@2lenet/ui-bundle/dist/ui.css": true
-                }
+                "fetch": "eager"
             }
         }
     },

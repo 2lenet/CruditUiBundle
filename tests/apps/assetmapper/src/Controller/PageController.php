@@ -25,10 +25,4 @@ class PageController extends AbstractController
     {
         return $this->render('outils.html.twig');
     }
-
-    #[Route('/crudit', name: 'crudit')]
-    public function crudit(): Response
-    {
-        return $this->render('crudit.html.twig');
-    }
 }

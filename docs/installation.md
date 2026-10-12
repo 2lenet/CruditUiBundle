@@ -40,11 +40,45 @@ import '@2lenet/ui-bundle/dist/ui.css';
 
 All the rules are in the `lle-ui` cascade layer: your own styles always win, whatever the order of the stylesheets.
 
-### Project created before Stimulus
+### After the installation
 
-Flex does not create the Stimulus configuration of an existing project. Add `assets/controllers.json` (listing the
-controllers of `@2lenet/ui-bundle`), start the Stimulus application in your entry point (`startStimulusApp()` from
-`@symfony/stimulus-bridge`) and enable `enableStimulusBridge('./assets/controllers.json')` in `webpack.config.js`.
+AssetMapper and Encore read `controllers.json` once: run `bin/console cache:clear` after `composer require`
+(AssetMapper does not see a `controllers.json` created or changed before), and rebuild with Encore.
+
+### Project created before Stimulus (Encore)
+
+Flex does not create the Stimulus configuration of a project that did not have the Stimulus recipe. Add:
+
+```json
+// assets/controllers.json
+{
+    "controllers": {
+        "@2lenet/ui-bundle": {
+            "dropdown": {"enabled": true, "fetch": "eager"}
+        }
+    },
+    "entrypoints": []
+}
+```
+
+```js
+// assets/bootstrap.js, imported by your entry point (assets/app.js)
+import { startStimulusApp } from '@symfony/stimulus-bridge';
+
+export const app = startStimulusApp(require.context(
+    '@symfony/stimulus-bridge/lazy-controller-loader!./controllers',
+    true,
+    /\.[jt]sx?$/
+));
+```
+
+```js
+// webpack.config.js
+Encore.enableStimulusBridge('./assets/controllers.json')
+```
+
+`tests/apps/encore` is a complete example. Keep the controllers of the bundle in `controllers.json`: a project that
+does not list them does not have them.
 
 ## Icons
 

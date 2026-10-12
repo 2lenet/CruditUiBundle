@@ -1,7 +1,0 @@
-{% extends 'base.html.twig' %}
-{% block body %}
-    <h1>Template de Crudit</h1>
-    {% embed '@LleCrudit/prototype/dropdown.html.twig' with {label: 'Actions Crudit'} %}
-        {% block content %}<a href="#!">Modifier</a>{% endblock %}
-    {% endembed %}
-{% endblock %}

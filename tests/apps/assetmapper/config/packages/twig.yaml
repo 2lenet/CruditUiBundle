@@ -1,7 +1,5 @@
 twig:
     file_name_pattern: '*.twig'
-    paths:
-        '../../../../CruditBundle/src/Resources/views': LleCrudit
 
 when@test:
     twig:

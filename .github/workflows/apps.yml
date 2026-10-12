@@ -1,0 +1,76 @@
+name: Test applications
+
+# The bundle is installed in a Symfony application for each asset tool it supports (AssetMapper, Webpack Encore),
+# then a headless Chrome checks that the stylesheet is loaded, that the project can override it and that a
+# Stimulus controller of the bundle works (tests/apps/smoke.mjs).
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    app:
+        name: "${{ matrix.app }} (${{ matrix.env }})"
+
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -   {app: assetmapper, env: dev}
+                    -   {app: assetmapper, env: prod}
+                    -   {app: encore, env: prod}
+
+        env:
+            APP_SECRET: ci
+            APP_ENV: ${{ matrix.env }}
+
+        defaults:
+            run:
+                working-directory: tests/apps/${{ matrix.app }}
+
+        steps:
+            -   uses: actions/checkout@v4
+
+            -   uses: shivammathur/setup-php@v2
+                with:
+                    php-version: '8.4'
+                    tools: composer:v2
+
+            -   uses: actions/setup-node@v4
+                with:
+                    node-version: 22
+
+            # The bundle is copied into vendor/ (path repository, symlink: false), as a project does.
+            -   name: 'Install the application'
+                run: composer install --no-interaction --prefer-dist
+
+            -   name: 'Build the assets (Encore)'
+                if: matrix.app == 'encore'
+                run: |
+                    npm install --no-audit --no-fund
+                    npm run build
+
+            -   name: 'Compile the assets (AssetMapper, production)'
+                if: matrix.app == 'assetmapper' && matrix.env == 'prod'
+                run: php bin/console asset-map:compile
+
+            -   name: 'Start the server'
+                run: |
+                    php bin/console cache:warmup
+                    php -S 127.0.0.1:8080 -t public > /tmp/server.log 2>&1 &
+                    npx --yes wait-on http://127.0.0.1:8080/ --timeout 30000
+
+            -   name: 'Smoke test'
+                working-directory: tests/apps
+                env:
+                    PUPPETEER_SKIP_DOWNLOAD: '1'
+                run: |
+                    npm install --no-audit --no-fund
+                    node smoke.mjs http://127.0.0.1:8080/ "$(which google-chrome)"
+
+            -   name: 'Server log'
+                if: failure()
+                run: cat /tmp/server.log

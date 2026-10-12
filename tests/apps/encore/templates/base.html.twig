@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        {# The CSS of the bundle is imported by assets/app.js, never by the autoimport of a controller. #}
+        {{ encore_entry_link_tags('app') }}
+        {{ encore_entry_script_tags('app') }}
+    </head>
+    <body>
+        {% block body %}{% endblock %}
+    </body>
+</html>

@@ -1,0 +1,11 @@
+// The only set of breakpoints: the media queries use it (tools/responsive), and generic/breakpoints
+// exposes it as CSS variables, which the JavaScript reads (dist/utils/breakpoints.js).
+// Same values as the crudit-v2 mockup (src/config/breakpoints.ts).
+$breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 1024px,
+    xl: 1280px,
+    xxl: 1600px,
+);

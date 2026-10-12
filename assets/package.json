@@ -11,10 +11,7 @@
                 "main": "dist/controllers/dropdown_controller.js",
                 "webpackMode": "eager",
                 "fetch": "eager",
-                "enabled": true,
-                "autoimport": {
-                    "@2lenet/ui-bundle/dist/ui.css": true
-                }
+                "enabled": true
             }
         },
         "importmap": {
@@ -30,6 +27,8 @@
     },
     "scripts": {
         "build": "sass --no-source-map --style=compressed styles/ui.scss:dist/ui.css",
-        "watch": "sass --no-source-map --watch styles/ui.scss:dist/ui.css"
+        "watch": "sass --no-source-map --watch styles/ui.scss:dist/ui.css",
+        "test": "node --test tests/*.test.mjs",
+        "check": "node scripts/check-build.mjs"
     }
 }

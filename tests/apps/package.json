@@ -1,0 +1,11 @@
+{
+    "private": true,
+    "description": "Smoke test shared by the test applications (assetmapper, encore)",
+    "type": "module",
+    "scripts": {
+        "smoke": "node smoke.mjs"
+    },
+    "devDependencies": {
+        "puppeteer-core": "^24.0.0"
+    }
+}

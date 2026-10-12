@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}UiBundle Encore test{% endblock %}
+
+{% block body %}
+    <h1>UiBundle Encore test</h1>
+    <div {{ stimulus_controller('@2lenet/ui-bundle/dropdown') }} {{ stimulus_action('@2lenet/ui-bundle/dropdown', 'keydown', 'keydown') }}>
+        <button type="button" class="lle-dropdown__button" aria-expanded="false" {{ stimulus_target('@2lenet/ui-bundle/dropdown', 'button') }} {{ stimulus_action('@2lenet/ui-bundle/dropdown', 'toggle') }}>Menu</button>
+        <div hidden {{ stimulus_target('@2lenet/ui-bundle/dropdown', 'panel') }}>Panel</div>
+    </div>
+{% endblock %}
