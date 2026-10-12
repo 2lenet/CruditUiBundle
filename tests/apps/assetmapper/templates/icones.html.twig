@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    {% if lle_crudit_ui_load_fontawesome %}
+        <link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/fontawesome.css') }}">
+    {% endif %}
+{% endblock %}
+{% block body %}
+    <h1>Icônes</h1>
+    <p>Icône du projet : {{ ui_icon('fa-solid fa-truck') }}</p>
+    {% for dir in ['ltr', 'rtl'] %}
+        <h2>{{ dir }}</h2>
+        <ul dir="{{ dir }}">
+            {% for name in names %}
+                <li>{{ ui_icon(name) }} {{ name }}</li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+{% endblock %}

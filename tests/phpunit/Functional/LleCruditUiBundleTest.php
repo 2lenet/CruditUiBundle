@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\AssetMapper\AssetMapperRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Twig\Environment;
 
 class LleCruditUiBundleTest extends TestCase
 {
@@ -54,5 +55,40 @@ class LleCruditUiBundleTest extends TestCase
         $paths = $repository->allDirectories();
 
         self::assertSame(LleCruditUiBundle::ASSETS_PACKAGE, $paths[\dirname(__DIR__, 3) . '/assets/dist'] ?? null);
+    }
+
+    public function testIconFunction(): void
+    {
+        self::assertSame(
+            '<i class="xx xx-trash" aria-hidden="true"></i><i class="fa-solid fa-pen" aria-hidden="true"></i>',
+            $this->render(
+                new TestKernel(['icons' => ['map' => ['fa-solid fa-trash' => 'xx xx-trash']]]),
+                "{{ ui_icon('delete') }}{{ ui_icon('edit') }}",
+            ),
+        );
+    }
+
+    public function testLoadFontawesomeGlobal(): void
+    {
+        self::assertSame('1', $this->render(new TestKernel(), '{{ lle_crudit_ui_load_fontawesome }}'));
+        self::assertSame(
+            'no',
+            $this->render(
+                new TestKernel(['icons' => ['load_fontawesome' => false]]),
+                '{{ lle_crudit_ui_load_fontawesome ? "yes" : "no" }}',
+            ),
+        );
+    }
+
+    private function render(TestKernel $kernel, string $template): string
+    {
+        $kernel->boot();
+
+        /** @var ContainerInterface $testContainer */
+        $testContainer = $kernel->getContainer()->get('test.service_container');
+        /** @var Environment $twig */
+        $twig = $testContainer->get('twig');
+
+        return $twig->createTemplate($template)->render();
     }
 }

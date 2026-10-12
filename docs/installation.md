@@ -31,12 +31,17 @@ Link it explicitly in your layout:
 ```twig
 {# AssetMapper #}
 <link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/ui.css') }}">
+<link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/fontawesome.css') }}">
 ```
 
 ```js
 // Webpack Encore, in your entry point (assets/app.js)
 import '@2lenet/crudit-ui-bundle/dist/ui.css';
+import '@2lenet/crudit-ui-bundle/dist/fontawesome.css';
 ```
+
+`fontawesome.css` is Font Awesome 7 Free (solid and regular), with its fonts. Leave it out if the project already
+loads Font Awesome or uses another icon library (see [Icons](#icons)).
 
 All the rules are in the `crudit-ui` cascade layer: your own styles always win, whatever the order of the stylesheets.
 
@@ -82,4 +87,15 @@ does not list them does not have them.
 
 ## Icons
 
-The bundle loads Font Awesome 7. To use another icon library, see [Configuration](configuration.md#icons).
+The bundle ships Font Awesome 7 Free in `fontawesome.css` (see [Stylesheet](#stylesheet)). Your layout links it; the
+layouts provided by the bundles (Crudit, Dashboard) link it only when the Twig global `lle_crudit_ui_load_fontawesome` is
+true, which is the default:
+
+```twig
+{% if lle_crudit_ui_load_fontawesome %}
+    <link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/fontawesome.css') }}">
+{% endif %}
+```
+
+To use another icon library, set `load_fontawesome: false` (no bundle links Font Awesome any more) and map the
+icons, see [Configuration](configuration.md#icons). The icon names are listed in [Icons](icons.md).

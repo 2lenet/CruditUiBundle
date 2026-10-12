@@ -17,7 +17,9 @@ lle_crudit_ui:
 
 ## Icons
 
-With another library, disable Font Awesome and map the icons you need:
+With another library, disable Font Awesome and map the icons you need. With `load_fontawesome: false`, the
+layouts of the bundles no longer link `fontawesome.css` (Twig global `lle_crudit_ui_load_fontawesome`); your layout links
+the stylesheet of your library:
 
 ```yaml
 lle_crudit_ui:

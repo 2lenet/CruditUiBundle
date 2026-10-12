@@ -22,12 +22,15 @@
         "@hotwired/stimulus": "^3.0.0"
     },
     "devDependencies": {
+        "@fortawesome/fontawesome-free": "^7.3.1",
         "@hotwired/stimulus": "^3.2.2",
         "sass": "^1.80.0"
     },
     "scripts": {
-        "build": "sass --no-source-map --style=compressed styles/ui.scss:dist/ui.css",
-        "watch": "sass --no-source-map --watch styles/ui.scss:dist/ui.css",
+        "build": "npm run build:css && npm run build:fonts",
+        "build:css": "sass --no-source-map --style=compressed --load-path=node_modules styles/ui.scss:dist/ui.css styles/fontawesome.scss:dist/fontawesome.css",
+        "build:fonts": "mkdir -p dist/webfonts && cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 node_modules/@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2 dist/webfonts/",
+        "watch": "sass --no-source-map --watch --load-path=node_modules styles/ui.scss:dist/ui.css styles/fontawesome.scss:dist/fontawesome.css",
         "test": "node --test tests/*.test.mjs",
         "check": "node scripts/check-build.mjs"
     }
