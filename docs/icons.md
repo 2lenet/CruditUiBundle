@@ -27,6 +27,9 @@ name as is, from any icon set ([ux.symfony.com/icons](https://ux.symfony.com/ico
 `lle_crudit_ui.icons.map` replaces any icon by another Iconify name, keyed by logical name for the catalogue and by
 Iconify name for the icons passed by the project (see [Configuration](configuration.md#icons)).
 
+An icon that cannot be rendered (unknown name, icon missing from the library, Iconify name that does not exist)
+does not break the page: `ui_icon()` renders nothing and logs a warning.
+
 Logical names are in kebab-case (`external-link`, `sort-asc`). **RTL** marks the directional icons: they are
 mirrored when the page is right-to-left (`dir="rtl"`), whatever the library: `ui_icon()` gives them the
 `crudit-ui-icon--mirror` class.

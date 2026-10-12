@@ -11,7 +11,7 @@
         <h2>{{ dir }}</h2>
         <ul dir="{{ dir }}">
             {% for name, icon in icons %}
-                <li>{{ ui_icon(icon, name in mirrored ? 'crudit-ui-icon--mirror' : '') }} {{ name }} ({{ icon }})</li>
+                <li>{{ icon ? ui_icon(icon, name in mirrored ? 'crudit-ui-icon--mirror' : '') : '—' }} {{ name }} ({{ icon ?? 'missing' }})</li>
             {% endfor %}
         </ul>
     {% endfor %}

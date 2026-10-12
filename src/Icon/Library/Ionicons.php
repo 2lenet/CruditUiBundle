@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Lle\CruditUiBundle\Icon\Library;
+
+/**
+ * Ionicons (`ionicons`): names of the catalogue that differ in this library, null for an icon it
+ * does not have (ui_icon() then renders nothing and logs a warning).
+ */
+final class Ionicons
+{
+    public const array EXCEPTIONS = [
+        'add' => 'plus',
+        'edit' => 'pencil-outline',
+        'remove' => 'minus',
+        'save' => 'save-outline',
+        'undo' => 'arrow-undo-outline',
+        'refresh' => 'refresh-outline',
+        'close' => 'close-outline',
+        'search' => 'search-outline',
+        'filter-clear' => null,
+        'bookmark-active' => 'bookmark',
+        'settings' => 'settings-outline',
+        'drag' => 'drag',
+        'upload' => 'upload',
+        'external-link' => 'open-outline',
+        'menu' => 'menu-outline',
+        'forward' => 'chevron-right',
+        'sidebar-toggle' => null,
+        'first' => 'skip-backward',
+        'back' => 'arrow-back-outline',
+        'next' => 'arrow-forward-outline',
+        'last' => 'skip-forward',
+        'sort' => null,
+        'sort-asc' => 'caret-up-outline',
+        'sort-desc' => 'caret-down-outline',
+        'success' => 'checkmark-circle-outline',
+        'info' => 'information-outline',
+        'warning' => 'warning-outline',
+        'error' => 'alert-circle-outline',
+        'check' => 'checkmark-outline',
+        'loading' => 'refresh-outline',
+        'empty' => 'archive-outline',
+        'locked' => 'lock-closed-outline',
+        'notifications' => 'notifications-outline',
+        'user' => 'person-outline',
+        'logout' => 'log-out-outline',
+        'impersonate' => 'glasses-outline',
+        'theme-light' => 'sunny-outline',
+        'email' => 'mail-outline',
+        'history-create' => null,
+        'history-transition' => 'swap-horizontal-outline',
+        'time' => 'clock',
+        'calendar' => 'calendar-outline',
+        'file' => 'document-text-outline',
+        'file-csv' => null,
+        'file-excel' => null,
+        'file-pdf' => null,
+        'bold' => null,
+        'italic' => null,
+        'bulleted-list' => 'list-outline',
+        'numbered-list' => null,
+        'quote' => 'quote',
+        'operator-equals' => null,
+        'operator-not-equals' => null,
+        'operator-less-than' => null,
+        'operator-less-or-equal' => null,
+        'operator-greater-than' => null,
+        'operator-greater-or-equal' => null,
+        'operator-between' => null,
+        'operator-contains' => 'text-outline',
+        'operator-starts-with' => null,
+        'operator-ends-with' => null,
+        'operator-not-empty' => 'square',
+        'trend-up' => 'trending-up-outline',
+        'trend-down' => 'trending-down-outline',
+        'table' => 'grid-outline',
+    ];
+}

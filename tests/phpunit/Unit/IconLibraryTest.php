@@ -33,10 +33,22 @@ class IconLibraryTest extends TestCase
         self::assertNull(IconLibrary::Lucide->icon('trash'));
     }
 
+    public function testIconTheLibraryDoesNotHave(): void
+    {
+        self::assertNull(IconLibrary::Octicons->icon('operator-equals'));
+        self::assertSame('octicon:trash-24', IconLibrary::Octicons->icon('delete'));
+    }
+
+    #[DataProvider('libraries')]
+    public function testExceptionsAreNamesOfTheCatalogue(IconLibrary $library): void
+    {
+        self::assertSame([], array_diff_key($library->exceptions(), IconCatalogue::ICONS));
+    }
+
     #[DataProvider('libraries')]
     public function testIconsAreIconifyNames(IconLibrary $library): void
     {
-        foreach ($library->icons() as $name => $icon) {
+        foreach (array_filter($library->icons(), static fn (?string $icon): bool => null !== $icon) as $name => $icon) {
             self::assertMatchesRegularExpression('/^[a-z0-9-]+:[a-z0-9-]+$/', $icon, $name);
         }
     }
@@ -48,7 +60,7 @@ class IconLibraryTest extends TestCase
     #[DataProvider('libraries')]
     public function testIconsExistInIconify(IconLibrary $library): void
     {
-        foreach ($library->icons() as $name => $icon) {
+        foreach (array_filter($library->icons(), static fn (?string $icon): bool => null !== $icon) as $name => $icon) {
             [$prefix, $iconName] = explode(':', $icon);
             self::assertContains($iconName, $this->iconSet($prefix), sprintf('%s: %s does not exist', $name, $icon));
         }

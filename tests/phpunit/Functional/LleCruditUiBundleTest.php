@@ -77,6 +77,11 @@ class LleCruditUiBundleTest extends TestCase
         );
     }
 
+    public function testUnknownIconDoesNotBreakThePage(): void
+    {
+        self::assertSame('before||after', $this->render(new TestKernel(), "before|{{ ui_icon('unknown') }}|after"));
+    }
+
     public function testUnknownLibraryIsRefused(): void
     {
         $this->expectException(InvalidConfigurationException::class);
