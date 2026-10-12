@@ -60,7 +60,7 @@ class TestKernel extends Kernel
             'http_method_override' => false,
             'asset_mapper' => ['enabled' => true],
         ]);
-        $container->extension('twig_component', ['anonymous_template_directory' => 'components/']);
+        $container->extension('twig_component', ['defaults' => [], 'anonymous_template_directory' => 'components/']);
         $container->extension('lle_crudit_ui', $this->uiConfig);
     }
 }
