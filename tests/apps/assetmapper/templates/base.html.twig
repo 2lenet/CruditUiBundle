@@ -9,7 +9,7 @@
 
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
-            <link rel="stylesheet" href="{{ asset('@2lenet/ui-bundle/ui.css') }}">
+            <link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/ui.css') }}">
         {% endblock %}
 
         {% set frankenphp_hot_reload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}

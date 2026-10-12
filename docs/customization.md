@@ -11,20 +11,20 @@ compilation needed:
 }
 ```
 
-All the rules of the bundle are in the `lle-ui` cascade layer: **your styles, which are not in a layer, always win**,
+All the rules of the bundle are in the `crudit-ui` cascade layer: **your styles, which are not in a layer, always win**,
 whatever the order in which the stylesheets are loaded. A rule of the bundle can be rewritten with a plain selector:
 
 ```css
-.lle-dropdown__button {
+.crudit-ui-dropdown__button {
     letter-spacing: 2px;
 }
 ```
 
 ## Replacing a Stimulus controller
 
-The identifier of a controller of the bundle is `2lenet--ui-bundle--<name>` (for example
-`2lenet--ui-bundle--dropdown`). To replace it, add a controller with the same identifier in your `assets/controllers/`:
-`assets/controllers/2lenet--ui-bundle--dropdown_controller.js`. The path of a controller of the bundle
+The identifier of a controller of the bundle is `2lenet--crudit-ui-bundle--<name>` (for example
+`2lenet--crudit-ui-bundle--dropdown`). To replace it, add a controller with the same identifier in your `assets/controllers/`:
+`assets/controllers/2lenet--crudit-ui-bundle--dropdown_controller.js`. The path of a controller of the bundle
 (`dist/controllers/…`) is a public API: it does not change without a note in the upgrade guide.
 
 The two asset tools do not behave the same way.
@@ -36,13 +36,13 @@ Your controller **wins alone**: the controllers of your project replace those of
 To **extend** the controller of the bundle instead of rewriting it, make it importable in `importmap.php`:
 
 ```php
-'@2lenet/ui-bundle/controllers/dropdown_controller.js' => [
-    'path' => '@2lenet/ui-bundle/controllers/dropdown_controller.js',
+'@2lenet/crudit-ui-bundle/controllers/dropdown_controller.js' => [
+    'path' => '@2lenet/crudit-ui-bundle/controllers/dropdown_controller.js',
 ],
 ```
 
 ```js
-import Dropdown from '@2lenet/ui-bundle/controllers/dropdown_controller.js';
+import Dropdown from '@2lenet/crudit-ui-bundle/controllers/dropdown_controller.js';
 
 export default class extends Dropdown {
     open() {
@@ -61,7 +61,7 @@ the bundle** in `controllers.json`:
 ```json
 {
     "controllers": {
-        "@2lenet/ui-bundle": {
+        "@2lenet/crudit-ui-bundle": {
             "dropdown": {"enabled": false}
         }
     }
@@ -71,7 +71,7 @@ the bundle** in `controllers.json`:
 Your controller can then extend it:
 
 ```js
-import Dropdown from '@2lenet/ui-bundle/dist/controllers/dropdown_controller.js';
+import Dropdown from '@2lenet/crudit-ui-bundle/dist/controllers/dropdown_controller.js';
 
 export default class extends Dropdown {
     open() {

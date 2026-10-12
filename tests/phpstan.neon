@@ -10,7 +10,9 @@ parameters:
         - ../tests
     excludePaths:
         - ../config/reference.php
+        # Symfony applications of the apps workflow, not part of the bundle
+        - ../tests/apps
     ignoreErrors:
         -
             identifier: method.childParameterType
-            path: ../src/LleUiBundle.php
+            path: ../src/LleCruditUiBundle.php

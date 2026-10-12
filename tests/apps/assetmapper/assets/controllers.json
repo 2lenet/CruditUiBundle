@@ -1,6 +1,6 @@
 {
     "controllers": {
-        "@2lenet/ui-bundle": {
+        "@2lenet/crudit-ui-bundle": {
             "dropdown": {
                 "enabled": true,
                 "fetch": "eager"

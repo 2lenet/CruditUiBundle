@@ -5,7 +5,7 @@
 //
 // All the bundle styles live in one cascade layer: the styles of the project, which are not in a layer,
 // always win, whatever the order in which the stylesheets are loaded.
-@layer lle-ui {
+@layer crudit-ui {
     @include meta.load-css('generic/breakpoints');
     @include meta.load-css('generic/tokens');
 

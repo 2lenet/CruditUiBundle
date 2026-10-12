@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lle\UiBundle;
+namespace Lle\CruditUiBundle;
 
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -16,12 +16,12 @@ use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
  * The bundle knows nothing about Crudit (CrudConfig, bricks, menu): it is used by
  * CruditBundle and DashboardBundle, which do not depend on each other.
  */
-class LleUiBundle extends AbstractBundle
+class LleCruditUiBundle extends AbstractBundle
 {
     /** Name of the assets package (assets/package.json), also the AssetMapper namespace. */
-    public const string ASSETS_PACKAGE = '@2lenet/ui-bundle';
+    public const string ASSETS_PACKAGE = '@2lenet/crudit-ui-bundle';
 
-    protected string $extensionAlias = 'lle_ui';
+    protected string $extensionAlias = 'lle_crudit_ui';
 
     public function configure(DefinitionConfigurator $definition): void
     {
@@ -54,8 +54,8 @@ class LleUiBundle extends AbstractBundle
         $icons = $config['icons'];
 
         $container->parameters()
-            ->set('lle_ui.icons.load_fontawesome', $icons['load_fontawesome'])
-            ->set('lle_ui.icons.map', $icons['map']);
+            ->set('lle_crudit_ui.icons.load_fontawesome', $icons['load_fontawesome'])
+            ->set('lle_crudit_ui.icons.map', $icons['map']);
 
         $container->import('../config/services.php');
     }

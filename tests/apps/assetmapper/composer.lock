@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eea3b2e8115078f72c261da91082657a",
+    "content-hash": "0753e4aeed557d9019f6a581b29786b9",
     "packages": [
         {
-            "name": "2lenet/ui-bundle",
+            "name": "2lenet/crudit-ui-bundle",
             "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../../..",
-                "reference": "21f08f266e1a1d5819de2fd935b48f9e2c59e20a"
+                "reference": "0637c20b8ef6d3202c0ecb56a325ac277940f3a2"
             },
             "require": {
                 "php": "^8.4",
@@ -36,14 +36,19 @@
                 "symfony/asset-mapper": "^7.0 || ^8.0"
             },
             "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
-                    "Lle\\UiBundle\\": "src/"
+                    "Lle\\CruditUiBundle\\": "src/"
                 }
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Lle\\UiBundle\\Tests\\": "tests/phpunit/"
+                    "Lle\\CruditUiBundle\\Tests\\": "tests/phpunit/"
                 }
             },
             "license": [
@@ -52,11 +57,11 @@
             "authors": [
                 {
                     "name": "Project Contributors",
-                    "homepage": "https://github.com/2lenet/UiBundle/graphs/contributors"
+                    "homepage": "https://github.com/2lenet/CruditUiBundle/graphs/contributors"
                 }
             ],
             "description": "2LE design system: tokens, base CSS, Twig components and Stimulus controllers shared by the 2LE bundles.",
-            "homepage": "https://github.com/2lenet/UiBundle",
+            "homepage": "https://github.com/2lenet/CruditUiBundle",
             "keywords": [
                 "design-system",
                 "stimulus",
@@ -4310,7 +4315,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "2lenet/ui-bundle": 20
+        "2lenet/crudit-ui-bundle": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

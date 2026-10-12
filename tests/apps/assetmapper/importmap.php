@@ -22,8 +22,8 @@ return [
     '@symfony/stimulus-bundle' => [
         'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
     ],
-    '@2lenet/ui-bundle/controllers/dropdown_controller.js' => [
-        'path' => '@2lenet/ui-bundle/controllers/dropdown_controller.js',
+    '@2lenet/crudit-ui-bundle/controllers/dropdown_controller.js' => [
+        'path' => '@2lenet/crudit-ui-bundle/controllers/dropdown_controller.js',
     ],
     '@fortawesome/fontawesome-free/css/all.min.css' => [
         'version' => '7.3.1',

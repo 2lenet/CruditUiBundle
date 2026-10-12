@@ -1,8 +1,8 @@
 # Configuration reference
 
 ```yaml
-# config/packages/lle_ui.yaml (default values)
-lle_ui:
+# config/packages/lle_crudit_ui.yaml (default values)
+lle_crudit_ui:
     icons:
         # load Font Awesome 7 from the bundle
         load_fontawesome: true
@@ -20,7 +20,7 @@ lle_ui:
 With another library, disable Font Awesome and map the icons you need:
 
 ```yaml
-lle_ui:
+lle_crudit_ui:
     icons:
         load_fontawesome: false
         map:

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Lle\UiBundle\Tests\Functional;
+namespace Lle\CruditUiBundle\Tests\Functional;
 
-use Lle\UiBundle\LleUiBundle;
+use Lle\CruditUiBundle\LleCruditUiBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -21,7 +21,7 @@ class TestKernel extends Kernel
     use MicroKernelTrait;
 
     /**
-     * @param array<string, mixed> $uiConfig lle_ui configuration of the project
+     * @param array<string, mixed> $uiConfig lle_crudit_ui configuration of the project
      */
     public function __construct(private readonly array $uiConfig = [])
     {
@@ -34,7 +34,7 @@ class TestKernel extends Kernel
         yield new TwigBundle();
         yield new TwigComponentBundle();
         yield new StimulusBundle();
-        yield new LleUiBundle();
+        yield new LleCruditUiBundle();
     }
 
     public function getProjectDir(): string
@@ -44,12 +44,12 @@ class TestKernel extends Kernel
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/lle_ui_bundle/' . md5(serialize($this->uiConfig)) . '/cache';
+        return sys_get_temp_dir() . '/lle_crudit_ui_bundle/' . md5(serialize($this->uiConfig)) . '/cache';
     }
 
     public function getLogDir(): string
     {
-        return sys_get_temp_dir() . '/lle_ui_bundle/logs';
+        return sys_get_temp_dir() . '/lle_crudit_ui_bundle/logs';
     }
 
     protected function configureContainer(ContainerConfigurator $container): void
@@ -61,6 +61,6 @@ class TestKernel extends Kernel
             'asset_mapper' => ['enabled' => true],
         ]);
         $container->extension('twig_component', ['anonymous_template_directory' => 'components/']);
-        $container->extension('lle_ui', $this->uiConfig);
+        $container->extension('lle_crudit_ui', $this->uiConfig);
     }
 }

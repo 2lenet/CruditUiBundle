@@ -1,5 +1,5 @@
 {
-    "name": "@2lenet/ui-bundle",
+    "name": "@2lenet/crudit-ui-bundle",
     "description": "2LE design system: Stimulus controllers and compiled CSS",
     "version": "0.1.0",
     "license": "MIT",

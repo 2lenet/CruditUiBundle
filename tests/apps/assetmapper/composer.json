@@ -7,7 +7,7 @@
         "php": ">=8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "2lenet/ui-bundle": "@dev",
+        "2lenet/crudit-ui-bundle": "@dev",
         "symfony/asset": "7.4.*",
         "symfony/asset-mapper": "7.4.*",
         "symfony/console": "7.4.*",

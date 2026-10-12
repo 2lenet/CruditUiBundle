@@ -1,14 +1,14 @@
-<h1 align="center">UiBundle</h1>
+<h1 align="center">CruditUiBundle</h1>
 
 <p align="center">
-    <a href="https://github.com/2lenet/UiBundle/actions" target="_blank">
-        <img src="https://github.com/2lenet/UiBundle/actions/workflows/phpstan.yml/badge.svg" alt="PHPStan status">
+    <a href="https://github.com/2lenet/CruditUiBundle/actions" target="_blank">
+        <img src="https://github.com/2lenet/CruditUiBundle/actions/workflows/phpstan.yml/badge.svg" alt="PHPStan status">
     </a>
-    <a href="https://github.com/2lenet/UiBundle/actions" target="_blank">
-        <img src="https://github.com/2lenet/UiBundle/actions/workflows/phpunit.yml/badge.svg" alt="PHPUnit status">
+    <a href="https://github.com/2lenet/CruditUiBundle/actions" target="_blank">
+        <img src="https://github.com/2lenet/CruditUiBundle/actions/workflows/phpunit.yml/badge.svg" alt="PHPUnit status">
     </a>
-    <a href="https://github.com/2lenet/UiBundle/actions" target="_blank">
-        <img src="https://github.com/2lenet/UiBundle/actions/workflows/validate.yml/badge.svg" alt="PHPCS status">
+    <a href="https://github.com/2lenet/CruditUiBundle/actions" target="_blank">
+        <img src="https://github.com/2lenet/CruditUiBundle/actions/workflows/validate.yml/badge.svg" alt="PHPCS status">
     </a>
 </p>
 
@@ -23,11 +23,11 @@ The bundle knows nothing about Crudit (`CrudConfig`, bricks, menu): it can be us
 ## Installation
 
 ```bash
-composer require 2lenet/ui-bundle
+composer require 2lenet/crudit-ui-bundle
 ```
 
-Afterwards, visit the [documentation](docs/index.md) to set up and use UiBundle.
+Afterwards, visit the [documentation](docs/index.md) to set up and use CruditUiBundle.
 
 ## Licence
 
-UiBundle is released under the terms of the [MIT License](LICENSE).
+CruditUiBundle is released under the terms of the [MIT License](LICENSE).

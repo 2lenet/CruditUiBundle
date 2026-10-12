@@ -1,5 +1,5 @@
 {
-    "2lenet/ui-bundle": {
+    "2lenet/crudit-ui-bundle": {
         "version": "dev-main"
     },
     "symfony/console": {

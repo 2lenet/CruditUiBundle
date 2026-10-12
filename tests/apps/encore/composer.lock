@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c166e49f851a308e5c8a63dc46a3da0b",
+    "content-hash": "043772663e1911bf1bbaee355af30ffb",
     "packages": [
         {
-            "name": "2lenet/ui-bundle",
+            "name": "2lenet/crudit-ui-bundle",
             "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../../..",
-                "reference": "de8098a3f4f1e5b6bfb006ab7c89baaf0d269832"
+                "reference": "0637c20b8ef6d3202c0ecb56a325ac277940f3a2"
             },
             "require": {
                 "php": "^8.4",
@@ -43,12 +43,12 @@
             },
             "autoload": {
                 "psr-4": {
-                    "Lle\\UiBundle\\": "src/"
+                    "Lle\\CruditUiBundle\\": "src/"
                 }
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Lle\\UiBundle\\Tests\\": "tests/phpunit/"
+                    "Lle\\CruditUiBundle\\Tests\\": "tests/phpunit/"
                 }
             },
             "license": [
@@ -57,11 +57,11 @@
             "authors": [
                 {
                     "name": "Project Contributors",
-                    "homepage": "https://github.com/2lenet/UiBundle/graphs/contributors"
+                    "homepage": "https://github.com/2lenet/CruditUiBundle/graphs/contributors"
                 }
             ],
             "description": "2LE design system: tokens, base CSS, Twig components and Stimulus controllers shared by the 2LE bundles.",
-            "homepage": "https://github.com/2lenet/UiBundle",
+            "homepage": "https://github.com/2lenet/CruditUiBundle",
             "keywords": [
                 "design-system",
                 "stimulus",
@@ -3966,7 +3966,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "2lenet/ui-bundle": 20
+        "2lenet/crudit-ui-bundle": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

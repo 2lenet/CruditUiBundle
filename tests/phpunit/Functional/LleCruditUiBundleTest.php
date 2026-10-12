@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Lle\UiBundle\Tests\Functional;
+namespace Lle\CruditUiBundle\Tests\Functional;
 
-use Lle\UiBundle\LleUiBundle;
+use Lle\CruditUiBundle\LleCruditUiBundle;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\AssetMapper\AssetMapperRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
-class LleUiBundleTest extends TestCase
+class LleCruditUiBundleTest extends TestCase
 {
     protected function tearDown(): void
     {
-        (new Filesystem())->remove(sys_get_temp_dir() . '/lle_ui_bundle');
+        (new Filesystem())->remove(sys_get_temp_dir() . '/lle_crudit_ui_bundle');
     }
 
     public function testDefaultConfiguration(): void
@@ -23,8 +23,8 @@ class LleUiBundleTest extends TestCase
         $kernel->boot();
         $container = $kernel->getContainer();
 
-        self::assertTrue($container->getParameter('lle_ui.icons.load_fontawesome'));
-        self::assertSame([], $container->getParameter('lle_ui.icons.map'));
+        self::assertTrue($container->getParameter('lle_crudit_ui.icons.load_fontawesome'));
+        self::assertSame([], $container->getParameter('lle_crudit_ui.icons.map'));
     }
 
     public function testIconConfiguration(): void
@@ -38,8 +38,8 @@ class LleUiBundleTest extends TestCase
         $kernel->boot();
         $container = $kernel->getContainer();
 
-        self::assertFalse($container->getParameter('lle_ui.icons.load_fontawesome'));
-        self::assertSame(['fa-solid fa-trash' => 'xx xx-trash'], $container->getParameter('lle_ui.icons.map'));
+        self::assertFalse($container->getParameter('lle_crudit_ui.icons.load_fontawesome'));
+        self::assertSame(['fa-solid fa-trash' => 'xx xx-trash'], $container->getParameter('lle_crudit_ui.icons.map'));
     }
 
     public function testAssetsAreExposedToAssetMapper(): void
@@ -53,6 +53,6 @@ class LleUiBundleTest extends TestCase
         $repository = $testContainer->get('asset_mapper.repository');
         $paths = $repository->allDirectories();
 
-        self::assertSame(LleUiBundle::ASSETS_PACKAGE, $paths[\dirname(__DIR__, 3) . '/assets/dist'] ?? null);
+        self::assertSame(LleCruditUiBundle::ASSETS_PACKAGE, $paths[\dirname(__DIR__, 3) . '/assets/dist'] ?? null);
     }
 }

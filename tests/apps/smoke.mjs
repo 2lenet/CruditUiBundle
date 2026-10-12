@@ -28,7 +28,7 @@ try {
     assert.equal(primary, '#b3261e', 'the project must override the variables of the bundle');
 
     // The Stimulus controller of the bundle works.
-    const button = await page.waitForSelector('.lle-dropdown__button');
+    const button = await page.waitForSelector('.crudit-ui-dropdown__button');
     const expanded = () => page.evaluate((b) => b.getAttribute('aria-expanded'), button);
     assert.equal(await expanded(), 'false');
     await button.click();

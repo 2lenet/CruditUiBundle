@@ -1,5 +1,5 @@
 {
-    "name": "2lenet/ui-bundle",
+    "name": "2lenet/crudit-ui-bundle",
     "type": "symfony-bundle",
     "description": "2LE design system: tokens, base CSS, Twig components and Stimulus controllers shared by the 2LE bundles.",
     "keywords": [
@@ -9,11 +9,11 @@
         "stimulus"
     ],
     "license": "MIT",
-    "homepage": "https://github.com/2lenet/UiBundle",
+    "homepage": "https://github.com/2lenet/CruditUiBundle",
     "authors": [
         {
             "name": "Project Contributors",
-            "homepage": "https://github.com/2lenet/UiBundle/graphs/contributors"
+            "homepage": "https://github.com/2lenet/CruditUiBundle/graphs/contributors"
         }
     ],
     "require": {
@@ -39,12 +39,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Lle\\UiBundle\\": "src/"
+            "Lle\\CruditUiBundle\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Lle\\UiBundle\\Tests\\": "tests/phpunit/"
+            "Lle\\CruditUiBundle\\Tests\\": "tests/phpunit/"
         }
     },
     "config": {

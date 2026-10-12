@@ -749,7 +749,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     script_attributes?: array<string, scalar|Param|null>,
  *     link_attributes?: array<string, scalar|Param|null>,
  * }
- * @psalm-type LleUiConfig = array{
+ * @psalm-type LleCruditUiConfig = array{
  *     icons?: array{
  *         load_fontawesome?: bool|Param, // Load Font Awesome 7 from the bundle; false when the project loads its own icon library. // Default: true
  *         map?: array<string, scalar|Param|null>,
@@ -811,7 +811,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     twig?: TwigConfig,
  *     stimulus?: StimulusConfig,
  *     webpack_encore?: WebpackEncoreConfig,
- *     lle_ui?: LleUiConfig,
+ *     lle_crudit_ui?: LleCruditUiConfig,
  *     twig_extra?: TwigExtraConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
@@ -822,7 +822,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         twig?: TwigConfig,
  *         stimulus?: StimulusConfig,
  *         webpack_encore?: WebpackEncoreConfig,
- *         lle_ui?: LleUiConfig,
+ *         lle_crudit_ui?: LleCruditUiConfig,
  *         twig_extra?: TwigExtraConfig,
  *     },
  *     "when@prod"?: array{
@@ -834,7 +834,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         twig?: TwigConfig,
  *         stimulus?: StimulusConfig,
  *         webpack_encore?: WebpackEncoreConfig,
- *         lle_ui?: LleUiConfig,
+ *         lle_crudit_ui?: LleCruditUiConfig,
  *         twig_extra?: TwigExtraConfig,
  *     },
  *     "when@test"?: array{
@@ -846,7 +846,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         twig?: TwigConfig,
  *         stimulus?: StimulusConfig,
  *         webpack_encore?: WebpackEncoreConfig,
- *         lle_ui?: LleUiConfig,
+ *         lle_crudit_ui?: LleCruditUiConfig,
  *         twig_extra?: TwigExtraConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias

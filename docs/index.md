@@ -1,4 +1,4 @@
-# UiBundle
+# CruditUiBundle
 
 The design system shared by the 2LE bundles.
 

@@ -4,7 +4,7 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "2lenet/ui-bundle": "@dev",
+        "2lenet/crudit-ui-bundle": "@dev",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "php": ">=8.2",

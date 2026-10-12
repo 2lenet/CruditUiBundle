@@ -1,7 +1,7 @@
 {
     "private": true,
     "devDependencies": {
-        "@2lenet/ui-bundle": "file:vendor/2lenet/ui-bundle/assets",
+        "@2lenet/crudit-ui-bundle": "file:vendor/2lenet/crudit-ui-bundle/assets",
         "@babel/core": "^7.17.0",
         "@babel/preset-env": "^7.16.0",
         "@hotwired/stimulus": "^3.0.0",

@@ -22,14 +22,14 @@ npm test        # breakpoints and the `media` mixin
 
 | Path | Content |
 |---|---|
-| `assets/styles/` | Sass, in ITCSS order: `settings` → `tools` → `generic` → `elements` → `objects` → `components` → `utilities`. Only `ui.scss` is compiled; it loads each partial with `meta.load-css` inside `@layer lle-ui`, so a partial is plain CSS and never declares the layer itself. |
+| `assets/styles/` | Sass, in ITCSS order: `settings` → `tools` → `generic` → `elements` → `objects` → `components` → `utilities`. Only `ui.scss` is compiled; it loads each partial with `meta.load-css` inside `@layer crudit-ui`, so a partial is plain CSS and never declares the layer itself. |
 | `assets/dist/ui.css` | The compiled stylesheet. |
 | `assets/dist/controllers/` | Stimulus controllers, native ES modules (no build). Their path is public API. |
 | `assets/dist/utils/` | JavaScript helpers shared by the controllers (`breakpoints.js`). |
 
 ### Conventions
 
-- Classes: prefix `lle-`, BEM (`lle-dropdown__button`). Tokens keep their plain names (`--color-primary`); a token specific to one component takes the prefix (`--lle-table-row-height`).
+- Classes: prefix `crudit-ui-`, BEM (`crudit-ui-dropdown__button`). Tokens keep their plain names (`--color-primary`); a token specific to one component takes the prefix (`--crudit-ui-table-row-height`).
 - **Breakpoints**: one set, `styles/settings/_breakpoints.scss`. In Sass use `@include media('>md')` / `media('<md')`; in JavaScript use `breakpoint('md')` or `matchBreakpoint('>md')` (`dist/utils/breakpoints.js`), which read the `--breakpoint-*` CSS variables. Never write a width in px in a media query or in a controller.
 - JavaScript: native ES modules only, no CSS/HTML/JSON import, bare imports declared in `peerDependencies` and `symfony.importmap`.
 - **Lazy loading**: a light controller is `"fetch": "eager"`; a heavy one (editor, Sortable, Chart.js…) is `"fetch": "lazy"` in `package.json`, or loads its library with a dynamic `import()`.
@@ -44,7 +44,7 @@ The bundle must not depend on `2lenet/crudit-bundle` nor on `2lenet/dashboard-bu
 Each one installs the bundle as a project does (Composer path repository with `symlink: false`, so the bundle is
 **copied** into `vendor/`), loads the stylesheet explicitly, overrides a variable in its own CSS and shows the
 dropdown controller. `tests/apps/smoke.mjs` drives a headless Chrome on the page: the stylesheet and the
-breakpoint variables are loaded, the project wins over the `lle-ui` layer, the controller opens and closes the
+breakpoint variables are loaded, the project wins over the `crudit-ui` layer, the controller opens and closes the
 menu, nothing fails to load. The `Test applications` workflow runs it for AssetMapper (dev and prod, with
 `asset-map:compile`) and Encore.
 
@@ -60,7 +60,7 @@ cd .. && npm install && node smoke.mjs http://127.0.0.1:8081/
 
 Pitfalls:
 
-- **A change in `assets/` is not seen by an application that already copied the bundle**: copy `assets/dist/` again into `vendor/2lenet/ui-bundle/assets/dist/` (or reinstall the bundle).
+- **A change in `assets/` is not seen by an application that already copied the bundle**: copy `assets/dist/` again into `vendor/2lenet/crudit-ui-bundle/assets/dist/` (or reinstall the bundle).
 - Composer copies the whole bundle, `vendor/` and `node_modules/` included, and the applications already installed with it: use a clean checkout (as the CI does) when installing a second application.
 - `php -S` must run **without a router script**: with one, it sends the static files (`/build`, `/assets`) to `index.php` too.
 - After `asset-map:compile`, delete `public/assets/` to go back to the development mode (the compiled files are served as is).
