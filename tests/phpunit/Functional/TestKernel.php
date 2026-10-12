@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
 
@@ -34,6 +35,7 @@ class TestKernel extends Kernel
         yield new TwigBundle();
         yield new TwigComponentBundle();
         yield new StimulusBundle();
+        yield new UXIconsBundle();
         yield new LleCruditUiBundle();
     }
 
@@ -61,6 +63,11 @@ class TestKernel extends Kernel
             'asset_mapper' => ['enabled' => true],
         ]);
         $container->extension('twig_component', ['defaults' => [], 'anonymous_template_directory' => 'components/']);
+        // Icons of the tests, without calling Iconify
+        $container->extension('ux_icons', [
+            'icon_dir' => __DIR__ . '/icons',
+            'iconify' => ['on_demand' => false],
+        ]);
         $container->extension('lle_crudit_ui', $this->uiConfig);
     }
 }

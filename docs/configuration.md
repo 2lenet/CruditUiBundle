@@ -4,28 +4,28 @@
 # config/packages/lle_crudit_ui.yaml (default values)
 lle_crudit_ui:
     icons:
-        # load Font Awesome 7 from the bundle
-        load_fontawesome: true
-        # icon replacements: "icon used by the bundles": "icon of your library"
+        # icon library of the project
+        library: fontawesome
+        # icon replacements: "logical name or Iconify name": "Iconify name"
         map: {}
 ```
 
 | Option | |
 |---|---|
-| `icons.load_fontawesome` | `false` when the project loads its own icon library |
-| `icons.map` | Replaces an icon rendered by the bundles by another one, for example `'fa-solid fa-trash': 'xx xx-trash'` |
+| `icons.library` | Icon library of the project, one of `fontawesome`, `bootstrap-icons`, `boxicons`, `flowbite`, `heroicons`, `iconoir`, `ionicons`, `lucide`, `mdi`, `octicons`, `phosphor`, `tabler` (see [Icon libraries](icon-libraries.md)) |
+| `icons.map` | Replaces an icon rendered by the bundles by another one, for example `delete: 'lucide:trash-2'` |
 
 ## Icons
 
-With another library, disable Font Awesome and map the icons you need. With `load_fontawesome: false`, the
-layouts of the bundles no longer link `fontawesome.css` (Twig global `lle_crudit_ui_load_fontawesome`); your layout links
-the stylesheet of your library:
+Choose the library of the project; the bundles then render all their icons from it. Replace the icons you want
+by any Iconify name ([ux.symfony.com/icons](https://ux.symfony.com/icons)), keyed by logical name
+([catalogue](icons.md)) or, for an icon passed by the project, by its Iconify name:
 
 ```yaml
 lle_crudit_ui:
     icons:
-        load_fontawesome: false
+        library: lucide
         map:
-            'fa-solid fa-trash': 'xx xx-trash'
-            'fa-solid fa-user': 'xx xx-user'
+            delete: 'lucide:trash-2'
+            'lucide:truck': 'tabler:truck-delivery'
 ```

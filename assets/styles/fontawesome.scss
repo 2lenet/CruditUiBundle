@@ -1,6 +1,0 @@
-// Font Awesome 7 Free (solid and regular), shipped next to ui.css: the fonts are copied to dist/webfonts.
-// The brands are left out, the bundles do not use them.
-@use '@fortawesome/fontawesome-free/scss/variables' with ($font-path: 'webfonts');
-@use '@fortawesome/fontawesome-free/scss/fontawesome';
-@use '@fortawesome/fontawesome-free/scss/solid';
-@use '@fortawesome/fontawesome-free/scss/regular';

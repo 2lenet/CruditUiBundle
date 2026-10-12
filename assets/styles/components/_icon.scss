@@ -1,0 +1,24 @@
+// SVG rendered by ui_icon() (Symfony UX Icons): the size of the text, on its baseline. The colour comes from
+// `currentColor` in the SVG of each library (fill or stroke), so it is not set here.
+.crudit-ui-icon {
+    display: inline-block;
+    inline-size: 1em;
+    block-size: 1em;
+    vertical-align: -0.125em;
+
+    &--spin {
+        animation: crudit-ui-icon-spin 1s steps(8) infinite;
+    }
+}
+
+@keyframes crudit-ui-icon-spin {
+    to {
+        rotate: 1turn;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .crudit-ui-icon--spin {
+        animation: none;
+    }
+}

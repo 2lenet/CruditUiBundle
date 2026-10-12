@@ -4,43 +4,55 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Tests\Unit;
 
+use Lle\CruditUiBundle\Icon\IconLibrary;
 use Lle\CruditUiBundle\Twig\IconRuntime;
 use PHPUnit\Framework\TestCase;
+use Symfony\UX\Icons\IconRendererInterface;
 
 class IconRuntimeTest extends TestCase
 {
-    public function testLogicalName(): void
+    public function testLogicalNameInTheDefaultLibrary(): void
     {
-        self::assertSame('<i class="fa-solid fa-trash" aria-hidden="true"></i>', (new IconRuntime([]))->icon('delete'));
+        self::assertSame('fa7-solid:trash class="crudit-ui-icon"', $this->runtime()->icon('delete'));
     }
 
-    public function testClassPassedByTheProject(): void
+    public function testLogicalNameInTheLibraryOfTheProject(): void
     {
-        self::assertSame('<i class="fa-solid fa-truck" aria-hidden="true"></i>', (new IconRuntime([]))->icon('fa-solid fa-truck'));
+        self::assertSame('lucide:trash class="crudit-ui-icon"', $this->runtime(IconLibrary::Lucide)->icon('delete'));
+    }
+
+    public function testIconifyNamePassedByTheProject(): void
+    {
+        self::assertSame('lucide:truck class="crudit-ui-icon"', $this->runtime()->icon('lucide:truck'));
     }
 
     public function testMapReplacesALogicalName(): void
     {
-        $runtime = new IconRuntime(['fa-solid fa-trash' => 'xx xx-trash']);
+        $runtime = $this->runtime(IconLibrary::FontAwesome, ['delete' => 'tabler:trash-x']);
 
-        self::assertSame('<i class="xx xx-trash" aria-hidden="true"></i>', $runtime->icon('delete'));
+        self::assertSame('tabler:trash-x class="crudit-ui-icon"', $runtime->icon('delete'));
     }
 
-    public function testMapReplacesAClassPassedByTheProject(): void
+    public function testMapReplacesAnIconifyNamePassedByTheProject(): void
     {
-        $runtime = new IconRuntime(['fa fa-user' => 'fa-solid fa-user']);
+        $runtime = $this->runtime(IconLibrary::FontAwesome, ['lucide:truck' => 'tabler:truck']);
 
-        self::assertSame('<i class="fa-solid fa-user" aria-hidden="true"></i>', $runtime->icon('fa fa-user'));
+        self::assertSame('tabler:truck class="crudit-ui-icon"', $runtime->icon('lucide:truck'));
+    }
+
+    public function testDirectionalIconIsMirrored(): void
+    {
+        self::assertSame('fa7-solid:arrow-right class="crudit-ui-icon crudit-ui-icon--mirror"', $this->runtime()->icon('next'));
+    }
+
+    public function testLoadingIconSpins(): void
+    {
+        self::assertSame('fa7-solid:spinner class="crudit-ui-icon crudit-ui-icon--spin"', $this->runtime()->icon('loading'));
     }
 
     public function testAdditionalClass(): void
     {
-        self::assertSame('<i class="fa-solid fa-pen me-1" aria-hidden="true"></i>', (new IconRuntime([]))->icon('edit', 'me-1'));
-    }
-
-    public function testClassesAreEscaped(): void
-    {
-        self::assertSame('<i class="fa-solid fa-pen &quot;&gt;" aria-hidden="true"></i>', (new IconRuntime([]))->icon('edit', '">'));
+        self::assertSame('fa7-solid:pen class="crudit-ui-icon me-1"', $this->runtime()->icon('edit', 'me-1'));
     }
 
     public function testUnknownName(): void
@@ -48,6 +60,23 @@ class IconRuntimeTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown icon "trash"');
 
-        (new IconRuntime([]))->icon('trash');
+        $this->runtime()->icon('trash');
+    }
+
+    /**
+     * @param array<string, string> $map
+     */
+    private function runtime(IconLibrary $library = IconLibrary::FontAwesome, array $map = []): IconRuntime
+    {
+        $renderer = new class implements IconRendererInterface {
+            public function renderIcon(string $name, array $attributes = []): string
+            {
+                \assert('true' === $attributes['aria-hidden']);
+
+                return sprintf('%s class="%s"', $name, (string) $attributes['class']);
+            }
+        };
+
+        return new IconRuntime($renderer, $library, $map);
     }
 }

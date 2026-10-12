@@ -27,5 +27,14 @@ jobs:
             -   name: "Install dependencies with Composer"
                 run: composer install --no-interaction --prefer-dist
 
+            # Icon sets (@iconify-json) checked by IconLibraryTest
+            -   uses: actions/setup-node@v4
+                with:
+                    node-version: 22
+
+            -   name: "Install the icon sets"
+                run: npm ci
+                working-directory: assets
+
             -   name: "Run PHPUnit"
                 run: vendor/bin/phpunit -c tests/phpunit/phpunit.xml

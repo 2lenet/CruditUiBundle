@@ -31,17 +31,12 @@ Link it explicitly in your layout:
 ```twig
 {# AssetMapper #}
 <link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/ui.css') }}">
-<link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/fontawesome.css') }}">
 ```
 
 ```js
 // Webpack Encore, in your entry point (assets/app.js)
 import '@2lenet/crudit-ui-bundle/dist/ui.css';
-import '@2lenet/crudit-ui-bundle/dist/fontawesome.css';
 ```
-
-`fontawesome.css` is Font Awesome 7 Free (solid and regular), with its fonts. Leave it out if the project already
-loads Font Awesome or uses another icon library (see [Icons](#icons)).
 
 All the rules are in the `crudit-ui` cascade layer: your own styles always win, whatever the order of the stylesheets.
 
@@ -87,15 +82,30 @@ does not list them does not have them.
 
 ## Icons
 
-The bundle ships Font Awesome 7 Free in `fontawesome.css` (see [Stylesheet](#stylesheet)). Your layout links it; the
-layouts provided by the bundles (Crudit, Dashboard) link it only when the Twig global `lle_crudit_ui_load_fontawesome` is
-true, which is the default:
+The icons are SVG rendered by [Symfony UX Icons](https://symfony.com/bundles/ux-icons/current/index.html): no icon
+font to link. Choose the icon library of the project (Font Awesome 7 by default, see
+[Icon libraries](icon-libraries.md) and [Configuration](configuration.md#icons)).
 
-```twig
-{% if lle_crudit_ui_load_fontawesome %}
-    <link rel="stylesheet" href="{{ asset('@2lenet/crudit-ui-bundle/fontawesome.css') }}">
-{% endif %}
+The icons come from [Iconify](https://iconify.design). In development, Symfony UX Icons downloads them, which
+requires the HTTP client, and `auto_lock` copies each displayed icon to `assets/icons/`, including the names built
+dynamically (icons of a `CrudConfig`, of the database…) that `ux:icons:lock` cannot find:
+
+```bash
+composer require symfony/http-client
 ```
 
-To use another icon library, set `load_fontawesome: false` (no bundle links Font Awesome any more) and map the
-icons, see [Configuration](configuration.md#icons). The icon names are listed in [Icons](icons.md).
+```yaml
+# config/packages/ux_icons.yaml
+when@dev:
+    ux_icons:
+        iconify:
+            auto_lock: true
+```
+
+The web server must be able to write to `assets/icons/` in development (with Docker, the folder created by
+Composer often belongs to `root`): otherwise the log shows `Could not auto-lock icon` and nothing is copied, although
+the icons are displayed.
+
+**Commit `assets/icons/`**: in production, the icons are read from it, without calling Iconify. Display the screens
+of the project in development after changing the library or adding an icon, so that its SVG is copied. The icon
+names are listed in [Icons](icons.md).

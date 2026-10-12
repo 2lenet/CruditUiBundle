@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use Lle\CruditUiBundle\Icon\IconCatalogue;
+use Lle\CruditUiBundle\Icon\IconLibrary;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -28,8 +30,15 @@ class PageController extends AbstractController
     }
 
     #[Route('/icones', name: 'icons')]
-    public function icons(): Response
+    public function icons(Request $request): Response
     {
-        return $this->render('icones.html.twig', ['names' => array_keys(IconCatalogue::ICONS)]);
+        $library = IconLibrary::tryFrom($request->query->getString('library')) ?? IconLibrary::FontAwesome;
+
+        return $this->render('icones.html.twig', [
+            'library' => $library,
+            'libraries' => IconLibrary::cases(),
+            'icons' => $library->icons(),
+            'mirrored' => IconCatalogue::MIRRORED,
+        ]);
     }
 }

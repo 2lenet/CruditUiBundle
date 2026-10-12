@@ -1,24 +1,6 @@
-// Directional icons are mirrored in right-to-left pages (RTL column of docs/icons.md, plus `angles-right`).
-// `scale` rather than `transform`: it adds up with the rotations of the components (open chevrons).
-// Icons without a reading direction (up, down, refresh) do not change.
-[dir='rtl'] {
-    .fa-chevron-right,
-    .fa-arrow-right,
-    .fa-arrow-left,
-    .fa-angles-right,
-    .fa-angles-left,
-    .fa-forward-step,
-    .fa-backward-step,
-    .fa-right-from-bracket,
-    .fa-arrow-up-right-from-square,
-    .fa-arrow-trend-up,
-    .fa-arrow-trend-down,
-    .fa-rotate-left,
-    .fa-paper-plane,
-    .fa-list-ul,
-    .fa-list-ol,
-    .fa-square-caret-right,
-    .fa-square-caret-left {
-        scale: -1 1;
-    }
+// Directional icons (RTL column of docs/icons.md) are mirrored in right-to-left pages: ui_icon() gives them the
+// `--mirror` modifier, whatever the icon library. Icons without a reading direction (up, down, refresh) do not
+// change. `scale` rather than `transform`: it adds up with the rotations of the components (open chevrons).
+[dir='rtl'] .crudit-ui-icon--mirror {
+    scale: -1 1;
 }
