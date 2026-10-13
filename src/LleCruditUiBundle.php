@@ -37,7 +37,7 @@ class LleCruditUiBundle extends AbstractBundle
                             ->defaultValue(IconLibrary::FontAwesome->value)
                         ->end()
                         ->arrayNode('map')
-                            ->info('Icon replacements, keyed by logical name or Iconify name, for example "delete": "lucide:trash-2".')
+                            ->info('Icon replacements, keyed by logical name or Iconify name, for example "delete": "tabler:trash-x".')
                             ->normalizeKeys(false)
                             ->useAttributeAsKey('icon')
                             ->scalarPrototype()->end()

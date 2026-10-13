@@ -98,7 +98,7 @@ class IconExtension implements ResetInterface
         $this->failed = [];
     }
 
-    public function doResolve(string $name): ?string
+    protected function doResolve(string $name): ?string
     {
         if (isset($this->map[$name])) {
             return $this->map[$name];
