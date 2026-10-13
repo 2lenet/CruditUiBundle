@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Lle\CruditUiBundle\Tests\Functional;
 
 use Lle\CruditUiBundle\LleCruditUiBundle;
+use Lle\CruditUiBundle\Twig\ThemeExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\AssetMapper\AssetMapperRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Environment;
 
 class LleCruditUiBundleTest extends TestCase
@@ -80,6 +83,20 @@ class LleCruditUiBundleTest extends TestCase
     public function testUnknownIconDoesNotBreakThePage(): void
     {
         self::assertSame('before||after', $this->render(new TestKernel(), "before|{{ ui_icon('unknown') }}|after"));
+    }
+
+    public function testThemeFunction(): void
+    {
+        $kernel = new TestKernel();
+        $kernel->boot();
+
+        /** @var ContainerInterface $testContainer */
+        $testContainer = $kernel->getContainer()->get('test.service_container');
+        /** @var RequestStack $requestStack */
+        $requestStack = $testContainer->get('request_stack');
+        $requestStack->push(new Request(cookies: [ThemeExtension::COOKIE => 'dark']));
+
+        self::assertSame('<html data-theme="dark">', $this->render($kernel, '<html{% if ui_theme() %} data-theme="{{ ui_theme() }}"{% endif %}>'));
     }
 
     public function testUnknownLibraryIsRefused(): void

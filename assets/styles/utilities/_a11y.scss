@@ -1,0 +1,11 @@
+@use '../tools/a11y' as *;
+
+// Visually hidden, read by assistive technologies.
+.crudit-ui-visually-hidden {
+    @include sr-only;
+}
+
+// A table caption in absolute position disturbs the layout of the table.
+caption.crudit-ui-visually-hidden {
+    position: static;
+}

@@ -1,0 +1,64 @@
+@use '../settings/breakpoints' as *;
+@use '../tools/responsive' as *;
+
+// Display, from a breakpoint too (mobile first): crudit-ui-d-none crudit-ui-d-md-flex.
+// Flex alignment, text alignment and truncation: the small set the templates of the bundles use.
+$displays: (none, block, inline, inline-block, flex, inline-flex, grid);
+
+@each $display in $displays {
+    .crudit-ui-d-#{$display} {
+        display: $display;
+    }
+}
+
+@each $breakpoint, $value in $breakpoints {
+    @if $value > 0 {
+        @include media('>#{$breakpoint}') {
+            @each $display in $displays {
+                .crudit-ui-d-#{$breakpoint}-#{$display} {
+                    display: $display;
+                }
+            }
+        }
+    }
+}
+
+@each $value in (start, end, center, space-between, space-around) {
+    .crudit-ui-justify-#{$value} {
+        justify-content: $value;
+    }
+}
+
+@each $value in (start, end, center, baseline, stretch) {
+    .crudit-ui-align-#{$value} {
+        align-items: $value;
+    }
+}
+
+.crudit-ui-flex-wrap {
+    flex-wrap: wrap;
+}
+
+.crudit-ui-flex-nowrap {
+    flex-wrap: nowrap;
+}
+
+.crudit-ui-flex-grow {
+    flex-grow: 1;
+}
+
+@each $value in (start, end, center) {
+    .crudit-ui-text-#{$value} {
+        text-align: $value;
+    }
+}
+
+.crudit-ui-text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.crudit-ui-w-100 {
+    width: 100%;
+}

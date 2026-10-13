@@ -1,0 +1,49 @@
+@use 'sass:map';
+@use '../settings/breakpoints' as *;
+@use '../tools/responsive' as *;
+
+// Layout grid in CSS grid, in place of the grid of Bootstrap (`row`, `col-lg-6`…).
+//
+// - `crudit-ui-grid`: 12 columns; a child takes the whole width, or `crudit-ui-col-<n>` columns, from a breakpoint
+//   with `crudit-ui-col-<breakpoint>-<n>` (mobile first: `crudit-ui-col-12 crudit-ui-col-lg-6`).
+// - `crudit-ui-grid--auto`: as many equal columns as fit, each at least `--crudit-ui-grid-min` wide (cards, fields).
+//
+// The gap is `--crudit-ui-grid-gap` (default `--space-4`).
+$columns: 12;
+
+.crudit-ui-grid {
+    display: grid;
+    grid-template-columns: repeat($columns, minmax(0, 1fr));
+    gap: var(--crudit-ui-grid-gap, var(--space-4));
+
+    > * {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+
+    &--auto {
+        grid-template-columns: repeat(auto-fill, minmax(min(var(--crudit-ui-grid-min, 16rem), 100%), 1fr));
+
+        > * {
+            grid-column: auto;
+        }
+    }
+}
+
+@for $span from 1 through $columns {
+    .crudit-ui-grid > .crudit-ui-col-#{$span} {
+        grid-column: span $span;
+    }
+}
+
+@each $breakpoint, $value in $breakpoints {
+    @if $value > 0 {
+        @include media('>#{$breakpoint}') {
+            @for $span from 1 through $columns {
+                .crudit-ui-grid > .crudit-ui-col-#{$breakpoint}-#{$span} {
+                    grid-column: span $span;
+                }
+            }
+        }
+    }
+}

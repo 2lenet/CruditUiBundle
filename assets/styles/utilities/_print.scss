@@ -1,0 +1,7 @@
+// Print: only the content of the page. Each component hides its own commands (actions, filters, pagination…) in its
+// stylesheet; `crudit-ui-print-hidden` hides any other element.
+@media print {
+    .crudit-ui-print-hidden {
+        display: none;
+    }
+}

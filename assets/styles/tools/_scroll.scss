@@ -1,0 +1,9 @@
+// Horizontal scrolling only. With overflow-x: auto, the browser also sets overflow-y to auto: a fractional height
+// (table rows) then shows a vertical scrollbar for one pixel (Chrome).
+// position: relative: the absolutely positioned elements of the content (visually hidden texts) are placed in the
+// container. Otherwise they escape the clipping and widen the page.
+@mixin scroll-x {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+}

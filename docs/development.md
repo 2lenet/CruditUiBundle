@@ -15,21 +15,23 @@ npm install
 npm run build   # styles/ui.scss -> dist/ui.css
 npm run watch
 npm run check   # fails when dist/ui.css is not the compilation of styles/ (run by the CI)
-npm test        # breakpoints and the `media` mixin
+npm test        # tokens and contrasts, prefix of the classes, grid, utilities, breakpoints
 ```
 
 `assets/dist/` is **committed**: the bundle ships the compiled CSS, projects have no build step for it.
 
 | Path | Content |
 |---|---|
-| `assets/styles/` | Sass, in ITCSS order: `settings` → `tools` → `generic` → `elements` → `objects` → `components` → `utilities`. Only `ui.scss` is compiled; it loads each partial with `meta.load-css` inside `@layer crudit-ui`, so a partial is plain CSS and never declares the layer itself. |
+| `assets/styles/` | Sass, in ITCSS order: `settings` → `tools` → `generic` → `elements` → `objects` → `components` → `utilities`. Only `ui.scss` is compiled; it loads each partial with `meta.load-css` inside its layer, so a partial is plain CSS and never declares the layer itself: `generic` and `elements` in `@layer crudit-ui-base`, the rest in `@layer crudit-ui`. |
 | `assets/dist/ui.css` | The compiled stylesheet. |
 | `assets/dist/controllers/` | Stimulus controllers, native ES modules (no build). Their path is public API. |
 | `assets/dist/utils/` | JavaScript helpers shared by the controllers (`breakpoints.js`). |
 
 ### Conventions
 
-- Classes: prefix `crudit-ui-`, BEM (`crudit-ui-dropdown__button`). Tokens keep their plain names (`--color-primary`); a token specific to one component takes the prefix (`--crudit-ui-table-row-height`).
+- **Layers**: a rule on a bare element (`a`, `button`, `h1`…) goes in `crudit-ui-base` (`generic/`, `elements/`); every rule of `crudit-ui` targets a `crudit-ui-` class (checked by `tests/base.test.mjs`). A project that keeps Bootstrap puts it between the two: an element rule in `crudit-ui` would win over its classes.
+
+- Classes: prefix `crudit-ui-`, BEM (`crudit-ui-dropdown__button`). Tokens keep their plain names (`--brand`, `--c-text`); a token specific to one component takes the prefix (`--crudit-ui-table-row-height`).
 - **Breakpoints**: one set, `styles/settings/_breakpoints.scss`. In Sass use `@include media('>md')` / `media('<md')`; in JavaScript use `breakpoint('md')` or `matchBreakpoint('>md')` (`dist/utils/breakpoints.js`), which read the `--breakpoint-*` CSS variables. Never write a width in px in a media query or in a controller.
 - JavaScript: native ES modules only, no CSS/HTML/JSON import, bare imports declared in `peerDependencies` and `symfony.importmap`.
 - **Lazy loading**: a light controller is `"fetch": "eager"`; a heavy one (editor, Sortable, Chart.js…) is `"fetch": "lazy"` in `package.json`, or loads its library with a dynamic `import()`.

@@ -1,0 +1,14 @@
+// Print: light background, whole table rows, links without the colour of their state.
+@media print {
+    body {
+        background-color: var(--c-surface);
+    }
+
+    tr {
+        break-inside: avoid;
+    }
+
+    a {
+        color: var(--c-text);
+    }
+}

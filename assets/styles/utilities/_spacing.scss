@@ -1,0 +1,47 @@
+@use 'sass:map';
+
+// Margins and paddings on the spacing scale of the tokens (--space-1 to --space-8), in logical properties:
+// `s` / `e` are the start and the end of the line (left / right in LTR, mirrored in RTL), as in Bootstrap 5.
+// crudit-ui-mt-2, crudit-ui-px-4, crudit-ui-ms-auto, crudit-ui-gap-3…
+$steps: (0, 1, 2, 3, 4, 5, 6, 7, 8);
+$sides: (
+    '': (''),
+    't': ('-block-start'),
+    'b': ('-block-end'),
+    's': ('-inline-start'),
+    'e': ('-inline-end'),
+    'x': ('-inline'),
+    'y': ('-block'),
+);
+
+@function space($step) {
+    @if $step == 0 {
+        @return 0;
+    }
+
+    @return var(--space-#{$step});
+}
+
+@each $side, $suffixes in $sides {
+    @each $suffix in $suffixes {
+        @each $step in $steps {
+            .crudit-ui-m#{$side}-#{$step} {
+                margin#{$suffix}: space($step);
+            }
+
+            .crudit-ui-p#{$side}-#{$step} {
+                padding#{$suffix}: space($step);
+            }
+        }
+
+        .crudit-ui-m#{$side}-auto {
+            margin#{$suffix}: auto;
+        }
+    }
+}
+
+@each $step in $steps {
+    .crudit-ui-gap-#{$step} {
+        gap: space($step);
+    }
+}
