@@ -7,7 +7,7 @@
     vertical-align: -0.125em;
 
     &--spin {
-        animation: crudit-ui-icon-spin 1s steps(8) infinite;
+        animation: crudit-ui-icon-spin 1s linear infinite;
     }
 }
 

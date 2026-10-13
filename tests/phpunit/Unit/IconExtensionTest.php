@@ -15,6 +15,8 @@ class IconExtensionTest extends TestCase
 {
     private BufferingLogger $logger;
 
+    private int $renderings = 0;
+
     protected function setUp(): void
     {
         $this->logger = new BufferingLogger();
@@ -90,16 +92,71 @@ class IconExtensionTest extends TestCase
         self::assertSame(['Icon "{icon}" not found.'], $this->warnings());
     }
 
+    public function testIconThatCannotBeRenderedIsLoggedAndLeftOut(): void
+    {
+        self::assertSame('', $this->extension()->icon('lucide:network-error'));
+        self::assertSame(['error'], array_column($this->logger->cleanLogs(), 0));
+    }
+
+    public function testUnknownNameIsLoggedOnce(): void
+    {
+        $extension = $this->extension();
+        $extension->icon('trash');
+        $extension->icon('trash');
+
+        self::assertCount(1, $this->warnings());
+    }
+
+    public function testIconTheLibraryDoesNotHaveIsLoggedOnce(): void
+    {
+        $extension = $this->extension(IconLibrary::Octicons);
+        $extension->icon('operator-equals');
+        $extension->icon('operator-equals');
+
+        self::assertCount(1, $this->warnings());
+    }
+
+    public function testIconThatCannotBeRenderedIsRenderedAndLoggedOnce(): void
+    {
+        $extension = $this->extension();
+        $extension->icon('lucide:does-not-exist');
+        $extension->icon('lucide:does-not-exist');
+
+        self::assertSame(1, $this->renderings);
+        self::assertCount(1, $this->warnings());
+    }
+
+    public function testResetForgetsTheIconsAlreadyLogged(): void
+    {
+        $extension = $this->extension();
+        $extension->icon('trash');
+        $extension->icon('lucide:does-not-exist');
+        $extension->reset();
+        $extension->icon('trash');
+        $extension->icon('lucide:does-not-exist');
+
+        self::assertSame(2, $this->renderings);
+        self::assertCount(4, $this->warnings());
+    }
+
     /**
      * @param array<string, string> $map
      */
     private function extension(IconLibrary $library = IconLibrary::FontAwesome, array $map = []): IconExtension
     {
-        $renderer = new class implements IconRendererInterface {
+        $renderer = new class ($this->renderings) implements IconRendererInterface {
+            public function __construct(private int &$renderings)
+            {
+            }
+
             public function renderIcon(string $name, array $attributes = []): string
             {
+                ++$this->renderings;
                 if (str_ends_with($name, 'does-not-exist')) {
                     throw new IconNotFoundException(sprintf('Icon "%s" not found.', $name));
+                }
+                if (str_ends_with($name, 'network-error')) {
+                    throw new \RuntimeException('Network error.');
                 }
                 \assert('true' === $attributes['aria-hidden']);
 

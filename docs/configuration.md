@@ -13,7 +13,7 @@ lle_crudit_ui:
 | Option | |
 |---|---|
 | `icons.library` | Icon library of the project, one of `fontawesome`, `bootstrap-icons`, `boxicons`, `flowbite`, `heroicons`, `iconoir`, `ionicons`, `lucide`, `mdi`, `octicons`, `phosphor`, `tabler` (see [Icon libraries](icon-libraries.md)) |
-| `icons.map` | Replaces an icon rendered by the bundles by another one, for example `delete: 'lucide:trash-2'` |
+| `icons.map` | Replaces an icon rendered by the bundles by another one, for example `delete: 'tabler:trash-x'` |
 
 ## Icons
 
@@ -26,6 +26,6 @@ lle_crudit_ui:
     icons:
         library: lucide
         map:
-            delete: 'lucide:trash-2'
+            delete: 'tabler:trash-x'
             'lucide:truck': 'tabler:truck-delivery'
 ```

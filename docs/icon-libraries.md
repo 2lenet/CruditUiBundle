@@ -20,20 +20,21 @@ lle_crudit_ui:
             operator-equals: 'tabler:equal'
 ```
 
-`IconLibraryTest` checks that every name exists in its Iconify set.
+`IconLibraryTest` checks that every name exists in its Iconify set, and is not a deprecated alias (`sort-asc` in Lucide
+is now `arrow-up-narrow-wide`): an alias may disappear from a later version of the set.
 
 | `library` | Library | Iconify prefix | Licence | Missing icons |
 |---|---|---|---|---|
 | `fontawesome` | [Font Awesome 7 (default)](https://fontawesome.com) | `fa7-solid`, `fa7-regular` | CC BY 4.0 | 0 |
 | `bootstrap-icons` | [Bootstrap Icons](https://icons.getbootstrap.com) | `bi` | MIT | 9 |
 | `boxicons` | [Boxicons](https://boxicons.com) | `bx` | MIT | 8 |
-| `flowbite` | [Flowbite](https://flowbite.com/icons/) | `flowbite` | MIT | 19 |
+| `flowbite` | [Flowbite](https://flowbite.com/icons/) | `flowbite` | MIT | 18 |
 | `heroicons` | [Heroicons](https://heroicons.com) | `heroicons` | MIT | 18 |
 | `iconoir` | [Iconoir](https://iconoir.com) | `iconoir` | MIT | 11 |
-| `ionicons` | [Ionicons](https://ionic.io/ionicons) | `ion` | MIT | 19 |
-| `lucide` | [Lucide](https://lucide.dev) | `lucide` | ISC | 6 |
+| `ionicons` | [Ionicons](https://ionic.io/ionicons) | `ion` | MIT | 18 |
+| `lucide` | [Lucide](https://lucide.dev) | `lucide` | ISC | 5 |
 | `mdi` | [Material Design Icons](https://pictogrammers.com/library/mdi/) | `mdi` | Apache 2.0 | 0 |
-| `octicons` | [Octicons](https://primer.style/octicons) | `octicon` | MIT | 25 |
+| `octicons` | [Octicons](https://primer.style/octicons) | `octicon` | MIT | 23 |
 | `phosphor` | [Phosphor](https://phosphoricons.com) | `ph` | MIT | 0 |
 | `tabler` | [Tabler Icons](https://tabler.io/icons) | `tabler` | MIT | 0 |
 
@@ -47,9 +48,9 @@ lle_crudit_ui:
 | `remove` | `dash` | `minus` | `minus-outline` | `minus` |
 | `save` | `floppy` | `save` | `floppy-disk-outline` | — |
 | `undo` | `arrow-counterclockwise` | `rotate-left` | `undo-outline` | `arrow-uturn-left` |
-| `refresh` | `arrow-clockwise` | `refresh` | `rotate-solid` | `arrow-path` |
+| `refresh` | `arrow-clockwise` | `refresh` | `refresh-outline` | `arrow-path` |
 | `resume` | `play` | `play` | `play-outline` | `play` |
-| `close` | `x` | `x` | `x-outline` | `x-mark` |
+| `close` | `x` | `x` | `close-outline` | `x-mark` |
 | `search` | `search` | `search` | `search-outline` | `magnifying-glass` |
 | `filter` | `filter` | `filter` | `filter-outline` | `funnel` |
 | `filter-clear` | — | — | — | — |
@@ -75,10 +76,10 @@ lle_crudit_ui:
 | `last` | `skip-forward` | `skip-next` | `forward-step-outline` | `forward` |
 | `arrow-up` | `arrow-up` | `up-arrow-alt` | `arrow-up-outline` | `arrow-up` |
 | `arrow-down` | `arrow-down` | `down-arrow-alt` | `arrow-down-outline` | `arrow-down` |
-| `sort` | `arrow-up-down` | `sort` | `sort-outline` | `arrows-up-down` |
+| `sort` | `arrow-down-up` | `sort` | `sort-outline` | `arrows-up-down` |
 | `sort-asc` | `sort-up` | `sort-up` | `caret-up-outline` | `bars-arrow-up` |
 | `sort-desc` | `sort-down` | `sort-down` | `caret-down-outline` | `bars-arrow-down` |
-| `success` | `check-circle` | `check-circle` | `circle-check-solid` | `check-circle` |
+| `success` | `check-circle` | `check-circle` | `check-circle-solid` | `check-circle` |
 | `info` | `info-circle` | `info-circle` | `info-circle-outline` | `information-circle` |
 | `warning` | `exclamation-triangle` | `error-alt` | — | `exclamation-triangle` |
 | `error` | `exclamation-circle` | `error` | `exclamation-circle-outline` | `exclamation-circle` |
@@ -93,7 +94,7 @@ lle_crudit_ui:
 | `language` | `globe` | `globe` | `globe-outline` | `language` |
 | `theme-light` | `sun` | `sun` | `sun-outline` | `sun` |
 | `theme-dark` | `moon` | `moon` | `moon-outline` | `moon` |
-| `theme-system` | `display` | `desktop` | — | `computer-desktop` |
+| `theme-system` | `display` | `desktop` | `desktop-pc-outline` | `computer-desktop` |
 | `email` | `envelope` | `envelope` | `envelope-outline` | `envelope` |
 | `history-create` | `folder-plus` | `folder-plus` | `folder-plus-outline` | `folder-plus` |
 | `history-transition` | `arrow-left-right` | `transfer` | `arrow-right-arrow-left-solid` | `arrows-right-left` |
@@ -127,67 +128,67 @@ lle_crudit_ui:
 
 | Name | `iconoir` | `ionicons` | `lucide` | `mdi` |
 |---|---|---|---|---|
-| `add` | `plus` | `plus` | `plus` | `plus` |
+| `add` | `plus` | `add-outline` | `plus` | `plus` |
 | `edit` | `edit` | `pencil-outline` | `pen` | `pen` |
-| `delete` | `trash` | `trash-outline` | `trash` | `trash` |
-| `remove` | `minus` | `minus` | `minus` | `minus` |
-| `save` | `floppy-disk` | `save-outline` | `save` | `floppy-disk` |
+| `delete` | `trash` | `trash-outline` | `trash` | `delete` |
+| `remove` | `minus` | `remove-outline` | `minus` | `minus` |
+| `save` | `floppy-disk` | `save-outline` | `save` | `content-save` |
 | `undo` | `undo` | `arrow-undo-outline` | `undo` | `rotate-left` |
 | `refresh` | `refresh` | `refresh-outline` | `refresh-cw` | `refresh` |
 | `resume` | `play` | `play-outline` | `play` | `play` |
 | `close` | `xmark` | `close-outline` | `x` | `close` |
-| `search` | `search` | `search-outline` | `search` | `search` |
+| `search` | `search` | `search-outline` | `search` | `magnify` |
 | `filter` | `filter` | `filter-outline` | `filter` | `filter` |
 | `filter-clear` | — | — | `filter-x` | `filter-remove` |
 | `bookmark` | `bookmark` | `bookmark-outline` | `bookmark` | `bookmark-outline` |
 | `bookmark-active` | `bookmark-solid` | `bookmark` | `bookmark-check` | `bookmark` |
-| `settings` | `settings` | `settings-outline` | `sliders` | `tune` |
-| `more` | `more-vert` | `ellipsis-vertical-outline` | `ellipsis-vertical` | `ellipsis-vertical` |
-| `drag` | `drag` | `drag` | `grip-vertical` | `drag` |
+| `settings` | `settings` | `settings-outline` | `sliders-vertical` | `tune` |
+| `more` | `more-vert` | `ellipsis-vertical-outline` | `ellipsis-vertical` | `dots-vertical` |
+| `drag` | `drag` | `reorder-two-outline` | `grip-vertical` | `drag` |
 | `print` | `printer` | `print-outline` | `printer` | `printer` |
 | `copy` | `copy` | `copy-outline` | `copy` | `content-copy` |
 | `download` | `download` | `download-outline` | `download` | `download` |
-| `upload` | `upload` | `upload` | `upload` | `cloud-arrow-up` |
-| `send` | `send` | `paper-plane-outline` | `send` | `paper-plane` |
+| `upload` | `upload` | `cloud-upload-outline` | `upload` | `cloud-arrow-up` |
+| `send` | `send` | `paper-plane-outline` | `send` | `send` |
 | `link` | `link` | `link-outline` | `link` | `link` |
-| `external-link` | `open-new-window` | `open-outline` | `arrow-up-right-from-square` | `external-link` |
+| `external-link` | `open-new-window` | `open-outline` | `square-arrow-out-up-right` | `open-in-new` |
 | `menu` | `menu` | `menu-outline` | `menu` | `menu` |
 | `dropdown` | `nav-arrow-down` | `chevron-down-outline` | `chevron-down` | `chevron-down` |
-| `forward` | `nav-arrow-right` | `chevron-right` | `chevron-right` | `chevron-right` |
+| `forward` | `nav-arrow-right` | `chevron-forward-outline` | `chevron-right` | `chevron-right` |
 | `sidebar-toggle` | `fast-arrow-left` | — | `chevrons-left` | `chevron-double-left` |
-| `first` | `skip-prev` | `skip-backward` | `skip-back` | `skip-previous` |
+| `first` | `skip-prev` | `play-skip-back-outline` | `skip-back` | `skip-previous` |
 | `back` | `arrow-left` | `arrow-back-outline` | `arrow-left` | `arrow-left` |
 | `next` | `arrow-right` | `arrow-forward-outline` | `arrow-right` | `arrow-right` |
-| `last` | `skip-next` | `skip-forward` | `skip-forward` | `skip-forward` |
+| `last` | `skip-next` | `play-skip-forward-outline` | `skip-forward` | `skip-forward` |
 | `arrow-up` | `arrow-up` | `arrow-up-outline` | `arrow-up` | `arrow-up` |
 | `arrow-down` | `arrow-down` | `arrow-down-outline` | `arrow-down` | `arrow-down` |
-| `sort` | `sort` | — | `arrow-up-down` | `sort` |
-| `sort-asc` | `sort-up` | `caret-up-outline` | `sort-asc` | `sort-ascending` |
-| `sort-desc` | `sort-down` | `caret-down-outline` | `sort-desc` | `sort-descending` |
+| `sort` | `sort` | `swap-vertical-outline` | `arrow-up-down` | `sort` |
+| `sort-asc` | `sort-up` | `caret-up-outline` | `arrow-up-narrow-wide` | `sort-ascending` |
+| `sort-desc` | `sort-down` | `caret-down-outline` | `arrow-down-wide-narrow` | `sort-descending` |
 | `success` | `check-circle` | `checkmark-circle-outline` | `circle-check` | `check-circle` |
-| `info` | `info-circle` | `information-outline` | `info` | `info-circle` |
-| `warning` | `warning-triangle` | `warning-outline` | `alert-triangle` | `warning` |
-| `error` | `warning-circle` | `alert-circle-outline` | `alert-circle` | `alert-circle` |
+| `info` | `info-circle` | `information-outline` | `info` | `information` |
+| `warning` | `warning-triangle` | `warning-outline` | `triangle-alert` | `alert` |
+| `error` | `warning-circle` | `alert-circle-outline` | `circle-alert` | `alert-circle` |
 | `check` | `check` | `checkmark-outline` | `check` | `check` |
 | `loading` | `refresh` | `refresh-outline` | `loader` | `loading` |
 | `empty` | `archive` | `archive-outline` | `inbox` | `inbox` |
 | `locked` | `lock` | `lock-closed-outline` | `lock` | `lock` |
 | `notifications` | `bell` | `notifications-outline` | `bell` | `bell` |
-| `user` | `user` | `person-outline` | `user` | `user` |
+| `user` | `user` | `person-outline` | `user` | `account` |
 | `logout` | `log-out` | `log-out-outline` | `log-out` | `logout` |
 | `impersonate` | `user-star` | `glasses-outline` | `venetian-mask` | `incognito` |
-| `language` | `globe` | `globe-outline` | `globe` | `globe` |
+| `language` | `globe` | `globe-outline` | `globe` | `earth` |
 | `theme-light` | `sun-light` | `sunny-outline` | `sun` | `white-balance-sunny` |
 | `theme-dark` | `half-moon` | `moon-outline` | `moon` | `weather-night` |
 | `theme-system` | `laptop` | `desktop-outline` | `monitor` | `monitor` |
-| `email` | `mail` | `mail-outline` | `mail` | `envelope` |
+| `email` | `mail` | `mail-outline` | `mail` | `email` |
 | `history-create` | `folder-plus` | — | `folder-plus` | `folder-plus` |
 | `history-transition` | `data-transfer-both` | `swap-horizontal-outline` | `arrow-left-right` | `arrow-left-right` |
-| `time` | `clock` | `clock` | `clock` | `clock` |
+| `time` | `clock` | `time-outline` | `clock` | `clock` |
 | `calendar` | `calendar` | `calendar-outline` | `calendar-days` | `calendar` |
 | `repeat` | `repeat` | `repeat-outline` | `repeat` | `repeat` |
-| `file` | `page` | `document-text-outline` | `file-text` | `file-text` |
-| `file-csv` | — | — | `file-spreadsheet` | `file-csv` |
+| `file` | `page` | `document-text-outline` | `file-text` | `file-document` |
+| `file-csv` | — | — | `file-spreadsheet` | `file-delimited` |
 | `file-excel` | `table` | — | `file-spreadsheet` | `file-excel` |
 | `file-pdf` | — | — | — | `file-pdf` |
 | `bold` | `bold` | — | `bold` | `format-bold` |
@@ -206,7 +207,7 @@ lle_crudit_ui:
 | `operator-starts-with` | `align-left` | — | `align-left` | `format-align-left` |
 | `operator-ends-with` | `align-right` | — | `align-right` | `format-align-right` |
 | `operator-empty` | `square` | `square-outline` | `square` | `square-outline` |
-| `operator-not-empty` | — | `square` | — | `square` |
+| `operator-not-empty` | — | `square` | `square-dot` | `square` |
 | `trend-up` | `graph-up` | `trending-up-outline` | `trending-up` | `trending-up` |
 | `trend-down` | `graph-down` | `trending-down-outline` | `trending-down` | `trending-down` |
 | `table` | `table` | `grid-outline` | `table` | `table` |
@@ -220,7 +221,7 @@ lle_crudit_ui:
 | `save` | — | `floppy-disk` | `device-floppy` |
 | `undo` | `undo-24` | `arrow-u-up-left` | `arrow-back-up` |
 | `refresh` | `sync-24` | `arrow-clockwise` | `rotate` |
-| `resume` | `play-24` | `play` | `play` |
+| `resume` | `triangle-circle-24` | `play` | `play` |
 | `close` | `x-24` | `x` | `x` |
 | `search` | `search-24` | `magnifying-glass` | `search` |
 | `filter` | `filter-24` | `funnel` | `filter` |
@@ -229,7 +230,7 @@ lle_crudit_ui:
 | `bookmark-active` | `bookmark-fill-24` | `bookmark-fill` | `bookmark-filled` |
 | `settings` | `sliders-24` | `sliders` | `adjustments` |
 | `more` | `kebab-horizontal-24` | `dots-three-vertical` | `dots-vertical` |
-| `drag` | — | `dots-six-vertical` | `grip-vertical` |
+| `drag` | `grabber-24` | `dots-six-vertical` | `grip-vertical` |
 | `print` | — | `printer` | `printer` |
 | `copy` | `copy-24` | `copy` | `copy` |
 | `download` | `download-24` | `download` | `download` |
@@ -253,7 +254,7 @@ lle_crudit_ui:
 | `success` | `check-circle-24` | `check-circle` | `circle-check` |
 | `info` | `info-24` | `info` | `info-circle` |
 | `warning` | `alert-24` | `warning` | `alert-triangle` |
-| `error` | — | `warning-circle` | `alert-circle` |
+| `error` | `stop-24` | `warning-circle` | `alert-circle` |
 | `check` | `check-24` | `check` | `check` |
 | `loading` | — | `spinner` | `loader` |
 | `empty` | `inbox-24` | `tray` | `inbox` |
@@ -276,7 +277,7 @@ lle_crudit_ui:
 | `file-csv` | — | `file-csv` | `file-type-csv` |
 | `file-excel` | `table-24` | `file-xls` | `file-excel` |
 | `file-pdf` | `file-pdf` | `file-pdf` | `file-type-pdf` |
-| `bold` | `bold-24` | `text-bold` | `bold` |
+| `bold` | `bold-24` | `text-t-bold` | `bold` |
 | `italic` | `italic-24` | `text-italic` | `italic` |
 | `bulleted-list` | `list-unordered-24` | `list` | `list` |
 | `numbered-list` | `list-ordered-24` | `list-numbers` | `list-numbers` |
@@ -288,7 +289,7 @@ lle_crudit_ui:
 | `operator-greater-than` | — | `greater-than` | `math-greater` |
 | `operator-greater-or-equal` | — | `greater-than-or-equal` | `math-equal-greater` |
 | `operator-between` | — | `arrows-left-right` | `arrows-left-right` |
-| `operator-contains` | `text-size` | `text` | `text-size` |
+| `operator-contains` | `text-size` | `text-t` | `text-size` |
 | `operator-starts-with` | — | `text-align-left` | `align-left` |
 | `operator-ends-with` | — | `text-align-right` | `align-right` |
 | `operator-empty` | `square-24` | `square` | `square` |

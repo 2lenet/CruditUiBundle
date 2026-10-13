@@ -54,20 +54,21 @@ class IconLibraryTest extends TestCase
     }
 
     /**
-     * A typo would only show up as a missing icon in a project. The icon sets come from the @iconify-json packages,
-     * devDependencies of assets/ (`npm ci` in assets/).
+     * A typo would only show up as a missing icon in a project, and a deprecated alias of Iconify may disappear
+     * from a later version of the icon set. The icon sets come from the @iconify-json packages, devDependencies of
+     * assets/ (`npm ci` in assets/).
      */
     #[DataProvider('libraries')]
     public function testIconsExistInIconify(IconLibrary $library): void
     {
         foreach (array_filter($library->icons(), static fn (?string $icon): bool => null !== $icon) as $name => $icon) {
             [$prefix, $iconName] = explode(':', $icon);
-            self::assertContains($iconName, $this->iconSet($prefix), sprintf('%s: %s does not exist', $name, $icon));
+            self::assertContains($iconName, $this->iconSet($prefix), sprintf('%s: %s does not exist or is a deprecated alias', $name, $icon));
         }
     }
 
     /**
-     * @return list<string>
+     * @return list<string> names of the icons, without the aliases
      */
     private function iconSet(string $prefix): array
     {
@@ -76,9 +77,9 @@ class IconLibraryTest extends TestCase
             self::markTestSkipped(sprintf('Icon set "%s" not installed: run `npm ci` in assets/.', $prefix));
         }
 
-        /** @var array{icons: array<string, mixed>, aliases?: array<string, mixed>} $iconSet */
+        /** @var array{icons: array<string, mixed>} $iconSet */
         $iconSet = json_decode((string) file_get_contents($file), true, flags: \JSON_THROW_ON_ERROR);
 
-        return array_keys($iconSet['icons'] + ($iconSet['aliases'] ?? []));
+        return array_keys($iconSet['icons']);
     }
 }

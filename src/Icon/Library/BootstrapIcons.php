@@ -27,7 +27,7 @@ final class BootstrapIcons
         'sidebar-toggle' => 'chevron-double-left',
         'first' => 'skip-start',
         'last' => 'skip-forward',
-        'sort' => 'arrow-up-down',
+        'sort' => 'arrow-down-up',
         'success' => 'check-circle',
         'info' => 'info-circle',
         'warning' => 'exclamation-triangle',
