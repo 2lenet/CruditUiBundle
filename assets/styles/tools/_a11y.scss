@@ -1,0 +1,25 @@
+// Focus ring shared by every interactive element (2 px, contrast ≥ 3:1).
+@mixin focus-ring($offset: var(--focus-ring-offset)) {
+    outline: var(--focus-ring-width) solid var(--c-focus);
+    outline-offset: $offset;
+}
+
+// Hides a content visually, while leaving it readable by assistive technologies.
+@mixin sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+// Transition cancelled under prefers-reduced-motion (the durations of the tokens fall to 0).
+@mixin transition($properties...) {
+    transition-property: $properties;
+    transition-duration: var(--motion-base);
+    transition-timing-function: var(--ease-standard);
+}

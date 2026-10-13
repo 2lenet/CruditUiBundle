@@ -12,6 +12,12 @@
                 "webpackMode": "eager",
                 "fetch": "eager",
                 "enabled": true
+            },
+            "theme": {
+                "main": "dist/controllers/theme_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
             }
         },
         "importmap": {

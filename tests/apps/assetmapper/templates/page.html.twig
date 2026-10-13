@@ -8,4 +8,11 @@
         <button type="button" class="crudit-ui-dropdown__button" aria-expanded="false" {{ stimulus_target('@2lenet/crudit-ui-bundle/dropdown', 'button') }} {{ stimulus_action('@2lenet/crudit-ui-bundle/dropdown', 'toggle') }}>Menu</button>
         <div hidden {{ stimulus_target('@2lenet/crudit-ui-bundle/dropdown', 'panel') }}>Panel</div>
     </div>
+    <a href="#" class="btn">Bootstrap button</a>
+    {% set ui_theme_controller = '@2lenet/crudit-ui-bundle/theme' %}
+    <div role="group" aria-label="Theme" {{ stimulus_controller(ui_theme_controller) }}>
+        {% for theme in ['light', 'dark', 'system'] %}
+            <button type="button" value="{{ theme }}" {{ stimulus_target(ui_theme_controller, 'option') }} {{ stimulus_action(ui_theme_controller, 'choose') }}>{{ theme }}</button>
+        {% endfor %}
+    </div>
 {% endblock %}

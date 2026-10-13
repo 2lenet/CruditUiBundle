@@ -1,0 +1,83 @@
+@use '../tools/a11y' as *;
+
+// Look of the HTML elements, from the tokens. Same as the crudit-v2 mockup (src/styles/elements/_base.scss), except
+// what belongs to the layout of CruditBundle (open drawer, focus targets of the page).
+
+html {
+    // Anchors and focus do not go under the sticky header.
+    scroll-padding-top: calc(var(--topbar-h) + var(--space-4));
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-base);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--c-link);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+
+    &:hover {
+        color: var(--c-link);
+        text-decoration-thickness: 2px;
+    }
+}
+
+// Visible focus on every interactive element.
+:focus-visible {
+    @include focus-ring;
+}
+
+::selection {
+    background-color: var(--c-primary-subtle-hover);
+    color: var(--c-text);
+}
+
+mark {
+    padding: 0;
+    background-color: transparent;
+    color: inherit;
+    font-weight: var(--font-weight-bold);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+}
+
+kbd {
+    display: inline-block;
+    padding: 0 var(--space-1);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--c-surface);
+    color: var(--c-text-muted);
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+}
+
+legend {
+    float: none;
+    width: auto;
+}
+
+button {
+    color: inherit;
+}
+
+// Code: colour of the text (a coloured code does not reach 4.5:1 in both themes).
+code {
+    color: inherit;
+}
+
+// Text areas: the direction of each paragraph follows its first strong character (French text in an Arabic interface
+// and the other way round). A template that displays such a content (long text, Markdown, rich HTML) gives it
+// dir="auto", so that the lists follow too; a phone number takes dir="ltr" ("06 34 28" would read "28 34 06").
+textarea {
+    unicode-bidi: plaintext;
+}

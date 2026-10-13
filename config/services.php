@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Lle\CruditUiBundle\Icon\IconLibrary;
 use Lle\CruditUiBundle\Twig\IconExtension;
+use Lle\CruditUiBundle\Twig\ThemeExtension;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
@@ -21,4 +22,6 @@ return static function (ContainerConfigurator $container): void {
             ->factory([IconLibrary::class, 'from'])
             ->args([param('lle_crudit_ui.icons.library')]))
         ->arg('$map', param('lle_crudit_ui.icons.map'));
+
+    $services->set(ThemeExtension::class);
 };

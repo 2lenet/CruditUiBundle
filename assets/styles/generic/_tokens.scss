@@ -1,6 +1,258 @@
-// Provisional: the tokens of the mockup (generic/_tokens.scss) arrive with lot 1.2.
+@use 'sass:list';
+@use '../settings/hues' as *;
+@use '../tools/responsive' as *;
+
+// Design tokens, exposed as CSS variables: a project changes its theme at runtime (brand colour, fonts, dark mode)
+// without compiling anything. Same values as the crudit-v2 mockup (src/styles/generic/_tokens.scss), except the
+// layout tokens (--sidebar-w…), which belong to the layout of CruditBundle.
+//
+// Theme: `data-theme="light"` or `data-theme="dark"` on <html> (choice of the user, ui_theme()); without the attribute,
+// the colours follow the preference of the system, in CSS, so the page never flashes in the other theme.
+
+@mixin hues($hues) {
+    @each $name, $pair in $hues {
+        --c-#{$name}-bg: #{list.nth($pair, 1)};
+        --c-#{$name}-text: #{list.nth($pair, 2)};
+    }
+}
+
+@mixin light-colors {
+    color-scheme: light;
+
+    --c-bg: #f5f7fa;
+    --c-surface: #ffffff;
+    --c-surface-sunken: #eef1f5;
+    --c-surface-hover: #eff2f6;
+    --c-surface-active: #e5e9ef;
+    --c-border: #dfe3e9;
+    --c-border-strong: #7d8898;
+    --c-text: #18202c;
+    --c-text-muted: #4f5a69;
+    --c-backdrop: rgb(10 15 25 / 50%);
+
+    --c-primary: var(--brand);
+    --c-primary-hover: color-mix(in oklab, var(--brand), black 15%);
+    --c-primary-active: color-mix(in oklab, var(--brand), black 25%);
+    --c-on-primary: #ffffff;
+    --c-primary-subtle: color-mix(in oklab, var(--brand) 9%, white);
+    --c-primary-subtle-hover: color-mix(in oklab, var(--brand) 15%, white);
+    --c-primary-text: color-mix(in oklab, var(--brand), black 25%);
+    --c-link: var(--c-primary-text);
+    --c-focus: color-mix(in oklab, var(--brand), black 10%);
+
+    --c-success-bg: #e6f5ec;
+    --c-success-text: #0b6334;
+    --c-success-border: #8fd0aa;
+    --c-warning-bg: #fff3d6;
+    --c-warning-text: #6e4600;
+    --c-warning-border: #f0c261;
+    --c-danger-bg: #fdecec;
+    --c-danger-text: #a3161a;
+    --c-danger-border: #f2a7a7;
+    --c-danger-solid: #c62828;
+    --c-on-danger-solid: #ffffff;
+    --c-success-solid: #1e7a44;
+    --c-on-success-solid: #ffffff;
+    --c-info-bg: #e7f0fc;
+    --c-info-text: #0b4a93;
+    --c-info-border: #9cc1ef;
+    --c-neutral-bg: #eceff3;
+    --c-neutral-text: #3d4755;
+    --c-inverse-bg: #18202c;
+    --c-inverse-text: #ffffff;
+
+    // Chart series: categorical palette readable by colour-blind people (Okabe-Ito), the first series follows the
+    // colour of the project.
+    --chart-1: var(--brand);
+    --chart-2: #cc7a00;
+    --chart-3: #11866a;
+    --chart-4: #b3548f;
+    --chart-5: #5b8fd6;
+    --chart-6: #c1502e;
+
+    --shadow-sm: 0 1px 2px rgb(16 24 40 / 6%);
+    --shadow-md: 0 4px 12px rgb(16 24 40 / 8%), 0 1px 3px rgb(16 24 40 / 6%);
+    --shadow-lg: 0 16px 40px rgb(16 24 40 / 18%), 0 2px 6px rgb(16 24 40 / 8%);
+    // Drop shadow as a gradient (edge of a sticky header): continuous from one cell to the next.
+    --shadow-edge: linear-gradient(rgb(16 24 40 / 10%), transparent);
+    --shadow-edge-size: 0.5rem;
+
+    @include hues($hues-light);
+}
+
+@mixin dark-colors {
+    color-scheme: dark;
+
+    --c-bg: #0e131a;
+    --c-surface: #151b24;
+    --c-surface-sunken: #0b1016;
+    --c-surface-hover: #1c2430;
+    --c-surface-active: #242e3b;
+    --c-border: #2a3340;
+    --c-border-strong: #6f7a8b;
+    --c-text: #e6eaf0;
+    --c-text-muted: #a9b3c1;
+    --c-backdrop: rgb(0 0 0 / 60%);
+
+    --c-primary: color-mix(in oklab, var(--brand), white 45%);
+    --c-primary-hover: color-mix(in oklab, var(--brand), white 58%);
+    --c-primary-active: color-mix(in oklab, var(--brand), white 65%);
+    --c-on-primary: #0b1017;
+    --c-primary-subtle: color-mix(in oklab, var(--brand) 24%, #151b24);
+    --c-primary-subtle-hover: color-mix(in oklab, var(--brand) 32%, #151b24);
+    --c-primary-text: color-mix(in oklab, var(--brand), white 62%);
+    --c-link: var(--c-primary-text);
+    --c-focus: color-mix(in oklab, var(--brand), white 55%);
+
+    --c-success-bg: #0f2e1d;
+    --c-success-text: #82e0aa;
+    --c-success-border: #2c6b47;
+    --c-warning-bg: #36270a;
+    --c-warning-text: #ffd27a;
+    --c-warning-border: #7a5a17;
+    --c-danger-bg: #3a1417;
+    --c-danger-text: #ffa3a3;
+    --c-danger-border: #7d2e33;
+    --c-danger-solid: #ff8f8f;
+    --c-on-danger-solid: #1f0a0a;
+    --c-success-solid: #6fd69c;
+    --c-on-success-solid: #07210f;
+    --c-info-bg: #0f2540;
+    --c-info-text: #93c4ff;
+    --c-info-border: #2b5487;
+    --c-neutral-bg: #232c38;
+    --c-neutral-text: #c9d1dc;
+    --c-inverse-bg: #e6eaf0;
+    --c-inverse-text: #0e131a;
+
+    --chart-1: color-mix(in oklab, var(--brand), white 40%);
+    --chart-2: #f0b04a;
+    --chart-3: #4cc7a4;
+    --chart-4: #df8fc1;
+    --chart-5: #8fb8f0;
+    --chart-6: #ef8a66;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-md: 0 4px 12px rgb(0 0 0 / 45%);
+    --shadow-lg: 0 16px 40px rgb(0 0 0 / 60%);
+    --shadow-edge: linear-gradient(rgb(0 0 0 / 45%), transparent);
+
+    @include hues($hues-dark);
+}
+
 :root {
-    --color-primary: #1f5fbf;
-    --color-on-primary: #fff;
-    --radius: 0.375rem;
+    // Writing direction: 1 in LTR, -1 in RTL. Multiplies the horizontal translations and rotations (drawer,
+    // switches, chevrons), which the logical properties do not cover.
+    --dir: 1;
+
+    // Brand: the only colour a project has to provide.
+    --brand: #0077a8;
+
+    // Typography (body text of 16 px at least)
+    --font-sans: 'Inter Variable', 'Noto Sans Arabic Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: sfmono-regular, menlo, monaco, consolas, 'Liberation Mono', 'Courier New', monospace;
+    --font-size-xs: 0.8125rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.375rem;
+    --font-size-2xl: 1.75rem;
+    --font-size-3xl: 2rem;
+    --line-height-heading: 1.2;
+    --line-height-tight: 1.25;
+    --line-height-base: 1.5;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    // Spacing (4 px scale)
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --space-8: 4rem;
+
+    // Shapes
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-full: 999px;
+
+    // Motion
+    --motion-fast: 120ms;
+    --motion-base: 200ms;
+    --motion-slow: 280ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+    // Focus
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+
+    // One density, compact: the amount of information displayed comes first.
+    // Controls of 32 px with a mouse, 44 px on a touch screen (always ≥ 24 px, WCAG 2.5.8).
+    --control-h: 2rem;
+    --control-h-small: 1.75rem;
+    --nav-item-h: 1.875rem;
+    --nav-item-gap: 0;
+
+    // Page
+    --topbar-h: 3.25rem;
+    --gutter: var(--space-4);
+
+    // Stacking
+    --z-sticky: 100;
+    --z-drawer: 300;
+    --z-popover: 400;
+    --z-dialog: 500;
+    --z-skip: 1000;
+
+    @include light-colors;
+
+    @media (pointer: coarse) {
+        --control-h: 2.75rem;
+        --control-h-small: 2.5rem;
+        --nav-item-h: 2.75rem;
+    }
+
+    @include media('>md') {
+        --gutter: var(--space-5);
+    }
+
+    @include media('>xl') {
+        --gutter: var(--space-6);
+    }
+}
+
+:root[dir='rtl'] {
+    --dir: -1;
+}
+
+:root[data-theme='dark'] {
+    @include dark-colors;
+}
+
+// Screen only: a printed page keeps the light colours.
+@media screen and (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        @include dark-colors;
+    }
+}
+
+// Print: always the light colours, even in dark mode.
+@media print {
+    :root[data-theme='dark'] {
+        @include light-colors;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --motion-fast: 0ms;
+        --motion-base: 0ms;
+        --motion-slow: 0ms;
+    }
 }

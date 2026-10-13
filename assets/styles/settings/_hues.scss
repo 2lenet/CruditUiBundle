@@ -1,0 +1,30 @@
+// Extended palette of the states (workflow, badges): background and text, with a contrast of at least 4.5:1 in the
+// light and in the dark theme (checked by tests/tokens.test.mjs). generic/tokens exposes each hue as
+// --c-<name>-bg and --c-<name>-text; a project adds a hue by declaring these two variables.
+// Same values as the crudit-v2 mockup (src/styles/generic/_tokens.scss).
+$hues-light: (
+    'blue': (#dbeafe, #1e40af),
+    'teal': (#ccfbf1, #115e59),
+    'green': (#dcfce7, #166534),
+    'lime': (#ecfccb, #3f6212),
+    'yellow': (#fef9c3, #713f12),
+    'orange': (#ffedd5, #9a3412),
+    'red': (#fee2e2, #991b1b),
+    'pink': (#fce7f3, #9d174d),
+    'purple': (#f3e8ff, #6b21a8),
+    'indigo': (#e0e7ff, #3730a3),
+    'gray': (#e5e7eb, #374151),
+);
+$hues-dark: (
+    'blue': (#172554, #93c5fd),
+    'teal': (#042f2e, #5eead4),
+    'green': (#052e16, #86efac),
+    'lime': (#1a2e05, #bef264),
+    'yellow': (#422006, #fde047),
+    'orange': (#431407, #fdba74),
+    'red': (#450a0a, #fca5a5),
+    'pink': (#500724, #f9a8d4),
+    'purple': (#3b0764, #d8b4fe),
+    'indigo': (#1e1b4b, #a5b4fc),
+    'gray': (#1f2937, #d1d5db),
+);

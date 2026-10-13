@@ -1,16 +1,35 @@
 @use 'sass:meta';
 
 // ITCSS: settings → tools → generic → elements → objects → components → utilities.
-// settings and tools produce no CSS. Each partial below is plain CSS: the layer is declared here, once.
+// settings and tools produce no CSS. Each partial below is plain CSS: the layers are declared here, once.
 //
-// All the bundle styles live in one cascade layer: the styles of the project, which are not in a layer,
-// always win, whatever the order in which the stylesheets are loaded.
-@layer crudit-ui {
+// Two cascade layers. The styles of the project, which are not in a layer, always win over both, whatever the order
+// in which the stylesheets are loaded.
+// - crudit-ui-base: what styles the bare HTML elements (reset, tokens, elements), the weakest;
+// - crudit-ui: the classes of the bundle (grid, components, utilities).
+// A project that keeps Bootstrap loads it in a layer between the two (`@layer crudit-ui-base, bootstrap, crudit-ui;`):
+// the classes of Bootstrap win over our reset, our components win over the reboot of Bootstrap.
+@layer crudit-ui-base, crudit-ui;
+
+@layer crudit-ui-base {
+    @include meta.load-css('generic/reset');
     @include meta.load-css('generic/breakpoints');
     @include meta.load-css('generic/tokens');
+
+    @include meta.load-css('elements/base');
+    @include meta.load-css('elements/print');
+}
+
+@layer crudit-ui {
+    @include meta.load-css('objects/grid');
 
     @include meta.load-css('components/dropdown');
     @include meta.load-css('components/icon');
 
+    // Utilities last: at equal specificity, they win over the components.
+    @include meta.load-css('utilities/display');
+    @include meta.load-css('utilities/spacing');
+    @include meta.load-css('utilities/a11y');
     @include meta.load-css('utilities/rtl');
+    @include meta.load-css('utilities/print');
 }

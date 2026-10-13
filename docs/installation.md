@@ -38,7 +38,18 @@ Link it explicitly in your layout:
 import '@2lenet/crudit-ui-bundle/dist/ui.css';
 ```
 
-All the rules are in the `crudit-ui` cascade layer: your own styles always win, whatever the order of the stylesheets.
+All the rules are in two cascade layers, `crudit-ui-base` and `crudit-ui`: your own styles always win, whatever the
+order of the stylesheets. If your project keeps Bootstrap, load it in its own layer first: see
+[Keeping Bootstrap](customization.md#keeping-bootstrap).
+
+### Theme
+
+Put the theme chosen by the user on `<html>`, in your layout: the page is then displayed in the right theme from the
+first paint (see [Dark mode](customization.md#dark-mode)). Without a choice, the CSS follows the system.
+
+```twig
+<html lang="{{ app.request.locale }}"{% if ui_theme() %} data-theme="{{ ui_theme() }}"{% endif %}>
+```
 
 ### After the installation
 

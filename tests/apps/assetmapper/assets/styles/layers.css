@@ -1,0 +1,14 @@
+/* A project that keeps Bootstrap: the order of the layers is declared before the stylesheet of the bundle, and
+   Bootstrap goes between its two layers. These rules stand for Bootstrap (its reboot, a class). */
+@layer crudit-ui-base, bootstrap, crudit-ui;
+
+@layer bootstrap {
+    button {
+        padding: 0;
+    }
+
+    .btn {
+        color: rgb(255 255 255);
+        background-color: rgb(13 110 253);
+    }
+}
