@@ -82,4 +82,30 @@ does not list them does not have them.
 
 ## Icons
 
-The bundle loads Font Awesome 7. To use another icon library, see [Configuration](configuration.md#icons).
+The icons are SVG rendered by [Symfony UX Icons](https://symfony.com/bundles/ux-icons/current/index.html): no icon
+font to link. Choose the icon library of the project (Font Awesome 7 by default, see
+[Icon libraries](icon-libraries.md) and [Configuration](configuration.md#icons)).
+
+The icons come from [Iconify](https://iconify.design). In development, Symfony UX Icons downloads them, which
+requires the HTTP client, and `auto_lock` copies each displayed icon to `assets/icons/`, including the names built
+dynamically (icons of a `CrudConfig`, of the database…) that `ux:icons:lock` cannot find:
+
+```bash
+composer require symfony/http-client
+```
+
+```yaml
+# config/packages/ux_icons.yaml
+when@dev:
+    ux_icons:
+        iconify:
+            auto_lock: true
+```
+
+The web server must be able to write to `assets/icons/` in development (with Docker, the folder created by
+Composer often belongs to `root`): otherwise the log shows `Could not auto-lock icon` and nothing is copied, although
+the icons are displayed.
+
+**Commit `assets/icons/`**: in production, the icons are read from it, without calling Iconify. Display the screens
+of the project in development after changing the library or adding an icon, so that its SVG is copied. The icon
+names are listed in [Icons](icons.md).

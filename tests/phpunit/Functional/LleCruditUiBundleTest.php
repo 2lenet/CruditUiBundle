@@ -6,9 +6,11 @@ namespace Lle\CruditUiBundle\Tests\Functional;
 
 use Lle\CruditUiBundle\LleCruditUiBundle;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\AssetMapper\AssetMapperRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Twig\Environment;
 
 class LleCruditUiBundleTest extends TestCase
 {
@@ -23,7 +25,7 @@ class LleCruditUiBundleTest extends TestCase
         $kernel->boot();
         $container = $kernel->getContainer();
 
-        self::assertTrue($container->getParameter('lle_crudit_ui.icons.load_fontawesome'));
+        self::assertSame('fontawesome', $container->getParameter('lle_crudit_ui.icons.library'));
         self::assertSame([], $container->getParameter('lle_crudit_ui.icons.map'));
     }
 
@@ -31,15 +33,15 @@ class LleCruditUiBundleTest extends TestCase
     {
         $kernel = new TestKernel([
             'icons' => [
-                'load_fontawesome' => false,
-                'map' => ['fa-solid fa-trash' => 'xx xx-trash'],
+                'library' => 'tabler',
+                'map' => ['delete' => 'tabler:trash-x'],
             ],
         ]);
         $kernel->boot();
         $container = $kernel->getContainer();
 
-        self::assertFalse($container->getParameter('lle_crudit_ui.icons.load_fontawesome'));
-        self::assertSame(['fa-solid fa-trash' => 'xx xx-trash'], $container->getParameter('lle_crudit_ui.icons.map'));
+        self::assertSame('tabler', $container->getParameter('lle_crudit_ui.icons.library'));
+        self::assertSame(['delete' => 'tabler:trash-x'], $container->getParameter('lle_crudit_ui.icons.map'));
     }
 
     public function testAssetsAreExposedToAssetMapper(): void
@@ -54,5 +56,48 @@ class LleCruditUiBundleTest extends TestCase
         $paths = $repository->allDirectories();
 
         self::assertSame(LleCruditUiBundle::ASSETS_PACKAGE, $paths[\dirname(__DIR__, 3) . '/assets/dist'] ?? null);
+    }
+
+    public function testIconFunction(): void
+    {
+        self::assertSame(
+            '<svg viewBox="0 0 16 16" fill="currentColor" class="crudit-ui-icon" aria-hidden="true"><path d="M1 1h14v14H1z"></path></svg>',
+            $this->render(new TestKernel(), "{{ ui_icon('delete') }}"),
+        );
+    }
+
+    public function testLibraryAndMap(): void
+    {
+        $kernel = new TestKernel(['icons' => ['library' => 'lucide', 'map' => ['edit' => 'fa7-solid:pen']]]);
+
+        self::assertSame(
+            '<svg viewBox="0 0 24 24" fill="currentColor" class="crudit-ui-icon" aria-hidden="true"><path d="M3 6h18"></path></svg>'
+            . '<svg viewBox="0 0 16 16" fill="currentColor" class="crudit-ui-icon" aria-hidden="true"><path d="M2 2h12v12H2z"></path></svg>',
+            $this->render($kernel, "{{ ui_icon('delete') }}{{ ui_icon('edit') }}"),
+        );
+    }
+
+    public function testUnknownIconDoesNotBreakThePage(): void
+    {
+        self::assertSame('before||after', $this->render(new TestKernel(), "before|{{ ui_icon('unknown') }}|after"));
+    }
+
+    public function testUnknownLibraryIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        (new TestKernel(['icons' => ['library' => 'fontawesome4']]))->boot();
+    }
+
+    private function render(TestKernel $kernel, string $template): string
+    {
+        $kernel->boot();
+
+        /** @var ContainerInterface $testContainer */
+        $testContainer = $kernel->getContainer()->get('test.service_container');
+        /** @var Environment $twig */
+        $twig = $testContainer->get('twig');
+
+        return $twig->createTemplate($template)->render();
     }
 }

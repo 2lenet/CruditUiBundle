@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle;
 
+use Lle\CruditUiBundle\Icon\IconLibrary;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -30,12 +31,13 @@ class LleCruditUiBundle extends AbstractBundle
                 ->arrayNode('icons')
                     ->addDefaultsIfNotSet()
                     ->children()
-                        ->booleanNode('load_fontawesome')
-                            ->info('Load Font Awesome 7 from the bundle; false when the project loads its own icon library.')
-                            ->defaultTrue()
+                        ->enumNode('library')
+                            ->info('Icon library of the project: the bundle builds the Iconify name of each icon from it.')
+                            ->values(array_column(IconLibrary::cases(), 'value'))
+                            ->defaultValue(IconLibrary::FontAwesome->value)
                         ->end()
                         ->arrayNode('map')
-                            ->info('Icon replacements, for example "fa-solid fa-trash": "xx xx-trash".')
+                            ->info('Icon replacements, keyed by logical name or Iconify name, for example "delete": "tabler:trash-x".')
                             ->normalizeKeys(false)
                             ->useAttributeAsKey('icon')
                             ->scalarPrototype()->end()
@@ -50,11 +52,11 @@ class LleCruditUiBundle extends AbstractBundle
      */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
-        /** @var array{load_fontawesome: bool, map: array<string, string>} $icons */
+        /** @var array{library: string, map: array<string, string>} $icons */
         $icons = $config['icons'];
 
         $container->parameters()
-            ->set('lle_crudit_ui.icons.load_fontawesome', $icons['load_fontawesome'])
+            ->set('lle_crudit_ui.icons.library', $icons['library'])
             ->set('lle_crudit_ui.icons.map', $icons['map']);
 
         $container->import('../config/services.php');

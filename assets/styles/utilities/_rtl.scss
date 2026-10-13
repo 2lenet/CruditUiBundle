@@ -1,0 +1,6 @@
+// Directional icons (RTL column of docs/icons.md) are mirrored in right-to-left pages: ui_icon() gives them the
+// `--mirror` modifier, whatever the icon library. Icons without a reading direction (up, down, refresh) do not
+// change. `scale` rather than `transform`: it adds up with the rotations of the components (open chevrons).
+[dir='rtl'] .crudit-ui-icon--mirror {
+    scale: -1 1;
+}

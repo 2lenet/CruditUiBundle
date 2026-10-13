@@ -10,4 +10,7 @@
     @include meta.load-css('generic/tokens');
 
     @include meta.load-css('components/dropdown');
+    @include meta.load-css('components/icon');
+
+    @include meta.load-css('utilities/rtl');
 }
