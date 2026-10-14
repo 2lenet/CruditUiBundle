@@ -42,13 +42,18 @@ All the rules are in two cascade layers, `crudit-ui-base` and `crudit-ui`: your 
 order of the stylesheets. If your project keeps Bootstrap, load it in its own layer first: see
 [Keeping Bootstrap](customization.md#keeping-bootstrap).
 
-### Theme
+### Language, direction and theme
 
-Put the theme chosen by the user on `<html>`, in your layout: the page is then displayed in the right theme from the
-first paint (see [Dark mode](customization.md#dark-mode)). Without a choice, the CSS follows the system.
+Put the language, the direction and the theme chosen by the user on `<html>`, in your layout:
+
+- `ui_lang()` gives the locale of the request in the form of the `lang` attribute (`ar-MA`);
+- `ui_dir()` gives `rtl` for a language written from right to left, and the CSS mirrors the layout (see
+  [Languages](languages.md));
+- `ui_theme()` displays the page in the right theme from the first paint (see [Dark mode](customization.md#dark-mode)).
+  Without a choice, the CSS follows the system.
 
 ```twig
-<html lang="{{ app.request.locale }}"{% if ui_theme() %} data-theme="{{ ui_theme() }}"{% endif %}>
+<html lang="{{ ui_lang() }}" dir="{{ ui_dir() }}"{% if ui_theme() %} data-theme="{{ ui_theme() }}"{% endif %}>
 ```
 
 ### After the installation

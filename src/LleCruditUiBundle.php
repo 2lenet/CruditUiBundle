@@ -44,6 +44,16 @@ class LleCruditUiBundle extends AbstractBundle
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('rtl_languages')
+                    ->info('Languages written from right to left, without region: "ar" also covers "ar_MA".')
+                    ->scalarPrototype()
+                        ->validate()
+                            ->ifTrue(static fn (mixed $language): bool => !\is_string($language) || 1 !== preg_match('/^[a-z]{2,3}$/', $language))
+                            ->thenInvalid('%s is not a language code without region, such as "ar".')
+                        ->end()
+                    ->end()
+                    ->defaultValue(['ar', 'fa', 'he', 'ur'])
+                ->end()
             ->end();
     }
 
@@ -57,7 +67,8 @@ class LleCruditUiBundle extends AbstractBundle
 
         $container->parameters()
             ->set('lle_crudit_ui.icons.library', $icons['library'])
-            ->set('lle_crudit_ui.icons.map', $icons['map']);
+            ->set('lle_crudit_ui.icons.map', $icons['map'])
+            ->set('lle_crudit_ui.rtl_languages', $config['rtl_languages']);
 
         $container->import('../config/services.php');
     }

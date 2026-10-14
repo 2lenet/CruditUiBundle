@@ -29,6 +29,8 @@
         "symfony/twig-bundle": "^7.4 || ^8.0",
         "symfony/ux-icons": "^3.4",
         "symfony/ux-twig-component": "^2.20 || ^3.0",
+        "symfony/yaml": "^7.0 || ^8.0",
+        "twig/intl-extra": "^3.21",
         "twig/twig": "^3.21"
     },
     "require-dev": {
@@ -40,6 +42,9 @@
         "slevomat/coding-standard": "^8.13",
         "squizlabs/php_codesniffer": "^3.7",
         "symfony/asset-mapper": "^7.0 || ^8.0"
+    },
+    "suggest": {
+        "ext-intl": "To format numbers and dates in every locale (ui_number, ui_date...): without it, only English is available"
     },
     "autoload": {
         "psr-4": {

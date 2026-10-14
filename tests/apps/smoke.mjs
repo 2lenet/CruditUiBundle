@@ -59,6 +59,33 @@ try {
     await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'dark'}]);
     assert.equal(await background(), '#0e131a', 'without a choice, the colours do not follow the system');
 
+    // Languages: lang and dir of <html>, translations of the bundle, numbers and dates in Latin digits, with the
+    // separators of the country, and the directional icons mirrored in right-to-left.
+    const locale = async (path) => {
+        await page.goto(new URL(path, url).href, {waitUntil: 'networkidle0'});
+
+        return page.evaluate(() => ({
+            lang: document.documentElement.lang,
+            dir: document.documentElement.dir,
+            dark: document.querySelector('button[value="dark"]').textContent.trim(),
+            number: document.getElementById('number').textContent.trim(),
+            date: document.getElementById('date').textContent.trim(),
+            scale: getComputedStyle(document.getElementById('mirrored')).scale,
+        }));
+    };
+    const latin = (text) => /^[\d\s.,/‏ ]+$/.test(text);
+    const fr = await locale('fr');
+    assert.deepEqual([fr.lang, fr.dir, fr.dark, fr.number, fr.date], ['fr', 'ltr', 'Sombre', '1 234,5', '13/10/2026']);
+    assert.equal(fr.scale, 'none', 'an icon is mirrored in a left-to-right page');
+    const arSa = await locale('ar_SA');
+    assert.deepEqual([arSa.lang, arSa.dir, arSa.dark, arSa.number], ['ar-SA', 'rtl', 'داكن', '1,234.5'], 'ar_SA');
+    assert.ok(latin(arSa.date), `the date is not in Latin digits: ${arSa.date}`);
+    assert.equal(arSa.scale, '-1 1', 'a directional icon is not mirrored in a right-to-left page');
+    const arMa = await locale('ar_MA');
+    assert.equal(arMa.number, '1.234,5', 'ar_MA does not follow the separators of Morocco');
+    const fa = await locale('fa');
+    assert.deepEqual([fa.dir, fa.number, fa.date], ['rtl', '1,234.5', '2026/10/13'], 'fa: Gregorian calendar in Latin digits');
+
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);
 } finally {

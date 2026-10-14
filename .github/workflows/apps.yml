@@ -38,6 +38,8 @@ jobs:
                 with:
                     php-version: '8.4'
                     tools: composer:v2
+                    # numbers and dates in every locale (ui_number, ui_date...)
+                    extensions: intl
 
             -   uses: actions/setup-node@v4
                 with:

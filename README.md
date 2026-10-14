@@ -19,7 +19,8 @@ Stimulus controllers, icons, languages and right-to-left support.
 The bundle knows nothing about Crudit (`CrudConfig`, bricks, menu): it can be used on its own.
 
 > The bundle is under construction: for now it provides the design tokens, the base CSS (reset, grid, utilities), the
-> dark mode and the icons. The components come next.
+> dark mode, the icons, and the languages (direction of the page, numbers and dates, translations). The components come
+> next.
 
 ## Installation
 
