@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use Lle\CruditUiBundle\Icon\IconLibrary;
+use Lle\CruditUiBundle\Locale\RequestLocale;
+use Lle\CruditUiBundle\Twig\FormatExtension;
 use Lle\CruditUiBundle\Twig\IconExtension;
+use Lle\CruditUiBundle\Twig\LocaleExtension;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -24,4 +27,12 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$map', param('lle_crudit_ui.icons.map'));
 
     $services->set(ThemeExtension::class);
+
+    $services->set(RequestLocale::class)
+        ->arg('$defaultLocale', param('kernel.default_locale'));
+
+    $services->set(FormatExtension::class);
+
+    $services->set(LocaleExtension::class)
+        ->arg('$rtlLanguages', param('lle_crudit_ui.rtl_languages'));
 };

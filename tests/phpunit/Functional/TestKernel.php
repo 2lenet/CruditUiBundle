@@ -61,6 +61,7 @@ class TestKernel extends Kernel
             'secret' => 'test',
             'http_method_override' => false,
             'asset_mapper' => ['enabled' => true],
+            'translator' => ['enabled' => true],
         ]);
         $container->extension('twig_component', ['defaults' => [], 'anonymous_template_directory' => 'components/']);
         // Icons of the tests, without calling Iconify

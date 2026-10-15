@@ -30,6 +30,7 @@ class LleCruditUiBundleTest extends TestCase
 
         self::assertSame('fontawesome', $container->getParameter('lle_crudit_ui.icons.library'));
         self::assertSame([], $container->getParameter('lle_crudit_ui.icons.map'));
+        self::assertSame(['ar', 'fa', 'he', 'ur'], $container->getParameter('lle_crudit_ui.rtl_languages'));
     }
 
     public function testIconConfiguration(): void
@@ -97,6 +98,53 @@ class LleCruditUiBundleTest extends TestCase
         $requestStack->push(new Request(cookies: [ThemeExtension::COOKIE => 'dark']));
 
         self::assertSame('<html data-theme="dark">', $this->render($kernel, '<html{% if ui_theme() %} data-theme="{{ ui_theme() }}"{% endif %}>'));
+    }
+
+    public function testLangAndDirFunctions(): void
+    {
+        $kernel = new TestKernel();
+        $kernel->boot();
+
+        /** @var ContainerInterface $testContainer */
+        $testContainer = $kernel->getContainer()->get('test.service_container');
+        /** @var RequestStack $requestStack */
+        $requestStack = $testContainer->get('request_stack');
+        $request = new Request();
+        $request->setLocale('ar_MA');
+        $requestStack->push($request);
+
+        self::assertSame('<html lang="ar-MA" dir="rtl">', $this->render($kernel, '<html lang="{{ ui_lang() }}" dir="{{ ui_dir() }}">'));
+    }
+
+    public function testFormatFilters(): void
+    {
+        $kernel = new TestKernel();
+        $kernel->boot();
+
+        /** @var ContainerInterface $testContainer */
+        $testContainer = $kernel->getContainer()->get('test.service_container');
+        /** @var RequestStack $requestStack */
+        $requestStack = $testContainer->get('request_stack');
+        $request = new Request();
+        $request->setLocale('ar_SA');
+        $requestStack->push($request);
+
+        self::assertSame('1,234.5', $this->render($kernel, '{{ 1234.5|ui_number }}'));
+    }
+
+    public function testTranslationsOfTheBundle(): void
+    {
+        self::assertSame(
+            'Sombre|Dunkel',
+            $this->render(new TestKernel(), "{{ 'crudit_ui.theme.dark'|trans(domain: 'LleCruditUiBundle', locale: 'fr') }}|{{ 'crudit_ui.theme.dark'|trans(domain: 'LleCruditUiBundle', locale: 'de') }}"),
+        );
+    }
+
+    public function testRtlLanguageWithRegionIsRefused(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        (new TestKernel(['rtl_languages' => ['ar_MA']]))->boot();
     }
 
     public function testUnknownLibraryIsRefused(): void

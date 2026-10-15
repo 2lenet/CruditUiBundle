@@ -59,6 +59,38 @@ try {
     await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'dark'}]);
     assert.equal(await background(), '#0e131a', 'without a choice, the colours do not follow the system');
 
+    // Languages: lang and dir of <html>, translations of the bundle, numbers and dates in Latin digits, with the
+    // separators of the country, and the directional icons mirrored in right-to-left.
+    const locale = async (path) => {
+        await page.goto(new URL(path, url).href, {waitUntil: 'networkidle0'});
+
+        return page.evaluate(() => ({
+            lang: document.documentElement.lang,
+            dir: document.documentElement.dir,
+            dark: document.querySelector('button[value="dark"]').textContent.trim(),
+            number: document.getElementById('number').textContent.trim(),
+            date: document.getElementById('date').textContent.trim(),
+            scale: getComputedStyle(document.querySelector('#mirrored svg')).scale,
+        }));
+    };
+    // The dates depend on the version of ICU (`13/10/2026 م` in ar_SA since ICU 74): only their digits are checked.
+    const latinDate = (text, numbers) => {
+        assert.doesNotMatch(text, /[\u0660-\u0669\u06F0-\u06F9]/, `the date is not in Latin digits: ${text}`);
+        assert.deepEqual(text.match(/\d+/g), numbers, `wrong date: ${text}`);
+    };
+    const fr = await locale('fr');
+    assert.deepEqual([fr.lang, fr.dir, fr.dark, fr.number, fr.date], ['fr', 'ltr', 'Sombre', '1 234,5', '13/10/2026']);
+    assert.equal(fr.scale, 'none', 'an icon is mirrored in a left-to-right page');
+    const arSa = await locale('ar_SA');
+    assert.deepEqual([arSa.lang, arSa.dir, arSa.dark, arSa.number], ['ar-SA', 'rtl', 'داكن', '1,234.5'], 'ar_SA');
+    latinDate(arSa.date, ['13', '10', '2026']);
+    assert.equal(arSa.scale, '-1 1', 'a directional icon is not mirrored in a right-to-left page');
+    const arMa = await locale('ar_MA');
+    assert.equal(arMa.number, '1.234,5', 'ar_MA does not follow the separators of Morocco');
+    const fa = await locale('fa');
+    assert.deepEqual([fa.dir, fa.number], ['rtl', '1,234.5'], 'fa: Latin digits');
+    latinDate(fa.date, ['2026', '10', '13']);
+
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);
 } finally {

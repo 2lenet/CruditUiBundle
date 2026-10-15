@@ -44,18 +44,18 @@ variables, for each theme:
 
 The theme follows the preference of the system (`prefers-color-scheme`), in CSS. The user can choose light or dark
 instead: the `theme` controller puts the choice in the `data-theme` attribute of `<html>` and in the `crudit_ui_theme`
-cookie, which the layout reads with `ui_theme()` (see [Installation](installation.md#theme)), so the next pages are
-displayed in the right theme from the first paint. "System" removes both.
+cookie, which the layout reads with `ui_theme()` (see [Installation](installation.md#language-direction-and-theme)),
+so the next pages are displayed in the right theme from the first paint. "System" removes both.
 
 The options are buttons (`aria-pressed` follows the choice), radio buttons or a select, whose value is `light`, `dark`
 or `system`:
 
 ```twig
 {% set theme = '@2lenet/crudit-ui-bundle/theme' %}
-<div role="group" aria-label="{{ 'Theme'|trans }}" {{ stimulus_controller(theme) }}>
-    {% for value, label in {light: 'Light', dark: 'Dark', system: 'System'} %}
+<div role="group" aria-label="{{ 'crudit_ui.theme.label'|trans(domain: 'LleCruditUiBundle') }}" {{ stimulus_controller(theme) }}>
+    {% for value in ['light', 'dark', 'system'] %}
         <button type="button" value="{{ value }}" {{ stimulus_target(theme, 'option') }} {{ stimulus_action(theme, 'choose') }}>
-            {{ label|trans }}
+            {{ ('crudit_ui.theme.' ~ value)|trans(domain: 'LleCruditUiBundle') }}
         </button>
     {% endfor %}
 </div>

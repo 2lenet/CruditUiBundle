@@ -8,12 +8,15 @@ lle_crudit_ui:
         library: fontawesome
         # icon replacements: "logical name or Iconify name": "Iconify name"
         map: {}
+    # languages written from right to left, without region
+    rtl_languages: [ar, fa, he, ur]
 ```
 
 | Option | |
 |---|---|
 | `icons.library` | Icon library of the project, one of `fontawesome`, `bootstrap-icons`, `boxicons`, `flowbite`, `heroicons`, `iconoir`, `ionicons`, `lucide`, `mdi`, `octicons`, `phosphor`, `tabler` (see [Icon libraries](icon-libraries.md)) |
 | `icons.map` | Replaces an icon rendered by the bundles by another one, for example `delete: 'tabler:trash-x'` |
+| `rtl_languages` | Languages written from right to left (Arabic, Persian, Hebrew, Urdu by default): `ui_dir()` gives `rtl` for them. A language code covers all its regions, `ar` also covers `ar_MA` (see [Languages](languages.md)) |
 
 ## Icons
 

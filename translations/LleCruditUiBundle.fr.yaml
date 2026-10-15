@@ -1,0 +1,10 @@
+crudit_ui:
+    action:
+        close: Fermer
+    language:
+        label: Langue
+    theme:
+        label: Apparence
+        light: Clair
+        dark: Sombre
+        system: Système

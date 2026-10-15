@@ -1,0 +1,11 @@
+# Arabic is translated by the project: the bundle ships fr, en, de and it
+crudit_ui:
+    action:
+        close: إغلاق
+    language:
+        label: اللغة
+    theme:
+        label: المظهر
+        light: فاتح
+        dark: داكن
+        system: النظام
