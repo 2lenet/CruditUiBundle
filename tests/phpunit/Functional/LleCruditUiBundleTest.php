@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Tests\Functional;
 
+use Lle\CruditUiBundle\Format\Formatter;
 use Lle\CruditUiBundle\LleCruditUiBundle;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
 use PHPUnit\Framework\TestCase;
@@ -130,6 +131,14 @@ class LleCruditUiBundleTest extends TestCase
         $requestStack->push($request);
 
         self::assertSame('1,234.5', $this->render($kernel, '{{ 1234.5|ui_number }}'));
+
+        // the service used outside the templates gives the same result as the filters
+        /** @var Formatter $formatter */
+        $formatter = $testContainer->get(Formatter::class);
+        self::assertSame(
+            $formatter->datetime('2026-10-13 14:05', 'short', 'short'),
+            $this->render($kernel, "{{ '2026-10-13 14:05'|ui_datetime('short', 'short') }}"),
+        );
     }
 
     public function testTranslationsOfTheBundle(): void

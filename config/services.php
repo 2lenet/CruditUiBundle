@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Lle\CruditUiBundle\Format\Formatter;
 use Lle\CruditUiBundle\Icon\IconLibrary;
 use Lle\CruditUiBundle\Locale\RequestLocale;
 use Lle\CruditUiBundle\Twig\FormatExtension;
@@ -30,6 +31,8 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(RequestLocale::class)
         ->arg('$defaultLocale', param('kernel.default_locale'));
+
+    $services->set(Formatter::class);
 
     $services->set(FormatExtension::class);
 
