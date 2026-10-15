@@ -24,8 +24,8 @@
         <p>
             <output id="number">{{ 1234.5|ui_number }}</output>
             <output id="date">{{ '2026-10-13 12:00'|ui_date('short') }}</output>
-            {# directional icon: ui_icon() gives it the mirror modifier #}
-            <svg id="mirrored" class="crudit-ui-icon crudit-ui-icon--mirror" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h10M8 4l4 4-4 4"/></svg>
+            {# directional icon: ui_icon() gives it the mirror modifier (local SVG, assets/icons/fa7-solid/arrow-right.svg) #}
+            <span id="mirrored">{{ ui_icon('next') }}</span>
         </p>
     </section>
 {% endblock %}

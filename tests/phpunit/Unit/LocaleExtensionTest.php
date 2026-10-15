@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Tests\Unit;
 
+use Lle\CruditUiBundle\Locale\RequestLocale;
 use Lle\CruditUiBundle\Twig\LocaleExtension;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +28,8 @@ class LocaleExtensionTest extends TestCase
         yield 'Hebrew' => ['he', 'he', 'rtl'];
         yield 'Persian' => ['fa_IR', 'fa-IR', 'rtl'];
         yield 'Urdu' => ['ur', 'ur', 'rtl'];
+        yield 'Keywords of ICU left out' => ['ar_SA@numbers=arab', 'ar-SA', 'rtl'];
+        yield 'Keywords of ICU without region' => ['ar@numbers=arab', 'ar', 'rtl'];
     }
 
     #[DataProvider('locales')]
@@ -52,14 +55,14 @@ class LocaleExtensionTest extends TestCase
     {
         $request = new Request();
         $request->setLocale('ar');
-        $extension = new LocaleExtension($this->requestStack($request), 'fr', ['he']);
+        $extension = new LocaleExtension(new RequestLocale($this->requestStack($request), 'fr'), ['he']);
 
         self::assertSame('ltr', $extension->dir());
     }
 
     private function extension(?Request $request, string $defaultLocale = 'fr'): LocaleExtension
     {
-        return new LocaleExtension($this->requestStack($request), $defaultLocale, self::RTL_LANGUAGES);
+        return new LocaleExtension(new RequestLocale($this->requestStack($request), $defaultLocale), self::RTL_LANGUAGES);
     }
 
     private function requestStack(?Request $request): RequestStack

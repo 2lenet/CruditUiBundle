@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Twig;
 
-use Symfony\Component\HttpFoundation\RequestStack;
+use Lle\CruditUiBundle\Locale\RequestLocale;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Environment;
 use Twig\Extra\Intl\IntlExtension;
@@ -12,10 +12,12 @@ use Twig\Extra\Intl\IntlExtension;
 /**
  * Numbers and dates in the format of the locale of the request, always in Latin digits: `ar_MA` gives `1.234,5`,
  * `ar_SA` gives `1,234.5` instead of `١٬٢٣٤٫٥`. The filters take the arguments of the `format_*` filters of
- * twig/intl-extra, without the locale; dates are in the Gregorian calendar.
+ * twig/intl-extra, without the locale and the calendar: dates are always in the Gregorian calendar, the default
+ * of `format_*` too.
  *
  * The keyword is only given to the formatters: the default locale of PHP is left alone, Symfony Intl (country
- * names, forms) does not read a locale with keywords.
+ * names, forms) does not read a locale with keywords. The filters use their own `IntlExtension`: the prototypes of
+ * formatters configured in `twig_extra.intl` by the project do not apply to them.
  */
 class FormatExtension
 {
@@ -24,8 +26,7 @@ class FormatExtension
     private ?IntlExtension $intl = null;
 
     public function __construct(
-        protected RequestStack $requestStack,
-        protected string $defaultLocale,
+        protected RequestLocale $requestLocale,
     ) {
     }
 
@@ -72,13 +73,19 @@ class FormatExtension
     }
 
     /**
-     * Locale of the request with the Latin digits: `ar_SA@numbers=latn`.
+     * Locale of the request with the Latin digits: `ar_SA@numbers=latn`. A `numbers` keyword already in the locale
+     * is replaced, ICU would keep the first one (`ar_SA@numbers=arab` gives `ar_SA@numbers=latn`).
      */
     public function locale(): string
     {
-        $locale = $this->requestStack->getCurrentRequest()?->getLocale() ?? $this->defaultLocale;
+        [$locale, $keywords] = explode('@', $this->requestLocale->get(), 2) + [1 => ''];
+        $keywords = array_filter(
+            explode(';', $keywords),
+            static fn (string $keyword): bool => '' !== $keyword && 'numbers' !== strtolower(trim(explode('=', $keyword, 2)[0])),
+        );
+        $keywords[] = self::KEYWORDS;
 
-        return $locale . (str_contains($locale, '@') ? ';' : '@') . self::KEYWORDS;
+        return $locale . '@' . implode(';', $keywords);
     }
 
     private function intl(): IntlExtension

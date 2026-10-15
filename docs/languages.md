@@ -24,7 +24,7 @@ CSS mirrors the layout: see [Right to left](styles.md#right-to-left).
 `ui_number`, `ui_currency`, `ui_date`, `ui_datetime` and `ui_time` format in the locale of the request, with the
 separators of its country, **always in Latin digits and in the Gregorian calendar**. They take the arguments of the
 `format_*` filters of [twig/intl-extra](https://twig.symfony.com/doc/3.x/filters/format_number.html), without the
-locale:
+locale and the calendar:
 
 ```twig
 {{ order.amount|ui_number }}
@@ -41,9 +41,14 @@ locale:
 | `ar_MA` | `1.234,5` | `13/10/2026` |
 | `fa` | `1,234.5` | `2026/10/13` |
 
-The `format_*` filters of Twig give, for the same locales, Arabic-Indic digits (`١٬٢٣٤٫٥` in `ar_SA`) and the Persian
-calendar in `fa`: use the `ui_*` filters. They need the `intl` extension of PHP, without which only English is
-available.
+The `format_*` filters of Twig give, for the same locales, Arabic-Indic or Persian digits (`١٬٢٣٤٫٥` in `ar_SA`,
+`۲۰۲۶/۱۰/۱۳` in `fa`), in the Gregorian calendar too: use the `ui_*` filters. The Latin digits are not configurable,
+on purpose; a project that wants the digits of the locale keeps the `format_*` filters. A `numbers` keyword in the
+locale (`ar_SA@numbers=arab`) is replaced.
+
+The filters need the `intl` extension of PHP, required by the bundle. They use their own instance of the extension
+of twig/intl-extra: the prototypes of formatters configured by the project in `twig_extra.intl` do not apply to them.
+The dates may differ slightly from one version of ICU to the other (`13/10/2026 م` in `ar_SA` since ICU 74).
 
 The default locale of PHP is not changed: a `NumberFormatter` or an `IntlDateFormatter` created in PHP follows the
 usual rules of the locale. Outside a request (command, message handler), the filters use `kernel.default_locale`.

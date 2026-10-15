@@ -71,8 +71,10 @@ Pitfalls:
 
 - **A change in `assets/` is not seen by an application that already copied the bundle**: copy `assets/dist/` again into `vendor/2lenet/crudit-ui-bundle/assets/dist/` (or reinstall the bundle).
 - Composer copies the whole bundle, `vendor/` and `node_modules/` included, and the applications already installed with it: use a clean checkout (as the CI does) when installing a second application.
-- The page is also displayed in Arabic and Persian (`/ar_SA`, `/fa`): PHP needs the `intl` extension, which the
-  `php:*-cli` images do not have (hence the `php-intl` image above).
+- The bundle requires the `intl` extension of PHP, which the `php:*-cli` and `composer:2` images do not have (hence
+  the `php-intl` image above, also needed by PHPUnit).
+- The dates depend on the version of ICU (`13/10/2026 م` in `ar_SA` since ICU 74, era included): the tests check
+  their digits and their order, not the exact text. The numbers are stable and checked as they are.
 - `php -S` must run **without a router script**: with one, it sends the static files (`/build`, `/assets`) to `index.php` too.
 - After `asset-map:compile`, delete `public/assets/` to go back to the development mode (the compiled files are served as is).
 - Flex adds its default files when installing (`stimulus_bootstrap.js`, example controllers, `autoimport` in `controllers.json`): remove them, the stylesheet is imported explicitly.

@@ -6,7 +6,6 @@ namespace Lle\CruditUiBundle\Tests\Functional;
 
 use Lle\CruditUiBundle\LleCruditUiBundle;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\AssetMapper\AssetMapperRepository;
@@ -117,7 +116,6 @@ class LleCruditUiBundleTest extends TestCase
         self::assertSame('<html lang="ar-MA" dir="rtl">', $this->render($kernel, '<html lang="{{ ui_lang() }}" dir="{{ ui_dir() }}">'));
     }
 
-    #[RequiresPhpExtension('intl')]
     public function testFormatFilters(): void
     {
         $kernel = new TestKernel();

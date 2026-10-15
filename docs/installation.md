@@ -2,6 +2,8 @@
 
 ## Bundle
 
+The bundle needs PHP 8.4 and the `intl` extension of PHP (numbers and dates, see [Languages](languages.md)).
+
 ```bash
 composer require 2lenet/crudit-ui-bundle
 ```

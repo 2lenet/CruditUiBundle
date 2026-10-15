@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Twig;
 
-use Symfony\Component\HttpFoundation\RequestStack;
+use Lle\CruditUiBundle\Locale\RequestLocale;
 use Twig\Attribute\AsTwigFunction;
 
 /**
@@ -17,14 +17,14 @@ class LocaleExtension
      * @param list<string> $rtlLanguages languages written from right to left, without region (`ar`)
      */
     public function __construct(
-        protected RequestStack $requestStack,
-        protected string $defaultLocale,
+        protected RequestLocale $requestLocale,
         protected array $rtlLanguages,
     ) {
     }
 
     /**
-     * Locale of the request in the BCP 47 form of the `lang` attribute: `ar_MA` gives `ar-MA`.
+     * Locale of the request in the BCP 47 form of the `lang` attribute: `ar_MA` gives `ar-MA`, the keywords of ICU
+     * are left out (`ar_SA@numbers=arab` gives `ar-SA`).
      */
     #[AsTwigFunction('ui_lang')]
     public function lang(): string
@@ -43,8 +43,11 @@ class LocaleExtension
         return \in_array($language, $this->rtlLanguages, true) ? 'rtl' : 'ltr';
     }
 
+    /**
+     * Locale of the request without the keywords of ICU (`@numbers=arab`), which have no place in `lang`.
+     */
     private function locale(): string
     {
-        return $this->requestStack->getCurrentRequest()?->getLocale() ?? $this->defaultLocale;
+        return explode('@', $this->requestLocale->get(), 2)[0];
     }
 }
