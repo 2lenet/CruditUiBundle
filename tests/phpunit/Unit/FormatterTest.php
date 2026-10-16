@@ -31,8 +31,8 @@ class FormatterTest extends TestCase
     }
 
     /**
-     * The numbers are stable from one version of ICU to the other, the dates are not (`13‏/10‏/2026 م` in `ar_SA`
-     * since ICU 74, era included): only their digits and their order are checked.
+     * The numbers are stable from one version of ICU to the other, the dates are not (spaces, separators): only their
+     * digits and their order are checked.
      *
      * @return iterable<string, array{string, string, list<string>}>
      */
@@ -60,6 +60,65 @@ class FormatterTest extends TestCase
         self::assertLatinDigits($date, $formatter->date(new \DateTimeImmutable('2026-10-13 12:00'), 'short', timezone: 'UTC'));
     }
 
+    /**
+     * The leading zeros are those of the `short` format of the locale, only the year is in 4 digits.
+     *
+     * @return iterable<string, array{string, list<string>, list<string>}>
+     */
+    public static function leadingZeros(): iterable
+    {
+        yield 'English: no leading zero' => ['en', ['1', '5', '2026'], ['9', '05']];
+        yield 'Spanish: no leading zero' => ['es', ['5', '1', '2026'], ['9', '05']];
+        yield 'German: leading zeros' => ['de', ['05', '01', '2026'], ['09', '05']];
+        yield 'French: leading zeros' => ['fr', ['05', '01', '2026'], ['09', '05']];
+    }
+
+    /**
+     * @param list<string> $date numbers of the date, in their order
+     * @param list<string> $time numbers of the time, in their order
+     */
+    #[DataProvider('leadingZeros')]
+    public function testTheShortDateKeepsTheLeadingZerosOfTheLocale(string $locale, array $date, array $time): void
+    {
+        $formatter = $this->formatter($locale);
+        $value = new \DateTimeImmutable('2026-01-05 09:05', new \DateTimeZone('UTC'));
+
+        self::assertLatinDigits($date, $formatter->date($value, 'short', timezone: 'UTC'));
+        self::assertLatinDigits([...$date, ...$time], $formatter->datetime($value, 'short', 'short', timezone: 'UTC'));
+    }
+
+    /**
+     * Locales whose default calendar, or the keyword, is not Gregorian: ICU would take the patterns of that calendar,
+     * with an era (`13‏/10‏/2026 م` in `ar_SA` with ICU 74, `AD2026/10/13` in Japanese) or a short year.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function otherCalendars(): iterable
+    {
+        yield 'Arabic of Saudi Arabia' => ['ar_SA'];
+        yield 'Islamic calendar asked by the locale' => ['ar_SA@calendar=islamic-umalqura'];
+        yield 'Japanese calendar asked by the locale' => ['ja@calendar=japanese'];
+        yield 'Persian calendar asked by the locale' => ['fa@calendar=persian'];
+        yield 'Thai, Buddhist calendar by default' => ['th'];
+    }
+
+    #[DataProvider('otherCalendars')]
+    public function testNoEraFromTheDefaultCalendarOfTheLocale(string $locale): void
+    {
+        $actual = $this->formatter($locale)->date(new \DateTimeImmutable('2026-10-13 12:00'), 'short', timezone: 'UTC');
+
+        self::assertMatchesRegularExpression('/(^|\D)2026(\D|$)/', $actual, 'year in 4 digits');
+        self::assertDoesNotMatchRegularExpression('/\p{L}/u', $actual, 'era');
+    }
+
+    public function testNoEraInTheLongFormatsEither(): void
+    {
+        $actual = $this->formatter('ja@calendar=japanese')->date(new \DateTimeImmutable('2026-10-13 12:00'), 'medium', timezone: 'UTC');
+
+        self::assertStringNotContainsString('西暦', $actual);
+        self::assertStringContainsString('2026', $actual);
+    }
+
     public function testCurrency(): void
     {
         self::assertStringContainsString('1,234.50', $this->formatter('ar_SA')->currency(1234.5, 'SAR'));
@@ -80,8 +139,12 @@ class FormatterTest extends TestCase
         $date = new \DateTimeImmutable('2026-10-13 14:05', new \DateTimeZone('UTC'));
         $formatter = $this->formatter('en');
 
-        self::assertSame("10/13/2026, 2:05\u{202F}PM", $formatter->datetime($date, 'short', 'short', timezone: 'UTC'));
-        self::assertSame("2:05:00\u{202F}PM", $formatter->time($date, 'medium', timezone: 'UTC'));
+        $datetime = $formatter->datetime($date, 'short', 'short', timezone: 'UTC');
+        self::assertLatinDigits(['10', '13', '2026', '2', '05'], $datetime);
+        self::assertStringContainsString('PM', $datetime);
+        $time = $formatter->time($date, 'medium', timezone: 'UTC');
+        self::assertLatinDigits(['2', '05', '00'], $time);
+        self::assertStringContainsString('PM', $time);
     }
 
     public function testPatternAndOtherFormatsAreLeftToIcu(): void
@@ -100,9 +163,9 @@ class FormatterTest extends TestCase
         $formatter = $this->formatter('fr', $twig);
         $date = new \DateTimeImmutable('2026-10-13 23:30', new \DateTimeZone('UTC'));
 
-        self::assertSame('14/10/2026 01:30', $formatter->datetime($date, 'short', 'short'));
+        self::assertLatinDigits(['14', '10', '2026', '01', '30'], $formatter->datetime($date, 'short', 'short'));
         // a date alone keeps its day
-        self::assertSame('13/10/2026', $formatter->date($date, 'short', timezone: false));
+        self::assertLatinDigits(['13', '10', '2026'], $formatter->date($date, 'short', timezone: false));
     }
 
     /**
@@ -110,21 +173,22 @@ class FormatterTest extends TestCase
      */
     public static function keywords(): iterable
     {
-        yield 'no keyword' => ['fr', 'fr@numbers=latn'];
-        yield 'numbers keyword replaced' => ['ar_SA@numbers=arab', 'ar_SA@numbers=latn'];
-        yield 'other keyword kept' => ['fa@calendar=persian', 'fa@calendar=persian;numbers=latn'];
-        yield 'numbers keyword among others' => ['ar@NUMBERS=arab;collation=standard', 'ar@collation=standard;numbers=latn'];
+        yield 'no keyword' => ['fr', 'fr@numbers=latn;calendar=gregorian'];
+        yield 'numbers keyword replaced' => ['ar_SA@numbers=arab', 'ar_SA@numbers=latn;calendar=gregorian'];
+        yield 'calendar keyword replaced' => ['fa@calendar=persian', 'fa@numbers=latn;calendar=gregorian'];
+        yield 'keywords in capitals replaced' => ['ja@CALENDAR=japanese;NUMBERS=jpan', 'ja@numbers=latn;calendar=gregorian'];
+        yield 'other keyword kept' => ['ar@NUMBERS=arab;collation=standard', 'ar@collation=standard;numbers=latn;calendar=gregorian'];
     }
 
     #[DataProvider('keywords')]
-    public function testTheNumbersKeywordIsAlwaysLatin(string $locale, string $expected): void
+    public function testTheNumbersAreLatinAndTheCalendarGregorian(string $locale, string $expected): void
     {
         self::assertSame($expected, $this->formatter($locale)->locale());
     }
 
     public function testNoRequestUsesTheDefaultLocale(): void
     {
-        self::assertSame('ar_MA@numbers=latn', (new Formatter(new RequestLocale(new RequestStack(), 'ar_MA'), $this->twig()))->locale());
+        self::assertSame('ar_MA@numbers=latn;calendar=gregorian', (new Formatter(new RequestLocale(new RequestStack(), 'ar_MA'), $this->twig()))->locale());
     }
 
     public function testTheDefaultLocaleOfPhpIsLeftAlone(): void

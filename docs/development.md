@@ -73,8 +73,9 @@ Pitfalls:
 - Composer copies the whole bundle, `vendor/` and `node_modules/` included, and the applications already installed with it: use a clean checkout (as the CI does) when installing a second application.
 - The bundle requires the `intl` extension of PHP, which the `php:*-cli` and `composer:2` images do not have (hence
   the `php-intl` image above, also needed by PHPUnit).
-- The dates depend on the version of ICU (`13/10/2026 م` in `ar_SA` since ICU 74, era included): the tests check
-  their digits and their order, not the exact text. The numbers are stable and checked as they are.
+- The spaces and separators of the dates depend on the version of ICU: the tests check their digits and their order,
+  not the exact text (and no era, which the default calendar of a locale would add: `13/10/2026 م` in `ar_SA` with
+  ICU 74). The numbers are stable and checked as they are.
 - `php -S` must run **without a router script**: with one, it sends the static files (`/build`, `/assets`) to `index.php` too.
 - After `asset-map:compile`, delete `public/assets/` to go back to the development mode (the compiled files are served as is).
 - Flex adds its default files when installing (`stimulus_bootstrap.js`, example controllers, `autoimport` in `controllers.json`): remove them, the stylesheet is imported explicitly.

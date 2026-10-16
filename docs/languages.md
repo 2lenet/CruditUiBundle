@@ -33,28 +33,30 @@ locale and the calendar:
 {{ order.updatedAt|ui_datetime('short', 'short') }}
 ```
 
-| Locale | `1234.5\|ui_number` | `date\|ui_date('short')` |
+| Locale | `1234.5\|ui_number` | `date\|ui_date('short')` (5 January 2026) |
 |---|---|---|
-| `fr` | `1 234,5` | `13/10/2026` |
-| `en` | `1,234.5` | `10/13/2026` |
-| `de` | `1.234,5` | `13.10.2026` |
-| `ar_SA` | `1,234.5` | `13/10/2026` |
-| `ar_MA` | `1.234,5` | `13/10/2026` |
-| `fa` | `1,234.5` | `2026/10/13` |
+| `fr` | `1 234,5` | `05/01/2026` |
+| `en` | `1,234.5` | `1/5/2026` |
+| `de` | `1.234,5` | `05.01.2026` |
+| `ar_SA` | `1,234.5` | `5/1/2026` |
+| `ar_MA` | `1.234,5` | `5/1/2026` |
+| `fa` | `1,234.5` | `2026/1/5` |
 
-The `short` date always has the **year in 4 digits**, in the order and with the separators of the locale
-(`10/13/2026` instead of `10/13/26` in en), alone or with a `short` or `medium` time. A `pattern` given to the filter
-is kept as is. Dates are shown in the default timezone of Twig (`twig.date.timezone`); `timezone: false` keeps the
+The `short` date, alone or with a `short` or `medium` time, has the **year in 4 digits** (`1/5/2026` instead of
+`1/5/26` in en); the rest follows the `short` format of the locale: order, separators and leading zeros (none in en,
+`05.01.2026` in de). With a `long` or `full` time, the pattern of ICU is kept, whose year may have 2 digits. A
+`pattern` given to the filter is kept as is. Dates are shown in the default timezone of Twig (`twig.date.timezone`); `timezone: false` keeps the
 timezone of the value, for a date or a time alone that must not change day or hour.
 
 The `format_*` filters of Twig give, for the same locales, Arabic-Indic or Persian digits (`١٬٢٣٤٫٥` in `ar_SA`,
 `۲۰۲۶/۱۰/۱۳` in `fa`), in the Gregorian calendar too: use the `ui_*` filters. The Latin digits are not configurable,
-on purpose; a project that wants the digits of the locale keeps the `format_*` filters. A `numbers` keyword in the
-locale (`ar_SA@numbers=arab`) is replaced.
+on purpose; a project that wants the digits of the locale keeps the `format_*` filters. The `numbers` and `calendar`
+keywords of the locale (`ar_SA@numbers=arab`, `ja@calendar=japanese`) are replaced: without them, ICU would take the
+patterns of the default calendar of the locale, with an era (`13/10/2026 م` in `ar_SA` with ICU 74).
 
 The filters need the `intl` extension of PHP, required by the bundle. They use their own instance of the extension
 of twig/intl-extra: the prototypes of formatters configured by the project in `twig_extra.intl` do not apply to them.
-The dates may differ slightly from one version of ICU to the other (`13/10/2026 م` in `ar_SA` since ICU 74).
+The spaces and separators of the dates may differ slightly from one version of ICU to the other.
 
 The default locale of PHP is not changed: a `NumberFormatter` or an `IntlDateFormatter` created in PHP follows the
 usual rules of the locale. Outside a request (command, message handler), the filters use `kernel.default_locale`.

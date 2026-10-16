@@ -14,18 +14,20 @@ use Twig\Extra\Intl\IntlExtension;
  * a template (a brick, a service): both give the same result.
  *
  * The methods take the arguments of the `format_*` filters of twig/intl-extra, without the locale and the calendar:
- * dates are always in the Gregorian calendar, the default of `format_*` too. The `short` date always has the year in
- * 4 digits (`10/13/2026` in en, `13.10.2026` in de, instead of `10/13/26` and `13.10.26`). Dates are converted to the
- * default timezone of Twig, as the `format_*` filters do; `timezone: false` keeps the timezone of the date (a date or a
- * time alone, which must not change day or hour).
+ * dates are always in the Gregorian calendar. The calendar is also forced in the locale, as ICU takes the patterns in
+ * the default calendar of the locale (`13/10/2026 م` in `ar_SA` with ICU 74, `AD2026/10/13` in
+ * `ja@calendar=japanese`). The `short` date, alone or with a `short` or `medium` time, has the year in 4 digits and
+ * the rest as the `short` format of the locale, leading zeros included (`1/5/2026` in en, `05.01.2026` in de, instead
+ * of `1/5/26` and `05.01.26`). Dates are converted to the default timezone of Twig, as the `format_*` filters do;
+ * `timezone: false` keeps the timezone of the date (a date or a time alone, which must not change day or hour).
  *
- * The keyword is only given to the formatters: the default locale of PHP is left alone, Symfony Intl (country
+ * The keywords are only given to the formatters: the default locale of PHP is left alone, Symfony Intl (country
  * names, forms) does not read a locale with keywords. The extension of twig/intl-extra used here is a separate
  * instance: the prototypes of formatters configured in `twig_extra.intl` by the project do not apply.
  */
 class Formatter
 {
-    public const string KEYWORDS = 'numbers=latn';
+    public const string KEYWORDS = 'numbers=latn;calendar=gregorian';
 
     /**
      * Skeletons of the time added to the date with a 4-digit year, by time format.
@@ -39,6 +41,17 @@ class Formatter
      */
     private array $patternGenerators = [];
 
+    /**
+     * @var array<string, string>
+     */
+    private array $dateSkeletons = [];
+
+    /**
+     * Twig gives the default timezone (`twig.date.timezone`), which the formatters of twig/intl-extra read from it:
+     * the same as the `format_*` filters. No circular reference, because FormatExtension is an extension by
+     * attributes, whose runtime is loaded lazily: a classic AbstractExtension receiving the Formatter would make one
+     * (Environment, FormatExtension, Formatter, Environment).
+     */
     public function __construct(
         protected RequestLocale $requestLocale,
         protected Environment $twig,
@@ -89,15 +102,17 @@ class Formatter
     }
 
     /**
-     * Locale of the request with the Latin digits: `ar_SA@numbers=latn`. A `numbers` keyword already in the locale
-     * is replaced, ICU would keep the first one (`ar_SA@numbers=arab` gives `ar_SA@numbers=latn`).
+     * Locale of the request with the Latin digits and the Gregorian calendar: `ar_SA@numbers=latn;calendar=gregorian`.
+     * The `numbers` and `calendar` keywords already in the locale are replaced, ICU would keep the first ones
+     * (`fa@calendar=persian` gives `fa@numbers=latn;calendar=gregorian`).
      */
     public function locale(): string
     {
         [$locale, $keywords] = explode('@', $this->requestLocale->get(), 2) + [1 => ''];
         $keywords = array_filter(
             explode(';', $keywords),
-            static fn (string $keyword): bool => '' !== $keyword && 'numbers' !== strtolower(trim(explode('=', $keyword, 2)[0])),
+            static fn (string $keyword): bool => '' !== $keyword
+                && !\in_array(strtolower(trim(explode('=', $keyword, 2)[0])), ['numbers', 'calendar'], true),
         );
         $keywords[] = self::KEYWORDS;
 
@@ -105,9 +120,10 @@ class Formatter
     }
 
     /**
-     * Pattern of the `short` date with a 4-digit year, in the order and with the separators of the locale, asked to
-     * ICU from a skeleton (`yyyyMMdd` gives `MM/dd/yyyy` in en). The pattern given by the template, the other date
-     * formats and the long times are left to ICU.
+     * Pattern of the `short` date with a 4-digit year, asked to ICU from a skeleton made from the `short` pattern of
+     * the locale (`M/d/yy` gives `yyyyMd`, then `M/d/yyyy` in en): the order, the separators and the leading zeros of
+     * the locale are kept. The pattern given by the template, the other date formats and the long times are left to
+     * ICU.
      */
     private function pattern(string $locale, ?string $dateFormat, string $timeFormat, string $pattern): string
     {
@@ -117,9 +133,29 @@ class Formatter
 
         $generator = $this->patternGenerators[$locale] ??= new \IntlDatePatternGenerator($locale);
 
-        $bestPattern = $generator->getBestPattern('yyyyMMdd' . self::TIME_SKELETONS[$timeFormat]);
+        $bestPattern = $generator->getBestPattern($this->dateSkeleton($locale) . self::TIME_SKELETONS[$timeFormat]);
 
         return false === $bestPattern ? '' : $bestPattern;
+    }
+
+    /**
+     * Skeleton of the `short` date of the locale with a 4-digit year: `dd.MM.yy` gives `yyyyMMdd`, `d/M/yy` gives
+     * `yyyyMd`. The quoted texts of the pattern are ignored.
+     */
+    private function dateSkeleton(string $locale): string
+    {
+        if (isset($this->dateSkeletons[$locale])) {
+            return $this->dateSkeletons[$locale];
+        }
+
+        $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::SHORT, \IntlDateFormatter::NONE, 'UTC', \IntlDateFormatter::GREGORIAN);
+        $shortPattern = (string) preg_replace("/'[^']*'/", '', (string) $formatter->getPattern());
+        $skeleton = 'yyyy';
+        foreach (['M', 'd'] as $field) {
+            $skeleton .= 1 === preg_match('/' . $field . '+/', $shortPattern, $match) ? $match[0] : $field;
+        }
+
+        return $this->dateSkeletons[$locale] = $skeleton;
     }
 
     private function intl(): IntlExtension
