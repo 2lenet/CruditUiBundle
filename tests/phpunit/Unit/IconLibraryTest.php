@@ -56,7 +56,7 @@ class IconLibraryTest extends TestCase
     /**
      * A typo would only show up as a missing icon in a project, and a deprecated alias of Iconify may disappear
      * from a later version of the icon set. The icon sets come from the @iconify-json packages, devDependencies of
-     * assets/ (`npm ci` in assets/).
+     * assets/ (`npm ci` in assets/): a missing icon set fails the test, as an untested library would.
      */
     #[DataProvider('libraries')]
     public function testIconsExistInIconify(IconLibrary $library): void
@@ -74,7 +74,7 @@ class IconLibraryTest extends TestCase
     {
         $file = \dirname(__DIR__, 3) . '/assets/node_modules/@iconify-json/' . $prefix . '/icons.json';
         if (!is_file($file)) {
-            self::markTestSkipped(sprintf('Icon set "%s" not installed: run `npm ci` in assets/.', $prefix));
+            self::fail(sprintf('Icon set "%s" not installed: run `npm ci` in assets/.', $prefix));
         }
 
         /** @var array{icons: array<string, mixed>} $iconSet */

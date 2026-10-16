@@ -32,3 +32,8 @@ lle_crudit_ui:
             delete: 'tabler:trash-x'
             'lucide:truck': 'tabler:truck-delivery'
 ```
+
+A value can also be an SVG of the project in `assets/icons/` (`logo` for `assets/icons/logo.svg`). The map is checked
+when the container is built: a key that is neither a logical name of the catalogue nor an Iconify name (a typo, a
+class of the former icon font such as `fa-solid fa-trash`), or a value that is not an icon name, stops with an error
+instead of being ignored. Run `bin/console ux:icons:lock` after changing it.

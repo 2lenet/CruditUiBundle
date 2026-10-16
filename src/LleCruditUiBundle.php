@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle;
 
+use Lle\CruditUiBundle\Icon\IconCatalogue;
 use Lle\CruditUiBundle\Icon\IconLibrary;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
@@ -21,6 +22,12 @@ class LleCruditUiBundle extends AbstractBundle
 {
     /** Name of the assets package (assets/package.json), also the AssetMapper namespace. */
     public const string ASSETS_PACKAGE = '@2lenet/crudit-ui-bundle';
+
+    /**
+     * Name of an icon for Symfony UX Icons (rule of `Icon::isValidName()`, internal): an Iconify name such as
+     * `tabler:trash-x`, or a local SVG of `assets/icons/` (`logo`, `flags:fr` in a sub-folder).
+     */
+    private const string ICON_NAME = '/^[a-z0-9]+(-[a-z0-9]+)*(:[a-z0-9]+(-[a-z0-9]+)*)*$/';
 
     protected string $extensionAlias = 'lle_crudit_ui';
 
@@ -40,7 +47,21 @@ class LleCruditUiBundle extends AbstractBundle
                             ->info('Icon replacements, keyed by logical name or Iconify name, for example "delete": "tabler:trash-x".')
                             ->normalizeKeys(false)
                             ->useAttributeAsKey('icon')
-                            ->scalarPrototype()->end()
+                            ->scalarPrototype()
+                                ->validate()
+                                    ->ifTrue(static fn (mixed $icon): bool => !\is_string($icon) || 1 !== preg_match(self::ICON_NAME, $icon))
+                                    ->thenInvalid('%s is not an icon name, such as "tabler:trash-x" (or "logo" for assets/icons/logo.svg).')
+                                ->end()
+                            ->end()
+                            ->validate()
+                                ->ifTrue(static fn (array $map): bool => [] !== self::unknownIcons($map))
+                                ->then(static function (array $map): never {
+                                    throw new \InvalidArgumentException(sprintf(
+                                        'Unknown icon(s) "%s": the keys are logical names of the catalogue (docs/icons.md), such as "delete", or Iconify names, such as "lucide:truck".',
+                                        implode('", "', self::unknownIcons($map)),
+                                    ));
+                                })
+                            ->end()
                         ->end()
                     ->end()
                 ->end()
@@ -84,6 +105,24 @@ class LleCruditUiBundle extends AbstractBundle
                 ],
             ]);
         }
+    }
+
+    /**
+     * Keys of `icons.map` that are neither a logical name of the catalogue nor an Iconify name (with a prefix, as
+     * `ui_icon()` receives them from a project): a typo, or a class of the former icon font (`fa-solid fa-trash`),
+     * which would otherwise be ignored without an error.
+     *
+     * @param array<array-key, mixed> $map
+     *
+     * @return list<string>
+     */
+    private static function unknownIcons(array $map): array
+    {
+        return array_values(array_filter(
+            array_map(strval(...), array_keys($map)),
+            static fn (string $icon): bool => !isset(IconCatalogue::ICONS[$icon])
+                && (!str_contains($icon, ':') || 1 !== preg_match(self::ICON_NAME, $icon)),
+        ));
     }
 
     private function isAssetMapperAvailable(ContainerBuilder $builder): bool

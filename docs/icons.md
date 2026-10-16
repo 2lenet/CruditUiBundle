@@ -1,7 +1,5 @@
 # Icons
 
-> **Draft (crudit#660): the list of logical names below is waiting for validation.**
-
 Templates never write an icon class. They render an icon from its **logical name**, which describes what the icon
 means, not what it looks like. Arrows and chevrons (except `dropdown`) are the exception: the same drawing serves
 many purposes (back, previous page, old value → new value…), so they get a generic name (`back`, `next`, `forward`,
@@ -170,7 +168,8 @@ The checklist widget uses `success`, `warning` and `error`.
 ## Not in the catalogue
 
 - **Icons chosen by the projects** (menu entries, actions, tabs, search results: `building`, `truck`,
-  `helmet-safety`…): the project passes their Font Awesome class to `ui_icon()`.
+  `helmet-safety`…): the project passes their Iconify name to `ui_icon()` (`lucide:truck`); the Font Awesome classes
+  (`fa fa-truck`, `fas fa-truck`) are no longer understood.
 - **Crudit icons that disappear with the redesign**: the sample notifications of the `sb_admin` layout (`donate`,
   `file-alt`).
 - **Mockup-only icons**: the mockup panel and the placeholder pages (`compass`, `layer-group`).

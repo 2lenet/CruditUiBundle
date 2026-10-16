@@ -6,6 +6,7 @@ namespace Lle\CruditUiBundle\Tests\Functional;
 
 use Lle\CruditUiBundle\LleCruditUiBundle;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\AssetMapper\AssetMapperRepository;
@@ -13,6 +14,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\UX\Icons\IconFinderInterface;
 use Twig\Environment;
 
 class LleCruditUiBundleTest extends TestCase
@@ -145,6 +147,51 @@ class LleCruditUiBundleTest extends TestCase
         $this->expectException(InvalidConfigurationException::class);
 
         (new TestKernel(['rtl_languages' => ['ar_MA']]))->boot();
+    }
+
+    public function testIconsOfTheBundleAreFoundForTheLock(): void
+    {
+        $kernel = new TestKernel(['icons' => ['library' => 'lucide', 'map' => ['delete' => 'tabler:trash-x']]]);
+        $kernel->boot();
+
+        /** @var IconFinderInterface $finder */
+        $finder = $kernel->getContainer()->get('.ux_icons.icon_finder');
+        $icons = [...$finder->icons()];
+
+        self::assertContains('lucide:pen', $icons);
+        self::assertContains('tabler:trash-x', $icons);
+        self::assertNotContains('lucide:trash', $icons);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string>, string}>
+     */
+    public static function invalidMaps(): iterable
+    {
+        yield 'class of the former icon font' => [['fa-solid fa-trash' => 'tabler:trash-x'], 'Unknown icon(s) "fa-solid fa-trash"'];
+        yield 'typo in a logical name' => [['delet' => 'tabler:trash-x'], 'Unknown icon(s) "delet"'];
+        yield 'replacement that is not an icon name' => [['delete' => 'fa fa-trash'], 'is not an icon name'];
+        yield 'logical name used as an Iconify name' => [['trash' => 'tabler:trash-x'], 'Unknown icon(s) "trash"'];
+    }
+
+    /**
+     * @param array<string, string> $map
+     */
+    #[DataProvider('invalidMaps')]
+    public function testInvalidMapIsRefused(array $map, string $message): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage($message);
+
+        (new TestKernel(['icons' => ['map' => $map]]))->boot();
+    }
+
+    public function testLocalIconsAreAcceptedInTheMap(): void
+    {
+        $kernel = new TestKernel(['icons' => ['map' => ['delete' => 'logo', 'edit' => 'flags:fr', 'lucide:truck' => 'logo']]]);
+        $kernel->boot();
+
+        self::assertSame(['delete' => 'logo', 'edit' => 'flags:fr', 'lucide:truck' => 'logo'], $kernel->getContainer()->getParameter('lle_crudit_ui.icons.map'));
     }
 
     public function testUnknownLibraryIsRefused(): void
