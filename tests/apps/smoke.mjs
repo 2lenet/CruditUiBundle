@@ -73,7 +73,7 @@ try {
             scale: getComputedStyle(document.querySelector('#mirrored svg')).scale,
         }));
     };
-    // The dates depend on the version of ICU (`13/10/2026 م` in ar_SA since ICU 74): only their digits are checked.
+    // The spaces and separators of the dates depend on the version of ICU: only their digits are checked.
     const latinDate = (text, numbers) => {
         assert.doesNotMatch(text, /[\u0660-\u0669\u06F0-\u06F9]/, `the date is not in Latin digits: ${text}`);
         assert.deepEqual(text.match(/\d+/g), numbers, `wrong date: ${text}`);

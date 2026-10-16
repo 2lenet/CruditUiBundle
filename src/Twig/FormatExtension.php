@@ -4,29 +4,18 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Twig;
 
-use Lle\CruditUiBundle\Locale\RequestLocale;
+use Lle\CruditUiBundle\Format\Formatter;
 use Twig\Attribute\AsTwigFilter;
-use Twig\Environment;
-use Twig\Extra\Intl\IntlExtension;
 
 /**
- * Numbers and dates in the format of the locale of the request, always in Latin digits: `ar_MA` gives `1.234,5`,
- * `ar_SA` gives `1,234.5` instead of `١٬٢٣٤٫٥`. The filters take the arguments of the `format_*` filters of
- * twig/intl-extra, without the locale and the calendar: dates are always in the Gregorian calendar, the default
- * of `format_*` too.
- *
- * The keyword is only given to the formatters: the default locale of PHP is left alone, Symfony Intl (country
- * names, forms) does not read a locale with keywords. The filters use their own `IntlExtension`: the prototypes of
- * formatters configured in `twig_extra.intl` by the project do not apply to them.
+ * Filters `ui_number`, `ui_currency`, `ui_date`, `ui_datetime` and `ui_time`: numbers and dates in the format of the
+ * locale of the request, always in Latin digits and in the Gregorian calendar. The formatting is done by the
+ * {@see Formatter} service, which PHP code uses outside a template.
  */
 class FormatExtension
 {
-    public const string KEYWORDS = 'numbers=latn';
-
-    private ?IntlExtension $intl = null;
-
     public function __construct(
-        protected RequestLocale $requestLocale,
+        protected Formatter $formatter,
     ) {
     }
 
@@ -36,7 +25,7 @@ class FormatExtension
     #[AsTwigFilter('ui_number')]
     public function number(mixed $number, array $attrs = [], string $style = 'decimal', string $type = 'default'): string
     {
-        return $this->intl()->formatNumber($number, $attrs, $style, $type, $this->locale());
+        return $this->formatter->number($number, $attrs, $style, $type);
     }
 
     /**
@@ -45,51 +34,29 @@ class FormatExtension
     #[AsTwigFilter('ui_currency')]
     public function currency(mixed $amount, string $currency, array $attrs = []): string
     {
-        return $this->intl()->formatCurrency($amount, $currency, $attrs, $this->locale());
+        return $this->formatter->currency($amount, $currency, $attrs);
     }
 
     #[AsTwigFilter('ui_datetime')]
     public function datetime(
-        Environment $env,
         mixed $date,
         ?string $dateFormat = null,
         ?string $timeFormat = null,
         string $pattern = '',
         mixed $timezone = null,
     ): string {
-        return $this->intl()->formatDateTime($env, $date, $dateFormat, $timeFormat, $pattern, $timezone, 'gregorian', $this->locale());
+        return $this->formatter->datetime($date, $dateFormat, $timeFormat, $pattern, $timezone);
     }
 
     #[AsTwigFilter('ui_date')]
-    public function date(Environment $env, mixed $date, ?string $dateFormat = null, string $pattern = '', mixed $timezone = null): string
+    public function date(mixed $date, ?string $dateFormat = null, string $pattern = '', mixed $timezone = null): string
     {
-        return $this->intl()->formatDate($env, $date, $dateFormat, $pattern, $timezone, 'gregorian', $this->locale());
+        return $this->formatter->date($date, $dateFormat, $pattern, $timezone);
     }
 
     #[AsTwigFilter('ui_time')]
-    public function time(Environment $env, mixed $date, ?string $timeFormat = null, string $pattern = '', mixed $timezone = null): string
+    public function time(mixed $date, ?string $timeFormat = null, string $pattern = '', mixed $timezone = null): string
     {
-        return $this->intl()->formatTime($env, $date, $timeFormat, $pattern, $timezone, 'gregorian', $this->locale());
-    }
-
-    /**
-     * Locale of the request with the Latin digits: `ar_SA@numbers=latn`. A `numbers` keyword already in the locale
-     * is replaced, ICU would keep the first one (`ar_SA@numbers=arab` gives `ar_SA@numbers=latn`).
-     */
-    public function locale(): string
-    {
-        [$locale, $keywords] = explode('@', $this->requestLocale->get(), 2) + [1 => ''];
-        $keywords = array_filter(
-            explode(';', $keywords),
-            static fn (string $keyword): bool => '' !== $keyword && 'numbers' !== strtolower(trim(explode('=', $keyword, 2)[0])),
-        );
-        $keywords[] = self::KEYWORDS;
-
-        return $locale . '@' . implode(';', $keywords);
-    }
-
-    private function intl(): IntlExtension
-    {
-        return $this->intl ??= new IntlExtension();
+        return $this->formatter->time($date, $timeFormat, $pattern, $timezone);
     }
 }
