@@ -17,8 +17,8 @@ use Twig\Extra\Intl\IntlExtension;
  * dates are always in the Gregorian calendar. The calendar is also forced in the locale, as ICU takes the patterns in
  * the default calendar of the locale (`13/10/2026 م` in `ar_SA` with ICU 74, `AD2026/10/13` in
  * `ja@calendar=japanese`). The `short` date, alone or with a `short` or `medium` time, has the year in 4 digits and
- * the rest as the `short` format of the locale, leading zeros included (`1/5/2026` in en, `05.01.2026` in de, instead
- * of `1/5/26` and `05.01.26`). Dates are converted to the default timezone of Twig, as the `format_*` filters do;
+ * the rest usually as the `short` format of the locale, leading zeros included (`1/5/2026` in en, `05.01.2026` in de,
+ * instead of `1/5/26` and `05.01.26`); a few locales differ slightly (`dd. MM. yyyy` in cs). Dates are converted to the default timezone of Twig, as the `format_*` filters do;
  * `timezone: false` keeps the timezone of the date (a date or a time alone, which must not change day or hour).
  *
  * The keywords are only given to the formatters: the default locale of PHP is left alone, Symfony Intl (country
@@ -122,7 +122,7 @@ class Formatter
     /**
      * Pattern of the `short` date with a 4-digit year, asked to ICU from a skeleton made from the `short` pattern of
      * the locale (`M/d/yy` gives `yyyyMd`, then `M/d/yyyy` in en): the order, the separators and the leading zeros of
-     * the locale are kept. The pattern given by the template, the other date formats and the long times are left to
+     * the locale are usually kept, ICU taking the pattern from the other formats of the locale. The pattern given by the template, the other date formats and the long times are left to
      * ICU.
      */
     private function pattern(string $locale, ?string $dateFormat, string $timeFormat, string $pattern): string
@@ -140,7 +140,8 @@ class Formatter
 
     /**
      * Skeleton of the `short` date of the locale with a 4-digit year: `dd.MM.yy` gives `yyyyMMdd`, `d/M/yy` gives
-     * `yyyyMd`. The quoted texts of the pattern are ignored.
+     * `yyyyMd`. The quoted texts of the pattern are ignored; an escaped quote (`''`) splits a quoted text in two,
+     * which does no harm: only the `M` and `d` outside the quoted texts matter.
      */
     private function dateSkeleton(string $locale): string
     {

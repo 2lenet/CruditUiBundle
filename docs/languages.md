@@ -43,10 +43,12 @@ locale and the calendar:
 | `fa` | `1,234.5` | `2026/1/5` |
 
 The `short` date, alone or with a `short` or `medium` time, has the **year in 4 digits** (`1/5/2026` instead of
-`1/5/26` in en); the rest follows the `short` format of the locale: order, separators and leading zeros (none in en,
-`05.01.2026` in de). With a `long` or `full` time, the pattern of ICU is kept, whose year may have 2 digits. A
-`pattern` given to the filter is kept as is. Dates are shown in the default timezone of Twig (`twig.date.timezone`); `timezone: false` keeps the
-timezone of the value, for a date or a time alone that must not change day or hour.
+`1/5/26` in en); the rest usually follows the `short` format of the locale, as close as ICU gives it: order,
+separators and leading zeros (none in en, `05.01.2026` in de). A few locales differ slightly, as ICU takes the pattern
+from other formats of the locale (`dd. MM. yyyy` in cs, whose `short` format is `dd.MM.yy`). With a `long` or `full`
+time, the pattern of ICU is kept, whose year may have 2 digits. A `pattern` given to the filter is kept as is. Dates
+are shown in the default timezone of Twig (`twig.date.timezone`); `timezone: false` keeps the timezone of the value,
+for a date or a time alone that must not change day or hour.
 
 The `format_*` filters of Twig give, for the same locales, Arabic-Indic or Persian digits (`١٬٢٣٤٫٥` in `ar_SA`,
 `۲۰۲۶/۱۰/۱۳` in `fa`), in the Gregorian calendar too: use the `ui_*` filters. The Latin digits are not configurable,

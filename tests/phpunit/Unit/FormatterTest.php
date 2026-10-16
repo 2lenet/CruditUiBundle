@@ -115,7 +115,10 @@ class FormatterTest extends TestCase
     {
         $actual = $this->formatter('ja@calendar=japanese')->date(new \DateTimeImmutable('2026-10-13 12:00'), 'medium', timezone: 'UTC');
 
+        // without the keyword, the Gregorian era of the Japanese patterns (西暦2026年10月13日); with the Japanese
+        // calendar, its own era (令和8年10月13日)
         self::assertStringNotContainsString('西暦', $actual);
+        self::assertStringNotContainsString('令和', $actual);
         self::assertStringContainsString('2026', $actual);
     }
 
