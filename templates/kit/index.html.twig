@@ -18,7 +18,9 @@
 {% block title %}Design kit{% endblock %}
 
 {% block body %}
-    <main class="crudit-ui-kit">
+    {#- A div, not <main>: the layout of a project may have its own. tabindex: where the focus goes when an alert
+     # of the kit is closed. -#}
+    <div class="crudit-ui-kit" tabindex="-1">
         <h1 class="crudit-ui-kit__heading">Design kit</h1>
         <p class="crudit-ui-kit__text">Tokens and components of CruditUiBundle in their states. Hover and focus are forced to be visible; the components stay usable.</p>
 
@@ -35,5 +37,5 @@
                 {{ include(section.template) }}
             </twig:LleCruditUi:Kit:Section>
         {% endfor %}
-    </main>
+    </div>
 {% endblock %}

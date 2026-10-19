@@ -79,7 +79,8 @@ or link.
 | `href` | string | `null` | renders an `<a>` instead of a `<button>` |
 | `type` | `button`, `submit`, `reset` | `button` | |
 | `disabled` | bool | `false` | `disabled` on a button; a link loses its `href` and gets `aria-disabled` |
-| `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form) |
+| `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form). A loading link loses its `href`, as a disabled one: neither followed (click, middle click, Ctrl+click) nor focused |
+| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. Nothing happens if a check of the project cancels the submit (`preventDefault()`), and a page restored by the Back button gets its button back. Pass `:busyOnSubmit="false"` when the project sends the form itself (Ajax) and handles `loading` |
 | `count` | int | `null` | counter after the label, read with it (`Filters 3`) |
 
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
@@ -106,7 +107,7 @@ whole information (`Notifications (3 unread)`).
 |---|---|---|---|
 | `icon` | string | required | |
 | `label` | string | required | accessible name, visually hidden |
-| `size`, `href`, `type`, `disabled`, `loading` | | | as for `Button` |
+| `size`, `href`, `type`, `disabled`, `loading`, `busyOnSubmit` | | | as for `Button` |
 | `count` | int | `null` | badge on the corner of the icon, hidden from assistive technologies: put the count in `label` |
 
 No block. A button that opens a panel (`aria-expanded="true"`) keeps the look of its hover.
@@ -154,10 +155,10 @@ A value without its rule gives a component in the neutral colours.
 
 | Component | Props | Block | Accessibility |
 |---|---|---|---|
-| `LleCruditUi:Status` | `tone` (`neutral`), `size` (`md`, `small`) | `content`: the label | outlined pill; the dot is hidden, the label written |
+| `LleCruditUi:Status` | `tone` (`neutral`), `size` (`md`, `small`: less padding, same text size, as in the mockup) | `content`: the label | outlined pill; the dot is hidden, the label written |
 | `LleCruditUi:Badge` | `tone` (`neutral`), `label` | `content`: the text | `label` is read after the text, not shown: a counter says what it counts (`12` + `visits to plan`) |
 | `LleCruditUi:Boolean` | `value` (`true`, `false`, `null`), `yes`, `no` (translated Yes and No) | | icon hidden, Yes or No written; `null` is a dash read as "Not set" |
-| `LleCruditUi:ColorSwatch` | `value` | | the swatch is hidden, the code written. The swatch is drawn only for a colour: a hexadecimal (`#0077a8`, `#07a`, with an alpha), `rgb()`, `rgba()`, `hsl()`, `hsla()` with numbers only, or a name (`teal`). Anything else (a value typed in a form, `red; background: url(…)`) gives an empty, dashed swatch |
+| `LleCruditUi:ColorSwatch` | `value` | | the swatch is hidden, the code written. The swatch is drawn only for a colour: a hexadecimal (`#0077a8`, `#07a`, with an alpha), `rgb()`, `rgba()`, `hsl()`, `hsla()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()` with numbers and units only (`hsl(200deg 50% 40%)`; no parenthesis, semicolon, quote nor colon inside, so no `url()`), or a name (`teal`). Anything else (a value typed in a form, `red; background: url(…)`) gives an empty, dashed swatch |
 | `LleCruditUi:Tag` | `pressed`, `busy` | `content`: the label | toggle button (`aria-pressed`): solid border, check and weight when associated; `busy` shows a spinner and ignores the click. The project switches the props; group the tags in a `role="group"` named by their title |
 | `LleCruditUi:Chip` | `removeLabel`, `removable` (`true`) | `content`: the text | an active filter, in a `<ul class="crudit-ui-chips">` named "Active filters"; the remove button is named "Remove the filter " and the text of the chip ("Remove the filter Status: planned"), or by `removeLabel`. Its attributes are passed with the `remove:` prefix: `remove:data-action="filters#remove"` |
 | `LleCruditUi:Avatar` | `name` (required), `size` (`small`, `md`, `large`), `impersonated` | | the initials (two at most) are hidden: write the name next to it. The impersonation is read ("(impersonation)") |
@@ -187,7 +188,7 @@ What concerns a whole zone: a list, a widget, a form.
 | `LleCruditUi:Spinner` | `label` (translated "Loading…") | | `role="status"`: the label is read, not shown |
 | `LleCruditUi:Skeleton` | `variant` (`line`, `title`, `value`, `cell`) | | hidden; **its container** has `aria-busy="true"` and a hidden text. Not animated when motion is reduced |
 | `LleCruditUi:EmptyState` | `title`, `icon` (`empty`; `null` for none), `compact`, `level` (`3`, level of the title, from 2 to 6) | `content`: the text, paragraphs or a list; `actions` | the icon is hidden; give the title the level that fits the page |
-| `LleCruditUi:Alert` | `tone` (`info`, `success`, `warning`, `danger`; `info`), `title`, `inline`, `dismissible` | `content`: the text, paragraphs or a list; `actions` | the icon is hidden; the type is read first ("Error:"), before the title if there is one. Give an error `role="alert"` (announced at once); a message that appears, `role="status"`. `dismissible` adds a close button (controller `alert`): it dispatches `2lenet--crudit-ui-bundle--alert:close` (cancelable), removes the alert, and puts the focus on the closest focusable container, or on `<main>` |
+| `LleCruditUi:Alert` | `tone` (`info`, `success`, `warning`, `danger`; `info`), `title`, `inline`, `dismissible` | `content`: the text, paragraphs or a list; `actions` | the icon is hidden; the type is read first ("Error:"), before the title if there is one. Give an error `role="alert"` (announced at once); a message that appears, `role="status"`. `dismissible` adds a close button (controller `alert`): it dispatches `2lenet--crudit-ui-bundle--alert:close` (cancelable) and removes the alert. If the focus was in the alert, it goes to the closest focusable container, or to `<main>`, which then keeps `tabindex="-1"`; a close called from elsewhere leaves the focus where it is |
 
 ### LleCruditUi:Kit:Section
 
@@ -233,9 +234,10 @@ when@dev:
 
 The page is then at `/crudit-ui/kit` (prefix it with `prefix:` if needed), and in another language at
 `/crudit-ui/kit/<locale>` (`/crudit-ui/kit/ar` for right to left). It extends the `base.html.twig` of the project,
-which loads the stylesheet and the controllers of the bundle (see [Installation](installation.md#assets)), and declares
-`<meta name="viewport" content="width=device-width, initial-scale=1">`: without it, a phone lays the page out on
-980 px and shrinks it.
+which loads the stylesheet and the controllers of the bundle (see [Installation](installation.md#assets)). The base
+needs the blocks `title` and `body`, and `<meta name="viewport" content="width=device-width, initial-scale=1">`:
+without it, a phone lays the page out on 980 px and shrinks it. The kit is a `<div>`, not a `<main>`: the layout of the
+project may have its own.
 
 The styles of the page are in `ui.css` (`components/_kit.scss`, about 0.7 KB compressed), loaded in production
 too: the page then works with Encore and AssetMapper alike, without a stylesheet of its own.

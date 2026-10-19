@@ -8,13 +8,14 @@
  #}
 {% props value, label, max = 100, tone = null, valueText = null %}
 {%- set id = attributes.render('id') ?? ('crudit-ui-progress-' ~ random()) -%}
-{%- set tone = tone ?? (value >= max ? 'success' : 'primary') -%}
-{%- set valueText = valueText ?? (max > 0 ? value / max : 0)|ui_number(style: 'percent') -%}
+{%- set bound = max -%}
+{%- set tone = tone ?? (value >= bound ? 'success' : 'primary') -%}
+{%- set valueText = valueText ?? (bound > 0 ? value / bound : 0)|ui_number(style: 'percent') -%}
 <div id="{{ id }}" {{ attributes.defaults({class: 'crudit-ui-progress crudit-ui-progress--' ~ tone}) }}>
     <div class="crudit-ui-progress__head">
         <span id="{{ id }}-label" class="crudit-ui-progress__label">{{ label }}</span>
         <span class="crudit-ui-progress__value" aria-hidden="true">{{ valueText }}</span>
     </div>
     {#- The value of the element stays between 0 and max; the real one is in the text. -#}
-    <progress class="crudit-ui-progress__track" value="{{ min(max(value, 0), max) }}" max="{{ max }}" aria-labelledby="{{ id }}-label" aria-valuetext="{{ valueText }}">{{ valueText }}</progress>
+    <progress class="crudit-ui-progress__track" value="{{ min(max(value, 0), bound) }}" max="{{ bound }}" aria-labelledby="{{ id }}-label" aria-valuetext="{{ valueText }}">{{ valueText }}</progress>
 </div>

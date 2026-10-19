@@ -105,7 +105,7 @@ try {
         }
         await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: scheme}]);
         await page.goto(new URL(path, url).href, {waitUntil: 'networkidle0'});
-        assert.ok(await page.$('main.crudit-ui-kit'), `the design kit page is missing: ${path}`);
+        assert.ok(await page.$('div.crudit-ui-kit'), `the design kit page is missing: ${path}`);
         await page.addScriptTag({content: axeSource});
         const violations = await page.evaluate(async () => (await window.axe.run(document, {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations
             .map((violation) => `${violation.id} (${violation.nodes.map((node) => node.target.join(' ')).join(', ')}): ${violation.help}`));
@@ -143,9 +143,35 @@ try {
     await page.keyboard.press('Enter');
     const closed = await page.evaluate(() => ({
         removed: !document.getElementById('kit-dismissible-alert'),
-        focus: document.activeElement?.tagName,
+        focus: document.activeElement?.className,
     }));
-    assert.deepEqual(closed, {removed: true, focus: 'MAIN'}, 'the alert is not closed, or the focus is lost: is the alert controller registered?');
+    assert.deepEqual(closed, {removed: true, focus: 'crudit-ui-kit'}, 'the alert is not closed, or the focus is lost: is the alert controller registered?');
+
+    // An alert closed while the user types in a field does not steal the focus.
+    await page.reload({waitUntil: 'networkidle0'});
+    const kept = await page.evaluate(() => {
+        const field = document.body.appendChild(Object.assign(document.createElement('input'), {'aria-label': 'Field'}));
+        field.focus();
+        document.querySelector('#kit-dismissible-alert .crudit-ui-alert__close').click();
+
+        return {removed: !document.getElementById('kit-dismissible-alert'), focus: document.activeElement === field};
+    });
+    assert.deepEqual(kept, {removed: true, focus: true}, 'closing an alert from elsewhere moves the focus');
+
+    // A double click on a submit button sends its form once: the first sending puts it in loading.
+    const sent = await page.evaluate(() => {
+        const form = document.getElementById('kit-submit-form');
+        const frame = document.body.appendChild(Object.assign(document.createElement('iframe'), {name: 'kit-submit-frame', hidden: true}));
+        form.target = frame.name;
+        let count = 0;
+        form.addEventListener('submit', () => { count++; });
+        const button = form.querySelector('button[type="submit"]');
+        button.click();
+        button.click();
+
+        return {count, busy: button.getAttribute('aria-busy'), spinner: button.querySelector(':scope > svg')?.classList.contains('crudit-ui-icon--spin')};
+    });
+    assert.deepEqual(sent, {count: 1, busy: 'true', spinner: true}, 'a double click sends the form twice: busyOnSubmit');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

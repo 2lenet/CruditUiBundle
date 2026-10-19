@@ -35,8 +35,10 @@ class ButtonTest extends TestCase
         self::assertSame('submit', $button->getAttribute('type'));
         self::assertSame('crudit-ui-btn crudit-ui-btn--primary crudit-ui-btn--small', $button->getAttribute('class'));
         // The icon first, hidden; the count after the label, read with it.
-        self::assertSame('svg', $button->firstElementChild?->localName);
-        self::assertSame('true', $button->firstElementChild->getAttribute('aria-hidden'));
+        // The spinner of busyOnSubmit (a submit button) waits in a template; then the icon, first, hidden.
+        $icon = $button->firstElementChild?->nextElementSibling;
+        self::assertSame(['template', 'svg'], [$button->firstElementChild?->localName, $icon?->localName]);
+        self::assertSame('true', $icon?->getAttribute('aria-hidden'));
         self::assertSame('3', $button->querySelector('.crudit-ui-btn__count')?->textContent);
         self::assertSame('Filters3', $button->textContent);
     }
@@ -82,6 +84,32 @@ class ButtonTest extends TestCase
         self::assertCount(1, $button->querySelectorAll('svg'));
         self::assertStringContainsString('crudit-ui-icon--spin', (string) $button->querySelector('svg')?->getAttribute('class'));
         self::assertSame('Save', $button->textContent);
+    }
+
+    public function testSubmitButtonIsBusyWhenItSendsItsForm(): void
+    {
+        $value = 'data-2lenet--crudit-ui-bundle--button-busy-on-submit-value';
+
+        $button = $this->element('<twig:LleCruditUi:Button type="submit" icon="save">Save</twig:LleCruditUi:Button>', 'button');
+        self::assertSame('true', $button->getAttribute($value));
+        self::assertSame('spinner', $button->querySelector('template')?->getAttribute('data-2lenet--crudit-ui-bundle--button-target'));
+
+        $button = $this->element('<twig:LleCruditUi:IconButton type="submit" icon="check" label="Save"/>', 'button');
+        self::assertSame('true', $button->getAttribute($value));
+
+        // Not for a plain button, nor when the project sends the form itself (Ajax).
+        self::assertFalse($this->element('<twig:LleCruditUi:Button>Cancel</twig:LleCruditUi:Button>', 'button')->hasAttribute($value));
+        $button = $this->element('<twig:LleCruditUi:Button type="submit" :busyOnSubmit="false">Save</twig:LleCruditUi:Button>', 'button');
+        self::assertFalse($button->hasAttribute($value));
+        self::assertNull($button->querySelector('template'));
+    }
+
+    public function testLoadingLinkIsNotFollowed(): void
+    {
+        $link = $this->element('<twig:LleCruditUi:Button href="/export" loading>Export</twig:LleCruditUi:Button>', 'a');
+
+        self::assertFalse($link->hasAttribute('href'));
+        self::assertSame('true', $link->getAttribute('aria-busy'));
     }
 
     public function testGuardOfTheClickIsMergedWithTheControllersOfTheProject(): void

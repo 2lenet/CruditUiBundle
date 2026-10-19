@@ -89,6 +89,10 @@ class StatusTest extends TestCase
         // Without removeLabel, the button is named after the text of the chip.
         $chip = $this->element('<twig:LleCruditUi:Chip>Agency: <strong>Lyon</strong></twig:LleCruditUi:Chip>', 'span');
         self::assertSame('Remove the filter Agency: Lyon', $chip->querySelector('button .crudit-ui-visually-hidden')?->textContent);
+
+        // An apostrophe or an ampersand is read as it is, never as an entity; the blanks of the block are normalised.
+        $chip = $this->element("<twig:LleCruditUi:Chip>\n    Agency:\t<strong>{{ agency }}</strong>,  {{ team }}\n</twig:LleCruditUi:Chip>", 'span', ['agency' => "L'Isle-d'Abeau", 'team' => 'R&D']);
+        self::assertSame("Remove the filter Agency: L'Isle-d'Abeau, R&D", $chip->querySelector('button .crudit-ui-visually-hidden')?->textContent);
     }
 
     /**
@@ -169,7 +173,7 @@ class StatusTest extends TestCase
      */
     public static function colors(): iterable
     {
-        foreach (['#0077a8', '#07a', '#0077a880', 'rgb(0, 119, 168)', 'rgba(0 119 168 / 50%)', 'hsl(197 100% 33%)', 'teal'] as $color) {
+        foreach (['#0077a8', '#07a', '#0077a880', 'rgb(0, 119, 168)', 'rgba(0 119 168 / 50%)', 'hsl(197 100% 33%)', 'hsl(200deg 50% 40%)', 'oklch(70% 0.1 200)', 'teal'] as $color) {
             yield $color => [$color];
         }
     }
@@ -193,7 +197,8 @@ class StatusTest extends TestCase
         yield 'css injection' => ['red; background-image: url(https://example.com/x.png)'];
         yield 'expression' => ['expression(alert(1))'];
         yield 'url' => ['url(https://example.com/x.png)'];
-        yield 'function with letters' => ['rgb(var(--x))'];
+        yield 'function in a function' => ['rgb(var(--x))'];
+        yield 'url in a colour function' => ['oklch(url(https://example.com/x.svg))'];
         yield 'quote' => ['red" onload="alert(1)'];
     }
 

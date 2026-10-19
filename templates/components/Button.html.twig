@@ -2,29 +2,15 @@
  # Button, or link that looks like a button (`href`). One primary button per zone.
  #
  # Props: variant (primary, secondary, ghost, warning, danger, danger-outline, link; secondary), size (md, small),
- # icon (logical or Iconify name, before the label), href, type (button), disabled, loading, count.
+ # icon (logical or Iconify name, before the label), href, type (button), disabled, loading, count, busyOnSubmit
+ # (true for a submit button: loading once it sends its form).
  # Block: content (the label). Contract: docs/components.md.
  #}
-{% props variant = 'secondary', size = 'md', icon = null, href = null, type = 'button', disabled = false, loading = false, count = null %}
+{% props variant = 'secondary', size = 'md', icon = null, href = null, type = 'button', disabled = false, loading = false, count = null, busyOnSubmit = null %}
+{%- set busyOnSubmit = busyOnSubmit ?? (type == 'submit') -%}
 {%- set icon = loading ? 'loading' : icon -%}
-{#- The attributes go through defaults(): one of each, the value of the project wins, data-controller is merged.
- # Loading keeps the focus (aria-disabled, not disabled); the controller then ignores the click. A disabled link has
- # no href: neither followed nor focused. -#}
-{%- set defaults = {
-    class: 'crudit-ui-btn crudit-ui-btn--' ~ variant ~ (size == 'small' ? ' crudit-ui-btn--small' : ''),
-    'data-controller': '2lenet--crudit-ui-bundle--button',
-} -%}
-{%- if href is not null and disabled -%}
-    {%- set defaults = defaults|merge({role: 'link', 'aria-disabled': 'true'}) -%}
-{%- endif -%}
-{%- if loading -%}
-    {%- set defaults = defaults|merge({'aria-disabled': 'true', 'aria-busy': 'true'}) -%}
-{%- endif -%}
-{%- if href is not null -%}
-    <a {% if not disabled %}href="{{ href }}" {% endif %}{{ attributes.defaults(defaults) }}>
-{%- else -%}
-    <button type="{{ type }}"{% if disabled %} disabled{% endif %} {{ attributes.defaults(defaults) }}>
-{%- endif -%}
+{%- set class = 'crudit-ui-btn crudit-ui-btn--' ~ variant ~ (size == 'small' ? ' crudit-ui-btn--small' : '') -%}
+{{- include('@LleCruditUi/partials/_button_open.html.twig') -}}
     {%- if icon %}{{ ui_icon(icon) }}{% endif -%}
     {%- block content %}{% endblock -%}
     {%- if count is not null %}<span class="crudit-ui-btn__count">{{ count }}</span>{% endif -%}
