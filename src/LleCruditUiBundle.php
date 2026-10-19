@@ -26,8 +26,10 @@ class LleCruditUiBundle extends AbstractBundle
     /**
      * Name of an icon for Symfony UX Icons (rule of `Icon::isValidName()`, internal): an Iconify name such as
      * `tabler:trash-x`, or a local SVG of `assets/icons/` (`logo`, `flags:fr` in a sub-folder).
+     *
+     * @internal public for the test that compares it with the rule of UX Icons
      */
-    private const string ICON_NAME = '/^[a-z0-9]+(-[a-z0-9]+)*(:[a-z0-9]+(-[a-z0-9]+)*)*$/';
+    public const string ICON_NAME = '/^[a-z0-9]+(-[a-z0-9]+)*(:[a-z0-9]+(-[a-z0-9]+)*)*$/';
 
     protected string $extensionAlias = 'lle_crudit_ui';
 
@@ -52,13 +54,22 @@ class LleCruditUiBundle extends AbstractBundle
                                     ->ifTrue(static fn (mixed $icon): bool => !\is_string($icon) || 1 !== preg_match(self::ICON_NAME, $icon))
                                     ->thenInvalid('%s is not an icon name, such as "tabler:trash-x" (or "logo" for assets/icons/logo.svg).')
                                 ->end()
+                                ->validate()
+                                    // taken for a local SVG (assets/icons/delete.svg), so nothing would be rendered
+                                    ->ifTrue(static fn (string $icon): bool => isset(IconCatalogue::ICONS[$icon]))
+                                    ->thenInvalid('%s is a logical name of the catalogue: give its Iconify name, such as "fa7-solid:trash", or put an SVG of the project in a subfolder.')
+                                ->end()
                             ->end()
                             ->validate()
-                                ->ifTrue(static fn (array $map): bool => [] !== self::unknownIcons($map))
-                                ->then(static function (array $map): never {
+                                ->always(static function (array $map): array {
+                                    $unknown = self::unknownIcons($map);
+                                    if ([] === $unknown) {
+                                        return $map;
+                                    }
+
                                     throw new \InvalidArgumentException(sprintf(
                                         'Unknown icon(s) "%s": the keys are logical names of the catalogue (docs/icons.md), such as "delete", or Iconify names, such as "lucide:truck".',
-                                        implode('", "', self::unknownIcons($map)),
+                                        implode('", "', $unknown),
                                     ));
                                 })
                             ->end()

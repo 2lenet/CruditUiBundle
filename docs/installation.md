@@ -140,11 +140,25 @@ final class CategoryIconFinder implements IconFinderInterface
 icon never displayed would be missing in production.
 
 In development, Symfony UX Icons fetches from Iconify an icon missing from `assets/icons/` (`iconify.on_demand`): the
-screens look right even when the command was forgotten. In production, the icon is then missing, or fetched from
-Iconify at each cache clear if the HTTP client is installed there too. Run the command before every commit that adds an
-icon or changes `lle_crudit_ui.icons`.
+screens look right even when the command was forgotten. In production, the icon is then missing, or, if the HTTP client
+is installed there too, fetched from Iconify at its first rendering and kept in the cache: fetched again after each
+cache clear (and by `asset-map:compile` with AssetMapper). Run the command before every commit that adds an icon or
+changes `lle_crudit_ui.icons`, and turn `on_demand` off in production, so that a forgotten command shows instead of
+being hidden by a call to Iconify:
+
+```yaml
+# config/packages/ux_icons.yaml
+when@prod:
+    ux_icons:
+        iconify:
+            on_demand: false
+```
 
 The command skips the icons already in `assets/icons/` and deletes none. **After changing the library**, delete the
 folder of the former one (`assets/icons/fa7-solid/` and `assets/icons/fa7-regular/` for Font Awesome; the SVG of the
-project are not in these folders) and run it again. An icon that Iconify does not have is only shown with `-v`:
-`bin/console ux:icons:lock -v`.
+project are not in these folders) and run it again.
+
+The command reports nothing by default. An icon that Iconify does not have is only shown with `-v`, and an unknown icon
+set only with `-vv`: a typo in a prefix (`tabelr:trash-x`) is a valid name, so the check of `lle_crudit_ui.icons.map`
+lets it through. Check with `bin/console ux:icons:lock -vv`. The command only imports the names with exactly one `:`
+(`prefix:name`); a name with more is only valid for an SVG of the project in a subfolder.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lle\CruditUiBundle\Tests\Functional;
 
 use Lle\CruditUiBundle\Format\Formatter;
+use Lle\CruditUiBundle\Icon\IconFinder;
 use Lle\CruditUiBundle\LleCruditUiBundle;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -158,6 +159,17 @@ class LleCruditUiBundleTest extends TestCase
         (new TestKernel(['rtl_languages' => ['ar_MA']]))->boot();
     }
 
+    public function testFinderOfTheBundleIsRegistered(): void
+    {
+        $kernel = new TestKernel();
+        $kernel->boot();
+
+        /** @var list<string> $finders */
+        $finders = $kernel->getContainer()->getParameter('test.ux_icons_finders');
+
+        self::assertContains(IconFinder::class, $finders);
+    }
+
     public function testIconsOfTheBundleAreFoundForTheLock(): void
     {
         $kernel = new TestKernel(['icons' => ['library' => 'lucide', 'map' => ['delete' => 'tabler:trash-x']]]);
@@ -181,6 +193,7 @@ class LleCruditUiBundleTest extends TestCase
         yield 'typo in a logical name' => [['delet' => 'tabler:trash-x'], 'Unknown icon(s) "delet"'];
         yield 'replacement that is not an icon name' => [['delete' => 'fa fa-trash'], 'is not an icon name'];
         yield 'logical name used as an Iconify name' => [['trash' => 'tabler:trash-x'], 'Unknown icon(s) "trash"'];
+        yield 'replacement that is a logical name' => [['edit' => 'delete'], '"delete" is a logical name of the catalogue'];
     }
 
     /**

@@ -26,6 +26,8 @@
             <output id="date">{{ '2026-10-13 12:00'|ui_date('short') }}</output>
             {# directional icon: ui_icon() gives it the mirror modifier (local SVG, assets/icons/fa7-solid/arrow-right.svg) #}
             <span id="mirrored">{{ ui_icon('next') }}</span>
+            {# icon of the catalogue, imported by ux:icons:lock: missing in production without the command #}
+            <span id="locked">{{ ui_icon('delete') }}</span>
         </p>
     </section>
 {% endblock %}

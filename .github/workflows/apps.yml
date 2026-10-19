@@ -49,6 +49,10 @@ jobs:
             -   name: 'Install the application'
                 run: composer install --no-interaction --prefer-dist
 
+            # The icons are not committed: imported as a project does before committing, which also tests the Finder.
+            -   name: 'Import the icons'
+                run: php bin/console ux:icons:lock
+
             -   name: 'Build the assets (Encore)'
                 if: matrix.app == 'encore'
                 run: |

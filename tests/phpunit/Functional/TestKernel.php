@@ -58,14 +58,20 @@ class TestKernel extends Kernel
     }
 
     /**
-     * The finder of UX Icons, private and removed when nothing uses it (no Iconify command here), is kept for the
-     * tests of the lock.
+     * For the tests of the lock: the services tagged as finders, and the finder of UX Icons, private and removed when
+     * nothing uses it (no Iconify command here). Its internal id may change: then only the test that reads it fails.
      */
     protected function build(ContainerBuilder $container): void
     {
         $container->addCompilerPass(new class implements CompilerPassInterface {
             public function process(ContainerBuilder $container): void
             {
+                $container->setParameter('test.ux_icons_finders', array_keys($container->findTaggedServiceIds('ux_icons.finder')));
+
+                if (!$container->hasDefinition('.ux_icons.icon_finder')) {
+                    return;
+                }
+
                 $container->getDefinition('.ux_icons.icon_finder')->setPublic(true);
             }
         }, PassConfig::TYPE_BEFORE_REMOVING);

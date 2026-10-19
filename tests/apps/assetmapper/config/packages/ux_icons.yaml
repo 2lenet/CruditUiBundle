@@ -19,3 +19,6 @@ when@prod:
     ux_icons:
         # Suppress exceptions for missing icons in production
         ignore_not_found: true
+        # the icons come from bin/console ux:icons:lock (CI): a forgotten icon shows instead of being fetched
+        iconify:
+            on_demand: false

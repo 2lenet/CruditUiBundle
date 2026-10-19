@@ -12,8 +12,8 @@ use Lle\CruditUiBundle\Twig\LocaleExtension;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -22,18 +22,18 @@ return static function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private();
 
-    // an enum is not autowired; one definition per service, the dumper does not share an inline service between two
-    $library = static fn () => inline_service(IconLibrary::class)
+    // an enum is excluded from autowiring: passed by its id
+    $services->set(IconLibrary::class)
         ->factory([IconLibrary::class, 'from'])
         ->args([param('lle_crudit_ui.icons.library')]);
 
     $services->set(IconExtension::class)
-        ->arg('$library', $library())
+        ->arg('$library', service(IconLibrary::class))
         ->arg('$map', param('lle_crudit_ui.icons.map'));
 
     // tagged ux_icons.finder by autoconfiguration: read by ux:icons:lock and the cache warmer
     $services->set(IconFinder::class)
-        ->arg('$library', $library())
+        ->arg('$library', service(IconLibrary::class))
         ->arg('$map', param('lle_crudit_ui.icons.map'));
 
     $services->set(ThemeExtension::class);
