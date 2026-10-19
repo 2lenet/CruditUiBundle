@@ -19,6 +19,7 @@ when@prod:
     ux_icons:
         # Suppress exceptions for missing icons in production
         ignore_not_found: true
-        # the icons come from bin/console ux:icons:lock (CI): a forgotten icon shows instead of being fetched
+        # the HTTP client is always installed (required by AssetMapper): without this, the icons would be fetched from
+        # Iconify and the smoke test would not see a forgotten bin/console ux:icons:lock
         iconify:
             on_demand: false

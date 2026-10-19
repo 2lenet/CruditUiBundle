@@ -144,7 +144,9 @@ screens look right even when the command was forgotten. In production, the icon 
 is installed there too, fetched from Iconify at its first rendering and kept in the cache: fetched again after each
 cache clear (and by `asset-map:compile` with AssetMapper). Run the command before every commit that adds an icon or
 changes `lle_crudit_ui.icons`, and turn `on_demand` off in production, so that a forgotten command shows instead of
-being hidden by a call to Iconify:
+being hidden by a call to Iconify. With AssetMapper, the HTTP client is installed in production anyway
+(`symfony/asset-mapper` requires it): `composer require --dev symfony/http-client` does not remove it, only
+`on_demand: false` stops the calls to Iconify.
 
 ```yaml
 # config/packages/ux_icons.yaml
