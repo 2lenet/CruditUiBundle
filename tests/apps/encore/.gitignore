@@ -23,3 +23,7 @@
 npm-debug.log
 yarn-error.log
 ###< symfony/webpack-encore-bundle ###
+
+# imported by bin/console ux:icons:lock in the CI; the SVG of the application is kept
+/assets/icons/*/*
+!/assets/icons/fa7-solid/arrow-right.svg

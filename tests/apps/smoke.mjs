@@ -59,6 +59,9 @@ try {
     await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'dark'}]);
     assert.equal(await background(), '#0e131a', 'without a choice, the colours do not follow the system');
 
+    // An icon of the catalogue, imported by the lock (the Finder of the bundle): Iconify is not called in production.
+    assert.ok(await page.$('#locked svg'), 'the icon "delete" is missing: run bin/console ux:icons:lock');
+
     // Languages: lang and dir of <html>, translations of the bundle, numbers and dates in Latin digits, with the
     // separators of the country, and the directional icons mirrored in right-to-left.
     const locale = async (path) => {

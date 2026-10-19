@@ -1,7 +1,5 @@
 # Icons
 
-> **Draft (crudit#660): the list of logical names below is waiting for validation.**
-
 Templates never write an icon class. They render an icon from its **logical name**, which describes what the icon
 means, not what it looks like. Arrows and chevrons (except `dropdown`) are the exception: the same drawing serves
 many purposes (back, previous page, old value → new value…), so they get a generic name (`back`, `next`, `forward`,
@@ -26,6 +24,11 @@ name as is, from any icon set ([ux.symfony.com/icons](https://ux.symfony.com/ico
 
 `lle_crudit_ui.icons.map` replaces any icon by another Iconify name, keyed by logical name for the catalogue and by
 Iconify name for the icons passed by the project (see [Configuration](configuration.md#icons)).
+
+An SVG of the project in a subfolder of `assets/icons/` is passed like an Iconify name: `ui_icon('flags:fr')` renders
+`assets/icons/flags/fr.svg`. An SVG at the root (`assets/icons/logo.svg`) has no `:`, so it is not a name for
+`ui_icon()`, which takes it for a logical name: `ui_icon('logo')` renders nothing. Use it as a value of the map, or
+render it with `{{ ux_icon('logo') }}` of Symfony UX Icons.
 
 An icon that cannot be rendered (unknown name, icon missing from the library, Iconify name that does not exist)
 does not break the page: `ui_icon()` renders nothing and logs a warning.
@@ -170,7 +173,9 @@ The checklist widget uses `success`, `warning` and `error`.
 ## Not in the catalogue
 
 - **Icons chosen by the projects** (menu entries, actions, tabs, search results: `building`, `truck`,
-  `helmet-safety`…): the project passes their Font Awesome class to `ui_icon()`.
+  `helmet-safety`…): the project passes their Iconify name to `ui_icon()` (`lucide:truck`); the Font Awesome classes
+  (`fa fa-truck`, `fas fa-truck`, `fa-solid fa-truck`, `fab fa-github`) are not understood; the brands are in
+  `fa7-brands` (`fa7-brands:github`).
 - **Crudit icons that disappear with the redesign**: the sample notifications of the `sb_admin` layout (`donate`,
   `file-alt`).
 - **Mockup-only icons**: the mockup panel and the placeholder pages (`compass`, `layer-group`).

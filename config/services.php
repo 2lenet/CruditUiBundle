@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Lle\CruditUiBundle\Format\Formatter;
+use Lle\CruditUiBundle\Icon\IconFinder;
 use Lle\CruditUiBundle\Icon\IconLibrary;
 use Lle\CruditUiBundle\Locale\RequestLocale;
 use Lle\CruditUiBundle\Twig\FormatExtension;
@@ -11,8 +12,8 @@ use Lle\CruditUiBundle\Twig\LocaleExtension;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()
@@ -21,10 +22,18 @@ return static function (ContainerConfigurator $container): void {
             ->autoconfigure()
             ->private();
 
+    // an enum is excluded from autowiring: passed by its id
+    $services->set(IconLibrary::class)
+        ->factory([IconLibrary::class, 'from'])
+        ->args([param('lle_crudit_ui.icons.library')]);
+
     $services->set(IconExtension::class)
-        ->arg('$library', inline_service(IconLibrary::class)
-            ->factory([IconLibrary::class, 'from'])
-            ->args([param('lle_crudit_ui.icons.library')]))
+        ->arg('$library', service(IconLibrary::class))
+        ->arg('$map', param('lle_crudit_ui.icons.map'));
+
+    // tagged ux_icons.finder by autoconfiguration: read by ux:icons:lock and the cache warmer
+    $services->set(IconFinder::class)
+        ->arg('$library', service(IconLibrary::class))
         ->arg('$map', param('lle_crudit_ui.icons.map'));
 
     $services->set(ThemeExtension::class);

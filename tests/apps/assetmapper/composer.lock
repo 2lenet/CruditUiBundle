@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "978db3dc16f66de5475ff102409fc010",
+    "content-hash": "79dbd54892f5230d76404637e94a95ce",
     "packages": [
         {
             "name": "2lenet/crudit-ui-bundle",

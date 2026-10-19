@@ -8,6 +8,9 @@ use Lle\CruditUiBundle\LleCruditUiBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\UX\Icons\UXIconsBundle;
@@ -52,6 +55,26 @@ class TestKernel extends Kernel
     public function getLogDir(): string
     {
         return sys_get_temp_dir() . '/lle_crudit_ui_bundle/logs';
+    }
+
+    /**
+     * For the tests of the lock: the services tagged as finders, and the finder of UX Icons, private and removed when
+     * nothing uses it (no Iconify command here). Its internal id may change: then only the test that reads it fails.
+     */
+    protected function build(ContainerBuilder $container): void
+    {
+        $container->addCompilerPass(new class implements CompilerPassInterface {
+            public function process(ContainerBuilder $container): void
+            {
+                $container->setParameter('test.ux_icons_finders', array_keys($container->findTaggedServiceIds('ux_icons.finder')));
+
+                if (!$container->hasDefinition('.ux_icons.icon_finder')) {
+                    return;
+                }
+
+                $container->getDefinition('.ux_icons.icon_finder')->setPublic(true);
+            }
+        }, PassConfig::TYPE_BEFORE_REMOVING);
     }
 
     protected function configureContainer(ContainerConfigurator $container): void

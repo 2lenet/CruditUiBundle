@@ -13,7 +13,6 @@
         "symfony/dotenv": "7.4.*",
         "symfony/flex": "^2.11",
         "symfony/framework-bundle": "7.4.*",
-        "symfony/http-client": "7.4.*",
         "symfony/runtime": "7.4.*",
         "symfony/stimulus-bundle": "^3.5.1",
         "symfony/twig-bundle": "7.4.*",
@@ -83,5 +82,8 @@
                 "symlink": false
             }
         }
-    ]
+    ],
+    "require-dev": {
+        "symfony/http-client": "7.4.*"
+    }
 }

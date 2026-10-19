@@ -104,26 +104,63 @@ The icons are SVG rendered by [Symfony UX Icons](https://symfony.com/bundles/ux-
 font to link. Choose the icon library of the project (Font Awesome 7 by default, see
 [Icon libraries](icon-libraries.md) and [Configuration](configuration.md#icons)).
 
-The icons come from [Iconify](https://iconify.design). In development, Symfony UX Icons downloads them, which
-requires the HTTP client, and `auto_lock` copies each displayed icon to `assets/icons/`, including the names built
-dynamically (icons of a `CrudConfig`, of the database…) that `ux:icons:lock` cannot find:
+The icons come from [Iconify](https://iconify.design). **Before committing**, import them into `assets/icons/` with
+the command of Symfony UX Icons, which downloads them and requires the HTTP client (in development only):
 
 ```bash
-composer require symfony/http-client
+composer require --dev symfony/http-client
+bin/console ux:icons:lock
 ```
+
+**Commit `assets/icons/`**: in production, the icons are read from it, without calling Iconify. The command imports
+the icons given by the *finders* (`Symfony\UX\Icons\IconFinderInterface`):
+
+- the bundle gives every icon of the [catalogue](icons.md) in the library of the project, and the replacements of
+  `lle_crudit_ui.icons.map`;
+- Symfony UX Icons gives the Iconify names written in the templates (`ui_icon('lucide:truck')`);
+- the icons built in PHP or stored in the database are found by nobody: the project declares them in a finder of
+  its own (any service implementing the interface, autoconfigured).
+
+```php
+use Symfony\UX\Icons\IconFinderInterface;
+
+final class CategoryIconFinder implements IconFinderInterface
+{
+    public function __construct(private CategoryRepository $categories) {}
+
+    public function icons(): iterable
+    {
+        return $this->categories->findAllIcons(); // ['lucide:truck', 'tabler:package', ...]
+    }
+}
+```
+
+`auto_lock`, which the recipe of Symfony UX Icons enables in development (`when@dev` in
+`config/packages/ux_icons.yaml`), is not used: remove it. It only copies the icons displayed while developing, so an
+icon never displayed would be missing in production.
+
+In development, Symfony UX Icons fetches from Iconify an icon missing from `assets/icons/` (`iconify.on_demand`): the
+screens look right even when the command was forgotten. In production, the icon is then missing, or, if the HTTP client
+is installed there too, fetched from Iconify at its first rendering and kept in the cache: fetched again after each
+cache clear (and by `asset-map:compile` with AssetMapper). Run the command before every commit that adds an icon or
+changes `lle_crudit_ui.icons`, and turn `on_demand` off in production, so that a forgotten command shows instead of
+being hidden by a call to Iconify. With AssetMapper, the HTTP client is installed in production anyway
+(`symfony/asset-mapper` requires it): `composer require --dev symfony/http-client` does not remove it, only
+`on_demand: false` stops the calls to Iconify.
 
 ```yaml
 # config/packages/ux_icons.yaml
-when@dev:
+when@prod:
     ux_icons:
         iconify:
-            auto_lock: true
+            on_demand: false
 ```
 
-The web server must be able to write to `assets/icons/` in development (with Docker, the folder created by
-Composer often belongs to `root`): otherwise the log shows `Could not auto-lock icon` and nothing is copied, although
-the icons are displayed.
+The command skips the icons already in `assets/icons/` and deletes none. **After changing the library**, delete the
+folder of the former one (`assets/icons/fa7-solid/` and `assets/icons/fa7-regular/` for Font Awesome; the SVG of the
+project are not in these folders) and run it again.
 
-**Commit `assets/icons/`**: in production, the icons are read from it, without calling Iconify. Display the screens
-of the project in development after changing the library or adding an icon, so that its SVG is copied. The icon
-names are listed in [Icons](icons.md).
+The command reports nothing by default. An icon that Iconify does not have is only shown with `-v`, and an unknown icon
+set only with `-vv`: a typo in a prefix (`tabelr:trash-x`) is a valid name, so the check of `lle_crudit_ui.icons.map`
+lets it through. Check with `bin/console ux:icons:lock -vv`. The command only imports the names with exactly one `:`
+(`prefix:name`); a name with more is only valid for an SVG of the project in a subfolder.

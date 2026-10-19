@@ -15,13 +15,11 @@ ux_icons:
     ignore_not_found: false
 
 
-when@dev:
-    ux_icons:
-        iconify:
-            # Persist each on-demand icon to disk on first render, so you don't forget to commit it before deploying (like `ux:icons:lock`)
-            auto_lock: true
-
 when@prod:
     ux_icons:
         # Suppress exceptions for missing icons in production
         ignore_not_found: true
+        # the HTTP client is always installed (required by AssetMapper): without this, the icons would be fetched from
+        # Iconify and the smoke test would not see a forgotten bin/console ux:icons:lock
+        iconify:
+            on_demand: false

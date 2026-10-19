@@ -15,13 +15,10 @@ ux_icons:
     ignore_not_found: false
 
 
-when@dev:
-    ux_icons:
-        iconify:
-            # Persist each on-demand icon to disk on first render, so you don't forget to commit it before deploying (like `ux:icons:lock`)
-            auto_lock: true
-
 when@prod:
     ux_icons:
         # Suppress exceptions for missing icons in production
         ignore_not_found: true
+        # the icons come from bin/console ux:icons:lock (CI): a forgotten icon shows instead of being fetched
+        iconify:
+            on_demand: false

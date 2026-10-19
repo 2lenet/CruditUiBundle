@@ -7,6 +7,9 @@ vendor/bin/phpstan analyse -c tests/phpstan.neon
 vendor/bin/phpunit -c tests/phpunit/phpunit.xml
 ```
 
+PHPUnit needs the icon sets of Iconify, devDependencies of `assets/` (`npm ci` in `assets/`, as the CI does):
+`IconLibraryTest` checks every icon name against them, and fails when a set is missing.
+
 ## Assets
 
 ```bash
