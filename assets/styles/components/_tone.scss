@@ -1,0 +1,25 @@
+@use 'sass:map';
+@use '../settings/hues' as *;
+
+// Tone of a component that takes one (Badge, Status): a class that only sets two variables, read by the component.
+// A project adds a colour with its two variables and one rule:
+// .crudit-ui-tone--foo { --crudit-ui-tone-bg: var(--c-foo-bg); --crudit-ui-tone-text: var(--c-foo-text); }
+.crudit-ui-tone--primary {
+    --crudit-ui-tone-bg: var(--c-primary-subtle);
+    --crudit-ui-tone-text: var(--c-primary-text);
+}
+
+@each $tone in neutral, info, success, warning, danger {
+    .crudit-ui-tone--#{$tone} {
+        --crudit-ui-tone-bg: var(--c-#{$tone}-bg);
+        --crudit-ui-tone-text: var(--c-#{$tone}-text);
+    }
+}
+
+// Extended palette (workflows with many states).
+@each $name in map.keys($hues-light) {
+    .crudit-ui-tone--#{$name} {
+        --crudit-ui-tone-bg: var(--c-#{$name}-bg);
+        --crudit-ui-tone-text: var(--c-#{$name}-text);
+    }
+}

@@ -1,0 +1,11 @@
+{#
+ # Section of the design kit page: one per group of components, with its title in the table of contents.
+ #
+ # Props: id (anchor, `kit-<id>`), title.
+ # Block: content.
+ #}
+{% props id, title %}
+<section id="kit-{{ id }}" {{ attributes.defaults({class: 'crudit-ui-kit__section'}) }} aria-labelledby="kit-{{ id }}-title">
+    <h2 id="kit-{{ id }}-title" class="crudit-ui-kit__title">{{ title }}</h2>
+    {% block content %}{% endblock %}
+</section>

@@ -1,0 +1,4 @@
+# Design kit page of CruditUiBundle. A project imports it under `when@dev` (docs/components.md); here in every
+# environment, because the CI also runs the smoke test, and its accessibility audit of the kit, in production.
+crudit_ui_kit:
+    resource: '@LleCruditUiBundle/config/routes/kit.php'

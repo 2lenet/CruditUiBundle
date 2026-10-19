@@ -1,0 +1,193 @@
+@use '../tools/responsive' as *;
+@use '../tools/scroll' as *;
+
+// Design kit page (development only, templates/kit/): the tokens and the components in their states. Same as the
+// page of the crudit-v2 mockup (src/styles/components/_design-kit.scss), with the prefix of the bundle. In ui.css on
+// purpose (decision of 19/10/2026): about 0.7 KB compressed, and the page works with Encore and AssetMapper alike.
+.crudit-ui-kit {
+    display: flex;
+    max-width: 80rem;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: var(--space-5) var(--space-4);
+    margin-inline: auto;
+
+    &__heading {
+        margin: 0;
+        font-size: var(--font-size-2xl);
+    }
+
+    &__toc-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-4);
+        padding: 0;
+        margin: 0;
+        font-size: var(--font-size-sm);
+        list-style: none;
+    }
+
+    &__section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-lg);
+        background-color: var(--c-surface);
+    }
+
+    &__title {
+        margin: 0;
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__subtitle {
+        margin: 0 0 var(--space-2);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__text {
+        max-width: 48rem;
+        margin: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__columns {
+        display: grid;
+        gap: var(--space-5);
+
+        @include media('>md') {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    &__stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2) var(--space-3);
+    }
+
+    &__swatches {
+        display: grid;
+        gap: var(--space-2);
+        padding: 0;
+        margin: 0;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+        list-style: none;
+    }
+
+    &__swatch {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--font-size-xs);
+
+        code {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    &__swatch-color {
+        width: var(--space-6);
+        height: var(--space-6);
+        flex: none;
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+    }
+
+    &__scale,
+    &__shapes {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: 0;
+        margin: 0 0 var(--space-4);
+        list-style: none;
+
+        code {
+            color: var(--c-text-muted);
+            font-size: var(--font-size-xs);
+        }
+    }
+
+    &__space {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    &__space-bar {
+        height: var(--space-3);
+        border-radius: var(--radius-sm);
+        background-color: var(--c-primary);
+    }
+
+    &__shapes {
+        flex-flow: row wrap;
+        gap: var(--space-3);
+    }
+
+    &__shape {
+        display: flex;
+        width: 8rem;
+        height: var(--space-8);
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--c-border);
+        background-color: var(--c-surface);
+    }
+}
+
+// Table of the states of a component: scrolls horizontally on small screens.
+.crudit-ui-kit__table-wrap {
+    @include scroll-x;
+}
+
+.crudit-ui-kit__table {
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding-block: var(--space-2);
+        padding-inline: 0 var(--space-3);
+        text-align: start;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    thead th {
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    tbody th {
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-regular);
+    }
+}
+
+// A colour of a project, declared as a project does it (docs/components.md): its two variables and one rule. Here it
+// reuses the orange of the palette, checked for contrast in both themes.
+.crudit-ui-kit {
+    --c-kit-coral-bg: var(--c-orange-bg);
+    --c-kit-coral-text: var(--c-orange-text);
+}
+
+.crudit-ui-tone--kit-coral {
+    --crudit-ui-tone-bg: var(--c-kit-coral-bg);
+    --crudit-ui-tone-text: var(--c-kit-coral-text);
+}

@@ -1,0 +1,11 @@
+{#
+ # Status (state of a workflow): an outlined pill with a dot and the label, always written.
+ #
+ # Props: tone (neutral, info, primary, success, warning, danger, a hue such as blue, or a colour of the project;
+ # neutral), size (md, small). Block: content (the label). Contract: docs/components.md.
+ #}
+{% props tone = 'neutral', size = 'md' %}
+<span {{ attributes.defaults({class: 'crudit-ui-status crudit-ui-tone--' ~ tone ~ (size == 'small' ? ' crudit-ui-status--small' : '')}) }}>
+    {#- -#}<span class="crudit-ui-status__dot" aria-hidden="true"></span>
+    {%- block content %}{% endblock -%}
+</span>

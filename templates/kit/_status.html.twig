@@ -1,0 +1,71 @@
+{# Status and badges (1.5.b): what describes a value. Never the colour alone: each status has its label, each badge
+ # its text. Loop variables are named `item`: inside a component, its props (`tone`) hide the variables. #}
+{% set tones = ['neutral', 'info', 'primary', 'success', 'warning', 'danger'] %}
+{% set hues = ['blue', 'teal', 'green', 'lime', 'yellow', 'orange', 'red', 'pink', 'purple', 'indigo', 'gray'] %}
+<p class="crudit-ui-kit__text">Never the colour alone: each status has a label, each badge a text, each boolean its Yes or No.</p>
+
+<h3 class="crudit-ui-kit__subtitle">Status: the 6 tones, then small</h3>
+<div class="crudit-ui-kit__row">
+    {% for item in tones %}<twig:LleCruditUi:Status tone="{{ item }}">{{ item }}</twig:LleCruditUi:Status>{% endfor %}
+</div>
+<div class="crudit-ui-kit__row">
+    {% for item in tones %}<twig:LleCruditUi:Status tone="{{ item }}" size="small">{{ item }}</twig:LleCruditUi:Status>{% endfor %}
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Workflow states: the extended palette</h3>
+<p class="crudit-ui-kit__text">Eleven hues checked for contrast, light and dark. A project adds its own with <code>--c-&lt;name&gt;-bg</code>, <code>--c-&lt;name&gt;-text</code> and the rule <code>.crudit-ui-tone--&lt;name&gt;</code>.</p>
+<div class="crudit-ui-kit__row">
+    {% for item in hues %}<twig:LleCruditUi:Status tone="{{ item }}">{{ item }}</twig:LleCruditUi:Status>{% endfor %}
+</div>
+
+<p class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Status tone="kit-coral">kit-coral</twig:LleCruditUi:Status>
+    <twig:LleCruditUi:Badge tone="kit-coral">kit-coral</twig:LleCruditUi:Badge>
+    <span class="crudit-ui-kit__text">a colour of the project: <code>.crudit-ui-tone--kit-coral</code> sets <code>--crudit-ui-tone-bg</code> and <code>--crudit-ui-tone-text</code></span>
+</p>
+
+<h3 class="crudit-ui-kit__subtitle">Badges and counters</h3>
+<div class="crudit-ui-kit__row">
+    {% for item in tones %}<twig:LleCruditUi:Badge tone="{{ item }}">{{ item }}</twig:LleCruditUi:Badge>{% endfor %}
+    <twig:LleCruditUi:Badge tone="danger" label="visits to plan">12</twig:LleCruditUi:Badge>
+    <twig:LleCruditUi:Badge>3 parts</twig:LleCruditUi:Badge>
+</div>
+<div class="crudit-ui-kit__row">
+    {% for item in hues %}<twig:LleCruditUi:Badge tone="{{ item }}">{{ item }}</twig:LleCruditUi:Badge>{% endfor %}
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Booleans, colour</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Boolean :value="true"/>
+    <twig:LleCruditUi:Boolean :value="false"/>
+    <twig:LleCruditUi:Boolean :value="null"/>
+    <twig:LleCruditUi:ColorSwatch value="#0077a8"/>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Tags and active filters</h3>
+<div class="crudit-ui-kit__row" role="group" aria-label="Tags of the visit">
+    <twig:LleCruditUi:Tag pressed>Lift</twig:LleCruditUi:Tag>
+    <twig:LleCruditUi:Tag>Night work</twig:LleCruditUi:Tag>
+    <twig:LleCruditUi:Tag class="crudit-ui-is-hover">Forced hover</twig:LleCruditUi:Tag>
+    <twig:LleCruditUi:Tag busy>Saving</twig:LleCruditUi:Tag>
+</div>
+<ul class="crudit-ui-chips" aria-label="Active filters">
+    <li><twig:LleCruditUi:Chip removeLabel="Remove the filter Status: planned">Status: <strong>planned</strong></twig:LleCruditUi:Chip></li>
+    <li><twig:LleCruditUi:Chip removeLabel="Remove the filter Agency: Lyon, Grenoble">Agency: <strong>Lyon, Grenoble</strong></twig:LleCruditUi:Chip></li>
+    <li><twig:LleCruditUi:Chip :removable="false">Archived: <strong>no</strong></twig:LleCruditUi:Chip></li>
+</ul>
+
+<h3 class="crudit-ui-kit__subtitle">Avatars (the name is written next to them)</h3>
+<div class="crudit-ui-kit__row">
+    <span class="crudit-ui-kit__row"><twig:LleCruditUi:Avatar name="Camille Martin" size="small"/>Camille Martin</span>
+    <span class="crudit-ui-kit__row"><twig:LleCruditUi:Avatar name="Élodie Ørsted"/>Élodie Ørsted</span>
+    <span class="crudit-ui-kit__row"><twig:LleCruditUi:Avatar name="Jean Dupont" size="large" impersonated/>Jean Dupont <span class="crudit-ui-visually-hidden">(impersonation)</span></span>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Progress</h3>
+<div class="crudit-ui-kit__columns">
+    <twig:LleCruditUi:ProgressBar label="Visits done" :value="9" :max="20"/>
+    <twig:LleCruditUi:ProgressBar label="Checklist" :value="12" :max="12"/>
+    <twig:LleCruditUi:ProgressBar label="Storage" :value="85" tone="warning" valueText="85 %, to watch"/>
+    <twig:LleCruditUi:ProgressBar label="Budget" :value="130" tone="danger" valueText="130 %, exceeded"/>
+</div>

@@ -1,0 +1,16 @@
+{#
+ # Colour: a swatch and its code, always written. The swatch is drawn only for a colour: a hexadecimal (#0077a8),
+ # rgb(), hsl() with numbers only, or a name (teal). Anything else (a value typed in a form, `red; background: url()`)
+ # gives an empty swatch. SVG fill, not a style attribute: works under a strict Content Security Policy.
+ #
+ # Props: value. Contract: docs/components.md.
+ #}
+{% props value %}
+{%- set value = value|trim -%}
+{%- set valid = value matches '/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i'
+    or value matches '/^(rgb|rgba|hsl|hsla)\\([0-9.,%\\/ ]+\\)$/i'
+    or value matches '/^[a-z]{3,20}$/i' -%}
+<span {{ attributes.defaults({class: 'crudit-ui-color' ~ (valid ? '' : ' crudit-ui-color--invalid')}) }}>
+    {#- -#}<svg class="crudit-ui-color__swatch" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3"{% if valid %} fill="{{ value }}"{% endif %}/></svg>
+    {#- -#}<code>{{ value }}</code>
+</span>

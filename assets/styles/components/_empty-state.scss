@@ -1,0 +1,52 @@
+// Empty state: an icon, a title, a text and an action (create, reset the filters). From the crudit-v2 mockup
+// (src/styles/components/_page.scss and _show.scss).
+.crudit-ui-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-7) var(--space-4);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-lg);
+    background-color: var(--c-surface);
+    text-align: center;
+
+    &--compact {
+        padding: var(--space-5) var(--space-4);
+    }
+
+    &__icon {
+        display: inline-grid;
+        width: 3.5rem;
+        height: 3.5rem;
+        place-items: center;
+        border-radius: var(--radius-full);
+        background-color: var(--c-primary-subtle);
+        color: var(--c-primary-text);
+        font-size: var(--font-size-xl);
+    }
+
+    &__title {
+        margin: 0;
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__text {
+        max-width: 44ch;
+        margin: 0;
+        color: var(--c-text-muted);
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-2);
+
+        // No action passed.
+        &:empty {
+            display: none;
+        }
+    }
+}

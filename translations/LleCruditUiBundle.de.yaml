@@ -1,6 +1,18 @@
 crudit_ui:
     action:
         close: Schließen
+    alert:
+        info: "Information:"
+        success: "Erfolg:"
+        warning: "Achtung:"
+        danger: "Fehler:"
+    avatar:
+        impersonated: "(Identitätswechsel)"
+    boolean:
+        yes: "Ja"
+        no: "Nein"
+    chip:
+        remove: "Filter %label% entfernen"
     language:
         label: Sprache
     theme:
@@ -8,3 +20,7 @@ crudit_ui:
         light: Hell
         dark: Dunkel
         system: System
+    state:
+        loading: Wird geladen…
+    value:
+        empty: Nicht angegeben

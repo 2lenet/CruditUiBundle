@@ -1,0 +1,19 @@
+{#
+ # Tag: a toggle button (aria-pressed). Associated: solid border, check and weight; free: dashed, "+". Busy while it
+ # is saved: spinner, and the click is ignored (controller button). The project switches it (pressed, busy).
+ #
+ # Props: pressed, busy. Block: content (the label). Contract: docs/components.md.
+ #}
+{% props pressed = false, busy = false %}
+{%- set defaults = {
+    class: 'crudit-ui-tag',
+    'aria-pressed': pressed ? 'true' : 'false',
+    'data-controller': '2lenet--crudit-ui-bundle--button',
+} -%}
+{%- if busy -%}
+    {%- set defaults = defaults|merge({'aria-disabled': 'true', 'aria-busy': 'true'}) -%}
+{%- endif -%}
+<button type="button" {{ attributes.defaults(defaults) }}>
+    {{- ui_icon(busy ? 'loading' : (pressed ? 'check' : 'add'), 'crudit-ui-tag__icon') -}}
+    {%- block content %}{% endblock -%}
+</button>

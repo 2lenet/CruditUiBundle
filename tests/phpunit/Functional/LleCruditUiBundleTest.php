@@ -17,10 +17,11 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\Icons\IconFinderInterface;
-use Twig\Environment;
 
 class LleCruditUiBundleTest extends TestCase
 {
+    use RendersTwig;
+
     protected function tearDown(): void
     {
         (new Filesystem())->remove(sys_get_temp_dir() . '/lle_crudit_ui_bundle');
@@ -221,17 +222,5 @@ class LleCruditUiBundleTest extends TestCase
         $this->expectException(InvalidConfigurationException::class);
 
         (new TestKernel(['icons' => ['library' => 'fontawesome4']]))->boot();
-    }
-
-    private function render(TestKernel $kernel, string $template): string
-    {
-        $kernel->boot();
-
-        /** @var ContainerInterface $testContainer */
-        $testContainer = $kernel->getContainer()->get('test.service_container');
-        /** @var Environment $twig */
-        $twig = $testContainer->get('twig');
-
-        return $twig->createTemplate($template)->render();
     }
 }

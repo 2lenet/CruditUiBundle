@@ -15,6 +15,7 @@
             <button type="button" value="{{ theme }}" {{ stimulus_target(ui_theme_controller, 'option') }} {{ stimulus_action(ui_theme_controller, 'choose') }}>{{ ('crudit_ui.theme.' ~ theme)|trans(domain: 'LleCruditUiBundle') }}</button>
         {% endfor %}
     </div>
+    <p><a href="{{ path('crudit_ui_kit') }}">Design kit</a></p>
     <section aria-label="{{ 'crudit_ui.language.label'|trans(domain: 'LleCruditUiBundle') }}">
         <p>
             {% for locale in ['fr', 'en', 'de', 'ar_SA', 'ar_MA', 'fa'] %}

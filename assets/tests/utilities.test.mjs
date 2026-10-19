@@ -38,3 +38,7 @@ test('the visually hidden utility and the print rules are there', () => {
     assert.match(css, /\.crudit-ui-visually-hidden\{position:absolute;width:1px/);
     assert.match(css, /@media print\{\.crudit-ui-print-hidden\{display:none\}/);
 });
+
+test('the forced focus of the design kit draws the ring of :focus-visible', () => {
+    assert.match(css, /\.crudit-ui-is-focus\{outline:var\(--focus-ring-width\) solid var\(--c-focus\);outline-offset:var\(--focus-ring-offset\)\}/);
+});

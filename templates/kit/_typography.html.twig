@@ -1,0 +1,28 @@
+{# Scales of the tokens: font sizes, spacing (multiples of 4 px), radii and shadows. #}
+<div class="crudit-ui-kit__columns">
+    <div>
+        <h3 class="crudit-ui-kit__subtitle">Font sizes</h3>
+        <ul class="crudit-ui-kit__scale">
+            {% for size in ['--font-size-xs', '--font-size-sm', '--font-size-md', '--font-size-lg', '--font-size-xl', '--font-size-2xl'] %}
+                <li style="font-size: var({{ size }})"><code>{{ size }}</code> Scheduled visit</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div>
+        <h3 class="crudit-ui-kit__subtitle">Spacing (multiples of 4 px)</h3>
+        <ul class="crudit-ui-kit__scale">
+            {% for space in ['--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6', '--space-7'] %}
+                <li class="crudit-ui-kit__space"><span class="crudit-ui-kit__space-bar" style="width: var({{ space }})" aria-hidden="true"></span><code>{{ space }}</code></li>
+            {% endfor %}
+        </ul>
+        <h3 class="crudit-ui-kit__subtitle">Radii and shadows</h3>
+        <ul class="crudit-ui-kit__shapes">
+            {% for radius in ['--radius-sm', '--radius-md', '--radius-lg'] %}
+                <li class="crudit-ui-kit__shape" style="border-radius: var({{ radius }})"><code>{{ radius }}</code></li>
+            {% endfor %}
+            {% for shadow in ['--shadow-sm', '--shadow-md', '--shadow-lg'] %}
+                <li class="crudit-ui-kit__shape" style="box-shadow: var({{ shadow }})"><code>{{ shadow }}</code></li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>

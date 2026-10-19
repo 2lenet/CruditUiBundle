@@ -1,0 +1,9 @@
+{#
+ # Buttons side by side: save and cancel of the edit in place, bar of a form.
+ #
+ # Props: label (optional: makes it a named group). Block: content. Contract: docs/components.md.
+ #}
+{% props label = null %}
+<div {% if label is not null %}role="group" aria-label="{{ label }}" {% endif %}{{ attributes.defaults({class: 'crudit-ui-btn-group'}) }}>
+    {%- block content %}{% endblock -%}
+</div>

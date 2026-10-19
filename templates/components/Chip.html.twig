@@ -1,0 +1,21 @@
+{#
+ # Chip: an active filter, removable one by one, in a list `<ul class="crudit-ui-chips">`. The remove button is named
+ # by removeLabel, "Remove the filter <text>" by default ("Remove the filter Status: planned"); its attributes are passed as `remove:data-action="…"`.
+ #
+ # Props: removeLabel, removable (true). Block: content (the text).
+ # Contract: docs/components.md.
+ #}
+{% props removeLabel = null, removable = true %}
+<span {{ attributes.defaults({class: 'crudit-ui-chip' ~ (removable ? '' : ' crudit-ui-chip--static')}) }}>
+    {#- -#}<span class="crudit-ui-chip__text">{% block content %}{% endblock %}</span>
+    {%- if removable -%}
+        <button type="button" {{ attributes.nested('remove').defaults({class: 'crudit-ui-chip__remove'}) }}>
+            {{- ui_icon('close') -}}
+            {%- if removeLabel is null -%}
+                {%- set text %}{{ block('content') }}{% endset -%}
+                {%- set removeLabel = 'crudit_ui.chip.remove'|trans({'%label%': text|striptags|replace({"\n": ' '})|trim}, 'LleCruditUiBundle') -%}
+            {%- endif -%}
+            <span class="crudit-ui-visually-hidden">{{ removeLabel }}</span>
+        </button>
+    {%- endif -%}
+</span>

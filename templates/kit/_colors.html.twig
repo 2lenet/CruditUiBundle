@@ -1,0 +1,19 @@
+{# Colors of the theme (generic/_tokens.scss): they follow the light or dark theme and the colour of the project. #}
+{% set groups = [
+    {title: 'Surfaces and borders', tokens: ['--c-bg', '--c-surface', '--c-surface-sunken', '--c-surface-hover', '--c-border', '--c-border-strong']},
+    {title: 'Text and links', tokens: ['--c-text', '--c-text-muted', '--c-link', '--c-focus']},
+    {title: 'Brand', tokens: ['--brand', '--c-primary', '--c-primary-hover', '--c-primary-subtle', '--c-primary-text']},
+    {title: 'States', tokens: ['--c-success-bg', '--c-success-text', '--c-warning-bg', '--c-warning-text', '--c-danger-bg', '--c-danger-text', '--c-info-bg', '--c-info-text']},
+] %}
+<p class="crudit-ui-kit__text">CSS variables of <code>generic/_tokens.scss</code>, in the current theme.</p>
+{% for group in groups %}
+    <h3 class="crudit-ui-kit__subtitle">{{ group.title }}</h3>
+    <ul class="crudit-ui-kit__swatches">
+        {% for token in group.tokens %}
+            <li class="crudit-ui-kit__swatch">
+                <span class="crudit-ui-kit__swatch-color" style="background-color: var({{ token }})" aria-hidden="true"></span>
+                <code>{{ token }}</code>
+            </li>
+        {% endfor %}
+    </ul>
+{% endfor %}

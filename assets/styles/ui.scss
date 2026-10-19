@@ -23,8 +23,19 @@
 @layer crudit-ui {
     @include meta.load-css('objects/grid');
 
+    @include meta.load-css('components/alert');
+    @include meta.load-css('components/avatar');
+    @include meta.load-css('components/badge');
+    @include meta.load-css('components/button');
     @include meta.load-css('components/dropdown');
+    @include meta.load-css('components/empty-state');
     @include meta.load-css('components/icon');
+    @include meta.load-css('components/kit');
+    @include meta.load-css('components/loading');
+    @include meta.load-css('components/progress');
+    @include meta.load-css('components/status');
+    @include meta.load-css('components/tag');
+    @include meta.load-css('components/tone');
 
     // Utilities last: at equal specificity, they win over the components.
     @include meta.load-css('utilities/display');

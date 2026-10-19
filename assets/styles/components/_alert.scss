@@ -1,0 +1,64 @@
+// Alert: an icon, a text that starts with its type (read), actions, and a close button. From the crudit-v2 mockup
+// (src/styles/components/_forms.scss), plus the success tone and the close button.
+.crudit-ui-alert {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    margin: 0;
+    border: 1px solid;
+    border-radius: var(--radius-md);
+
+    @each $tone in info, success, warning, danger {
+        &--#{$tone} {
+            border-color: var(--c-#{$tone}-border);
+            background-color: var(--c-#{$tone}-bg);
+            color: var(--c-#{$tone}-text);
+        }
+    }
+
+    &--inline {
+        flex-wrap: nowrap;
+        padding: var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    &__icon {
+        margin-top: 0.1875rem;
+        flex: none;
+    }
+
+    &__body {
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__title {
+        margin: 0;
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__text {
+        margin: 0;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+
+        // No action passed.
+        &:empty {
+            display: none;
+        }
+    }
+
+    // The close button takes the colour of the alert.
+    &__close {
+        margin-block-start: calc(-1 * var(--space-1));
+        margin-inline-end: calc(-1 * var(--space-1));
+        color: inherit;
+    }
+}

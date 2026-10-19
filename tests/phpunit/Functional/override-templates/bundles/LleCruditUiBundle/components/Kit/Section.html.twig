@@ -1,0 +1,3 @@
+{# A project overrides a component of the bundle as any template of a bundle: templates/bundles/LleCruditUiBundle/. #}
+{% props id, title %}
+<div class="project-section" data-id="{{ id }}">{{ title }}: {% block content %}{% endblock %}</div>

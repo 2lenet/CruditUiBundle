@@ -1,0 +1,15 @@
+{#
+ # Empty state: an icon, a title, a text and the actions (create, reset the filters).
+ #
+ # Props: title, icon (empty), compact, level (3: level of the title, from 2 to 6). Blocks: content (the text), actions.
+ # Contract: docs/components.md.
+ #}
+{% props title = null, icon = 'empty', compact = false, level = 3 %}
+<div {{ attributes.defaults({class: 'crudit-ui-empty-state' ~ (compact ? ' crudit-ui-empty-state--compact' : '')}) }}>
+    {%- if icon %}<span class="crudit-ui-empty-state__icon" aria-hidden="true">{{ ui_icon(icon) }}</span>{% endif -%}
+    {%- set level = level in 2..6 ? level : 3 -%}
+    {%- if title is not null %}<h{{ level }} class="crudit-ui-empty-state__title">{{ title }}</h{{ level }}>{% endif -%}
+    <div class="crudit-ui-empty-state__text">{% block content %}{% endblock %}</div>
+    {#- Hidden when empty (no action passed). -#}
+    <div class="crudit-ui-empty-state__actions">{%- block actions %}{% endblock -%}</div>
+</div>

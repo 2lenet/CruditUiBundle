@@ -1,0 +1,39 @@
+{#
+ # Design kit: the tokens and the components of the bundle in all their states, to review them in a real project.
+ # Enabled in development by importing config/routes/kit.php (docs/components.md). It extends the base.html.twig of
+ # the project, which loads the CSS and the Stimulus controllers of the bundle.
+ #
+ # Each sub-lot of the components adds one line to `sections` and its own file `_<id>.html.twig`.
+ #}
+{% extends 'base.html.twig' %}
+
+{% set sections = [
+    {id: 'colors', title: 'Colors', template: '@LleCruditUi/kit/_colors.html.twig'},
+    {id: 'typography', title: 'Typography and spacing', template: '@LleCruditUi/kit/_typography.html.twig'},
+    {id: 'buttons', title: 'Buttons', template: '@LleCruditUi/kit/_buttons.html.twig'},
+    {id: 'status', title: 'Status and badges', template: '@LleCruditUi/kit/_status.html.twig'},
+    {id: 'states', title: 'Loading, empty and messages', template: '@LleCruditUi/kit/_states.html.twig'},
+] %}
+
+{% block title %}Design kit{% endblock %}
+
+{% block body %}
+    <main class="crudit-ui-kit">
+        <h1 class="crudit-ui-kit__heading">Design kit</h1>
+        <p class="crudit-ui-kit__text">Tokens and components of CruditUiBundle in their states. Hover and focus are forced to be visible; the components stay usable.</p>
+
+        <nav class="crudit-ui-kit__toc" aria-label="Contents of the kit">
+            <ul class="crudit-ui-kit__toc-list">
+                {% for section in sections %}
+                    <li><a href="#kit-{{ section.id }}">{{ section.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </nav>
+
+        {% for section in sections %}
+            <twig:LleCruditUi:Kit:Section id="{{ section.id }}" title="{{ section.title }}">
+                {{ include(section.template) }}
+            </twig:LleCruditUi:Kit:Section>
+        {% endfor %}
+    </main>
+{% endblock %}

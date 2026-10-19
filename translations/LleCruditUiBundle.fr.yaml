@@ -1,6 +1,18 @@
 crudit_ui:
     action:
         close: Fermer
+    alert:
+        info: "Information\u00a0:"
+        success: "Succès\u00a0:"
+        warning: "Attention\u00a0:"
+        danger: "Erreur\u00a0:"
+    avatar:
+        impersonated: "(impersonation)"
+    boolean:
+        yes: "Oui"
+        no: "Non"
+    chip:
+        remove: "Retirer le filtre %label%"
     language:
         label: Langue
     theme:
@@ -8,3 +20,7 @@ crudit_ui:
         light: Clair
         dark: Sombre
         system: Système
+    state:
+        loading: Chargement…
+    value:
+        empty: Non renseigné
