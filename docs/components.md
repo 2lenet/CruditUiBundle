@@ -332,8 +332,8 @@ or the actions `open`, `close` and `dismiss` of the controller.
 Controller `2lenet--crudit-ui-bundle--dialog`, on the `<dialog>`. Events `…dialog:open` and `…dialog:close` on the
 dialog, however it opens or closes; the native `cancel` and `close` of `<dialog>` are there too. **Escape, the close
 button and a click on the backdrop fire `cancel` first**: a project cancels it (`preventDefault()`) to keep the dialog
-open (a form with changes, to confirm); Chrome closes it all the same on a second try when nothing was clicked or
-typed in between. A press in the dialog released on the backdrop (a selection of text) does not
+open (a form with changes, to confirm). Chrome closes it all the same without a click or a key of the user before
+(a `dismiss` called by a timer), or on a second try with none in between. A press in the dialog released on the backdrop (a selection of text) does not
 close it. The dialog closes when the controller disconnects and before Turbo caches the page, also when it is moved in
 the page (Stimulus disconnects it, and a modal dialog moved is no longer modal): do not move an open dialog.
 

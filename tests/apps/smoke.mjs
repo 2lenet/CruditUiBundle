@@ -464,19 +464,19 @@ try {
     await page.mouse.up();
     assert.equal((await dialog('kit-dialog-confirm')).open, true, 'a click in the dialog, or a selection that ends on the backdrop, closes it');
 
-    // A project keeps it open by cancelling "cancel" (a form with changes): close button and backdrop.
-    const cancelled = await page.evaluate(() => {
-        const element = document.getElementById('kit-dialog-confirm');
-        const keep = (event) => event.preventDefault();
-        element.addEventListener('cancel', keep);
-        element.querySelector('.crudit-ui-dialog__close').click();
-        const kept = element.open;
-        element.removeEventListener('cancel', keep);
-        element.querySelector('.crudit-ui-dialog__close').click();
-
-        return {kept, closed: !element.open};
+    // A project keeps it open by cancelling "cancel" (a form with changes): close button and backdrop. Real clicks:
+    // Chrome makes "cancel" of requestClose() cancelable only after an action of the user.
+    await page.evaluate(() => {
+        window.kitKeep = (event) => event.preventDefault();
+        document.getElementById('kit-dialog-confirm').addEventListener('cancel', window.kitKeep);
     });
-    assert.deepEqual(cancelled, {kept: true, closed: true}, 'the close button does not fire a cancelable "cancel"');
+    await page.click('#kit-dialog-confirm .crudit-ui-dialog__close');
+    const keptByButton = (await dialog('kit-dialog-confirm')).open;
+    await page.mouse.click(5, 5);
+    const keptByBackdrop = (await dialog('kit-dialog-confirm')).open;
+    await page.evaluate(() => document.getElementById('kit-dialog-confirm').removeEventListener('cancel', window.kitKeep));
+    await page.click('#kit-dialog-confirm .crudit-ui-dialog__close');
+    assert.deepEqual([keptByButton, keptByBackdrop, (await dialog('kit-dialog-confirm')).open], [true, true, false], 'the close button or the backdrop does not fire a cancelable "cancel"');
 
     // Events of the controller, and the focus put on <main> when the button that opened the dialog is gone.
     const lost = await page.evaluate(async () => {
