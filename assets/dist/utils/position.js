@@ -93,8 +93,7 @@ export function resetPosition(panel) {
 function fixedOrigin(anchor) {
     const viewport = {top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth};
     for (let element = anchor.parentElement; element; element = element.parentElement) {
-        const style = getComputedStyle(element);
-        if (style.transform !== 'none' || style.translate !== 'none' || style.filter !== 'none' || /paint|layout|strict|content/.test(style.contain)) {
+        if (containsFixed(getComputedStyle(element))) {
             const rect = element.getBoundingClientRect();
 
             return {top: rect.top + element.clientTop, left: rect.left + element.clientLeft, clip: clippingRect(element) ?? viewport};
@@ -102,6 +101,17 @@ function fixedOrigin(anchor) {
     }
 
     return {top: 0, left: 0, clip: viewport};
+}
+
+/*
+ * The properties that make an element the containing block of its descendants in position: fixed.
+ */
+function containsFixed(style) {
+    return ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdropFilter', 'webkitBackdropFilter'].some((property) => (style[property] ?? 'none') !== 'none')
+        || /transform|translate|rotate|scale|perspective|filter/.test(style.willChange)
+        || /paint|layout|strict|content/.test(style.contain)
+        // A size container has layout containment, which the computed value of contain does not show.
+        || (style.containerType ?? 'normal') !== 'normal';
 }
 
 function clippingRect(element) {

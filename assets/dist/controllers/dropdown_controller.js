@@ -1,17 +1,25 @@
 import { Controller } from '@hotwired/stimulus';
 import { keepInViewport, placeFloating, resetPosition } from '../utils/position.js';
 
+const BUTTON = '2lenet--crudit-ui-bundle--button';
+
 /*
  * Dropdown (component Dropdown): a button (target "button", action "toggle") opens a panel (target "panel").
  * Disclosure pattern, not an ARIA menu (decision of 19/10/2026): the panel holds links, buttons or fields, Tab goes
  * from one to the next, no arrow keys.
  *
- * - Escape closes it and gives the focus back to the button; the event stops there (a dialog around stays open).
+ * - Escape closes it and gives the focus back to the button; the event stops there, and its default is prevented: a
+ *   dialog around (a native <dialog> too, closed by the browser otherwise) stays open.
  * - A click outside, or the focus leaving it, closes it.
  * - A click on an item of a menu (.crudit-ui-menu__item, not disabled) closes it and gives the focus back to the
- *   button: the action that follows (a dialog) gives it back there too when it closes.
+ *   button, before the action of the item runs (capture): a dialog that the action opens takes the focus, and gives
+ *   it back to the button when it closes.
+ * - An item that sends a form (busyOnSubmit) puts the button of the dropdown in loading, as long as it is itself.
  * - Shown under the button, shifted to stay in the screen. With the value "floating", in position: fixed, placed
- *   next to the button: it is not cut by a container that scrolls (a table); it closes when the page scrolls.
+ *   next to the button: it is not cut by a container that scrolls (a table). It closes when the page scrolls, and
+ *   follows the button when the window is resized, or when the page scrolls while the focus is in it (the virtual
+ *   keyboard of a phone, opened by a field of the panel).
+ * - Closed when the controller disconnects and before Turbo caches the page: a snapshot is never restored open.
  * - The root takes the class crudit-ui-dropdown--open: a sticky container can rise above its neighbours with :has().
  *
  * Events: "open" and "close" (2lenet--crudit-ui-bundle--dropdown:open / :close), on the root.
@@ -23,7 +31,8 @@ export default class extends Controller {
 
     connect() {
         // A click in the dropdown moves the focus (to <main> when the target is not focusable): the focusout it
-        // causes does not close it. Reset once the click is over, when the focus has landed.
+        // causes does not close it. Reset once the click is over, when the focus has landed, and when the panel
+        // opens or closes (a pointerup that never came, released outside the window).
         this.pointerInside = false;
         const pointerOver = () => setTimeout(() => {
             this.pointerInside = false;
@@ -31,6 +40,7 @@ export default class extends Controller {
 
         this.onKeydown = (event) => {
             if (event.key === 'Escape' && this.isOpen()) {
+                event.preventDefault();
                 event.stopPropagation();
                 this.close();
                 this.buttonTarget.focus();
@@ -54,29 +64,41 @@ export default class extends Controller {
                 this.buttonTarget.focus();
             }
         };
+        this.onItemBusy = () => this.trigger()?.busy();
+        this.onItemIdle = () => this.trigger()?.restore();
         this.onDocumentPointerDown = (event) => {
             if (!this.element.contains(event.target)) {
                 this.close();
             }
         };
         this.onScroll = (event) => {
-            if (!(event.target instanceof Node && this.panelTarget.contains(event.target))) {
-                this.close();
+            if (event.target instanceof Node && this.panelTarget.contains(event.target)) {
+                return;
             }
+            this.panelTarget.contains(document.activeElement) ? this.follow() : this.close();
         };
+        this.onResize = () => this.follow();
+        this.onBeforeCache = () => this.close();
 
         this.element.addEventListener('keydown', this.onKeydown);
         this.element.addEventListener('focusout', this.onFocusOut);
         this.element.addEventListener('pointerdown', this.onPointerDown);
-        this.panelTarget.addEventListener('click', this.onPanelClick);
+        this.panelTarget.addEventListener('click', this.onPanelClick, {capture: true});
+        this.panelTarget.addEventListener(`${BUTTON}:busy`, this.onItemBusy);
+        this.panelTarget.addEventListener(`${BUTTON}:idle`, this.onItemIdle);
+        document.addEventListener('turbo:before-cache', this.onBeforeCache);
     }
 
     disconnect() {
+        this.close();
         this.element.removeEventListener('keydown', this.onKeydown);
         this.element.removeEventListener('focusout', this.onFocusOut);
         this.element.removeEventListener('pointerdown', this.onPointerDown);
-        this.panelTarget.removeEventListener('click', this.onPanelClick);
-        this.removeDocumentListeners();
+        this.panelTarget.removeEventListener('click', this.onPanelClick, {capture: true});
+        this.panelTarget.removeEventListener(`${BUTTON}:busy`, this.onItemBusy);
+        this.panelTarget.removeEventListener(`${BUTTON}:idle`, this.onItemIdle);
+        document.removeEventListener('turbo:before-cache', this.onBeforeCache);
+        cancelAnimationFrame(this.frame);
     }
 
     isOpen() {
@@ -91,14 +113,15 @@ export default class extends Controller {
         if (this.isOpen()) {
             return;
         }
+        this.pointerInside = false;
         this.panelTarget.hidden = false;
         this.buttonTarget.setAttribute('aria-expanded', 'true');
         this.element.classList.add('crudit-ui-dropdown--open');
 
         if (this.floatingValue) {
-            placeFloating(this.buttonTarget, this.panelTarget, {align: this.alignValue});
+            this.place();
             window.addEventListener('scroll', this.onScroll, {capture: true, passive: true});
-            window.addEventListener('resize', this.onScroll);
+            window.addEventListener('resize', this.onResize);
         } else {
             keepInViewport(this.panelTarget);
         }
@@ -114,17 +137,29 @@ export default class extends Controller {
         if (!this.isOpen()) {
             return;
         }
+        this.pointerInside = false;
         this.panelTarget.hidden = true;
         this.buttonTarget.setAttribute('aria-expanded', 'false');
         this.element.classList.remove('crudit-ui-dropdown--open');
         resetPosition(this.panelTarget);
-        this.removeDocumentListeners();
+        document.removeEventListener('pointerdown', this.onDocumentPointerDown);
+        window.removeEventListener('scroll', this.onScroll, {capture: true});
+        window.removeEventListener('resize', this.onResize);
         this.dispatch('close');
     }
 
-    removeDocumentListeners() {
-        document.removeEventListener('pointerdown', this.onDocumentPointerDown);
-        window.removeEventListener('scroll', this.onScroll, {capture: true});
-        window.removeEventListener('resize', this.onScroll);
+    place() {
+        placeFloating(this.buttonTarget, this.panelTarget, {align: this.alignValue});
+    }
+
+    // Places the floating panel again, once per frame.
+    follow() {
+        cancelAnimationFrame(this.frame);
+        this.frame = requestAnimationFrame(() => this.isOpen() && this.place());
+    }
+
+    // The controller "button" of the button of the dropdown (its loading state).
+    trigger() {
+        return this.application.getControllerForElementAndIdentifier(this.buttonTarget, BUTTON);
     }
 }

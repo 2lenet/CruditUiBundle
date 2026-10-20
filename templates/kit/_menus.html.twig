@@ -48,6 +48,16 @@
     </twig:LleCruditUi:Dropdown>
 </div>
 
+<h3 class="crudit-ui-kit__subtitle">An item that sends a form</h3>
+<form id="kit-menu-form" action="#kit-menus" method="get" class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Dropdown id="kit-menu-submit" label="Send">
+        <twig:LleCruditUi:Menu>
+            <twig:LleCruditUi:MenuItem icon="email" type="submit" name="channel" value="email">By email</twig:LleCruditUi:MenuItem>
+        </twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+    <span class="crudit-ui-kit__text">The button of the menu is in loading while the form is sent.</span>
+</form>
+
 <h3 class="crudit-ui-kit__subtitle">In a container that scrolls (floating)</h3>
 <div class="crudit-ui-kit__table-wrap crudit-ui-kit__scroller">
     <table class="crudit-ui-kit__table">

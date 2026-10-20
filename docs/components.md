@@ -86,6 +86,9 @@ or link.
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
 element; `class` and `data-controller` are added to those of the component, the others replace its own.
 
+Events of its controller: `2lenet--crudit-ui-bundle--button:busy` and `…:idle`, when it goes in loading (busyOnSubmit)
+and back.
+
 To keep a disabled button focusable (a form without change), pass `aria-disabled="true"` instead of `disabled`: it
 looks the same. The controller of the component, `2lenet--crudit-ui-bundle--button`, then ignores the click, Enter on
 the button and Enter in a field of its form; only a `form.submit()` in JavaScript still sends it. A disabled button
@@ -214,7 +217,7 @@ no arrow keys.
 | `iconOnly` | bool | `false` | an icon button, as `IconButton` |
 | `variant`, `size` | | `secondary`, `md` | as for `Button` (not with `iconOnly`, which takes `size` only) |
 | `align` | `end`, `start` | `end` | edge of the button the panel is aligned on, in the reading direction |
-| `floating` | bool | `false` | the panel in `position: fixed`, placed next to the button by the controller: it is not cut by a container that scrolls or hides its overflow (a table, a card). It closes when the page scrolls |
+| `floating` | bool | `false` | the panel in `position: fixed`, placed next to the button by the controller: it is not cut by a container that scrolls or hides its overflow (a table, a card). It closes when the page scrolls, and follows the button when the window is resized or when the page scrolls while the focus is in the panel (the virtual keyboard of a phone, opened by a field) |
 
 Blocks: `content`, the panel (a `Menu`, or anything: `crudit-ui-dropdown__header`, `__title`, `__body` and `__footer`
 lay out a panel with a title and buttons); `trigger`, the content of the button in place of the icon, the label and the
@@ -227,8 +230,11 @@ that writes its own markup gives the controller to a container, the target `butt
 button (with `aria-expanded="false"`), the target `panel` to the panel (with `hidden`).
 
 Accessibility: `aria-expanded` and `aria-controls` on the button. Escape closes the panel and gives the focus back to
-the button (and stops there: a dialog around stays open); a click outside or the focus leaving the dropdown close it;
-the choice of an item of a `Menu` closes it and gives the focus back to the button. The panel is shifted to stay in the
+the button (and stops there, its default prevented: a dialog around, a native `<dialog>` too, stays open); a click
+outside or the focus leaving the dropdown close it; the choice of an item of a `Menu` closes it and gives the focus
+back to the button, before the action of the item runs: a dialog that the action opens takes the focus, and gives it
+back to the button. While an item sends a form (`type="submit"`), the button of the dropdown is in loading. The panel
+closes when the controller disconnects and before Turbo caches the page. The panel is shifted to stay in the
 screen; the root takes `crudit-ui-dropdown--open` while it is open, so that a sticky container (a cell, a bar) rises
 above its neighbours: `.my-sticky:has(.crudit-ui-dropdown--open) { z-index: … }`.
 
@@ -269,7 +275,7 @@ a touch screen.
 | `text` | string | required | |
 | `placement` | `above`, `below`, `beside` | `above` | `beside`: on the inline end side, centred (the collapsed menu bar); always floating |
 | `align` | `end`, `start` | `end` | edge of the element it is aligned on, above or below |
-| `floating` | bool | `false` | in `position: fixed`, placed by the controller when it is shown: inside a container that hides its overflow |
+| `floating` | bool | `false` | in `position: fixed`, placed by the controller when it is shown, and again when the page scrolls: inside a container that hides its overflow |
 
 Block: `content`, the element (focusable). Attributes: on the host (`<span class="crudit-ui-tooltip-host">`).
 Controller `2lenet--crudit-ui-bundle--tooltip`.

@@ -5,7 +5,8 @@
  #
  # Props: label (required: text of the button, or its accessible name with iconOnly), icon, iconOnly (an IconButton,
  # "more" by default), variant (as Button; secondary), size (md, small), align (end, start: edge of the button the
- # panel is aligned on), floating (position: fixed, inside a table or a container that scrolls).
+ # panel is aligned on), floating (position: fixed, inside a table or a container that scrolls). The button is in
+ # loading while an item of the panel sends a form.
  # Blocks: content (the panel), trigger (the content of the button, in place of icon, label and chevron).
  # Attributes: on the root; `trigger:` on the button, `panel:` on the panel. The id passed by the project, if any,
  # names the panel too (<id>-panel). Contract: docs/components.md.
@@ -28,6 +29,8 @@
         ('data-' ~ controller ~ '-target'): 'button',
         'data-action': controller ~ '#toggle',
     }}, with_context: false) -}}
+        {#- Spinner of the loading state, while an item of the panel sends a form (controllers dropdown and button). -#}
+        <template data-2lenet--crudit-ui-bundle--button-target="spinner">{{ ui_icon('loading') }}</template>
         {%- block trigger -%}
             {%- if iconOnly -%}
                 {{- ui_icon(icon ?? 'more') -}}<span class="crudit-ui-visually-hidden">{{ label }}</span>
