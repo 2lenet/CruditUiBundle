@@ -1,6 +1,6 @@
 // Smoke test of a test application: node smoke.mjs <url> [chrome path]
 // The page must show the dropdown controller of the bundle and load its stylesheet; the design kit page must have no
-// accessibility violation (axe-core), and its menus and tooltips must work.
+// accessibility violation (axe-core), and its menus, tooltips and dialogs must work.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
@@ -394,17 +394,170 @@ try {
     await page.mouse.move(box.x + 2, box.y + 2);
     assert.equal(await settled('visible'), 'visible', 'the tooltip does not come back when the pointer moves');
 
-    // A floating tooltip follows its host when the page scrolls.
-    await page.hover('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host:has(.crudit-ui-tooltip--floating) button');
+    // A floating tooltip follows its host when the page scrolls. Shown by the focus: the pointer, which does not move,
+    // would leave the host as the page scrolls.
+    await page.focus('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host:has(.crudit-ui-tooltip--floating) button');
     const gap = () => page.evaluate(() => {
         const host = document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host:has(.crudit-ui-tooltip--floating)');
 
         return Math.round(host.querySelector('.crudit-ui-tooltip').getBoundingClientRect().top - host.getBoundingClientRect().top);
     });
     const before = await gap();
-    await page.evaluate(() => window.scrollBy(0, 40));
+    const scrolled = await page.evaluate(() => {
+        const top = window.scrollY;
+        window.scrollBy(0, 40);
+
+        return window.scrollY - top;
+    });
+    assert.equal(scrolled, 40, 'the page does not scroll: the test of the floating tooltip checks nothing');
     await new Promise((resolve) => setTimeout(resolve, 100));
     assert.equal(await gap(), before, 'a floating tooltip does not follow its host when the page scrolls');
+
+    // Dialogs of the design kit (controller dialog): opened modal by a button (commandfor), the focus on the element
+    // with autofocus, kept in the dialog, given back to the button by Escape, the close button and the backdrop.
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const dialog = (id) => page.evaluate((dialogId) => {
+        const element = document.getElementById(dialogId);
+
+        return {
+            open: element.open,
+            modal: element.matches(':modal'),
+            focus: element.contains(document.activeElement) ? document.activeElement.textContent.trim() || document.activeElement.id : document.activeElement?.id,
+            locked: getComputedStyle(document.documentElement).overflow === 'hidden',
+        };
+    }, id);
+    const openDialog = async (opener, id) => {
+        await page.click(`#${opener}`);
+        await page.waitForFunction((dialogId) => document.getElementById(dialogId).open, {timeout: 1000}, id);
+    };
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    assert.deepEqual(await dialog('kit-dialog-confirm'), {open: true, modal: true, focus: 'Cancel', locked: true}, 'the confirmation is not opened modal, with the focus on Cancel');
+    // Tab never reaches the page under the dialog (the browser may give the focus to its own interface on the way).
+    const tabbed = [];
+    for (let index = 0; index < 5; index++) {
+        await page.keyboard.press('Tab');
+        tabbed.push(await page.evaluate(() => document.getElementById('kit-dialog-confirm').contains(document.activeElement) || document.activeElement === document.body));
+    }
+    assert.deepEqual(tabbed, [true, true, true, true, true], 'the focus leaves the dialog');
+    await page.keyboard.press('Escape');
+    assert.deepEqual(await dialog('kit-dialog-confirm'), {open: false, modal: false, focus: 'kit-dialog-confirm-open', locked: false}, 'Escape does not close the dialog, or does not give the focus back');
+
+    // The buttons of the footer close it (command="close"), with their value; the close button and the backdrop too.
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    await page.click('#kit-dialog-confirm .crudit-ui-dialog__footer .crudit-ui-btn--danger');
+    assert.deepEqual([await page.evaluate(() => document.getElementById('kit-dialog-confirm').returnValue), (await dialog('kit-dialog-confirm')).focus], ['delete', 'kit-dialog-confirm-open'], 'a button of the footer does not close the dialog');
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    await page.click('#kit-dialog-confirm .crudit-ui-dialog__close');
+    assert.deepEqual(await dialog('kit-dialog-confirm'), {open: false, modal: false, focus: 'kit-dialog-confirm-open', locked: false}, 'the close button does not close the dialog');
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    await page.mouse.click(5, 5);
+    assert.equal((await dialog('kit-dialog-confirm')).open, false, 'a click on the backdrop does not close the dialog');
+    // A click in the dialog, or a press in it released on the backdrop (a selection of text), keeps it open.
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    const titleBox = await (await page.$('#kit-dialog-confirm .crudit-ui-dialog__title')).boundingBox();
+    await page.mouse.click(titleBox.x + 2, titleBox.y + 2);
+    await page.mouse.move(titleBox.x + 2, titleBox.y + 2);
+    await page.mouse.down();
+    await page.mouse.move(5, 5);
+    await page.mouse.up();
+    assert.equal((await dialog('kit-dialog-confirm')).open, true, 'a click in the dialog, or a selection that ends on the backdrop, closes it');
+
+    // A project keeps it open by cancelling "cancel" (a form with changes): close button and backdrop.
+    const cancelled = await page.evaluate(() => {
+        const element = document.getElementById('kit-dialog-confirm');
+        const keep = (event) => event.preventDefault();
+        element.addEventListener('cancel', keep);
+        element.querySelector('.crudit-ui-dialog__close').click();
+        const kept = element.open;
+        element.removeEventListener('cancel', keep);
+        element.querySelector('.crudit-ui-dialog__close').click();
+
+        return {kept, closed: !element.open};
+    });
+    assert.deepEqual(cancelled, {kept: true, closed: true}, 'the close button does not fire a cancelable "cancel"');
+
+    // Events of the controller, and the focus put on <main> when the button that opened the dialog is gone.
+    const lost = await page.evaluate(async () => {
+        const events = [];
+        const element = document.getElementById('kit-dialog-confirm');
+        element.addEventListener('2lenet--crudit-ui-bundle--dialog:open', () => events.push('open'));
+        element.addEventListener('2lenet--crudit-ui-bundle--dialog:close', () => events.push('close'));
+        const main = document.body.appendChild(document.createElement('main'));
+        const opener = main.appendChild(Object.assign(document.createElement('button'), {type: 'button', textContent: 'Delete'}));
+        opener.focus();
+        element.showModal();
+        opener.remove();
+        element.close();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        const focus = document.activeElement === main;
+        main.remove();
+
+        return {events, focus};
+    });
+    assert.deepEqual(lost, {events: ['open', 'close'], focus: true}, 'the events of the dialog, or the focus put on <main> when its button is gone');
+
+    // A form method="dialog" closes it; its submit button does not stay in loading (nothing is sent).
+    await openDialog('kit-dialog-form-open', 'kit-dialog-form');
+    assert.equal((await dialog('kit-dialog-form')).focus, 'Close', 'without autofocus, the focus does not go to the first focusable element');
+    await page.click('#kit-dialog-form .crudit-ui-btn--primary');
+    assert.equal((await dialog('kit-dialog-form')).open, true, 'the dialog closes with a required field empty');
+    await page.type('#kit-dialog-date', '12122026');
+    await page.click('#kit-dialog-form .crudit-ui-btn--primary');
+    const submittedForm = await page.evaluate(() => ({
+        open: document.getElementById('kit-dialog-form').open,
+        busy: document.querySelector('#kit-dialog-form .crudit-ui-btn--primary').getAttribute('aria-busy'),
+        focus: document.activeElement.id,
+    }));
+    assert.deepEqual(submittedForm, {open: false, busy: null, focus: 'kit-dialog-form-open'}, 'the form method="dialog" does not close the dialog, or leaves its button in loading');
+
+    // The drawer: on the inline end side, the whole height; Escape closes its dropdown first, then the drawer.
+    const drawer = async () => {
+        await openDialog('kit-drawer-open', 'kit-drawer');
+        await page.waitForFunction(() => getComputedStyle(document.getElementById('kit-drawer')).translate === 'none', {timeout: 1000});
+
+        return page.evaluate(() => {
+            const rect = document.getElementById('kit-drawer').getBoundingClientRect();
+
+            return {end: document.dir === 'rtl' ? Math.round(rect.left) === 0 : Math.round(rect.right) === document.documentElement.clientWidth, height: Math.round(rect.height) === innerHeight};
+        });
+    };
+    assert.deepEqual(await drawer(), {end: true, height: true}, 'the drawer is not on the inline end side, on the whole height');
+    await page.click('#kit-drawer-saved > button');
+    await page.keyboard.press('Escape');
+    assert.deepEqual([(await dialog('kit-drawer')).open, await page.evaluate(() => document.getElementById('kit-drawer-saved-panel').hidden)], [true, true], 'Escape in a dropdown closes the drawer around it');
+    await page.keyboard.press('Escape');
+    assert.equal((await dialog('kit-drawer')).open, false, 'Escape does not close the drawer');
+
+    // The value "open": shown modal when the dialog connects (a form sent back with its errors).
+    const atLoad = await page.evaluate(async () => {
+        const element = document.getElementById('kit-dialog-preview').cloneNode(true);
+        element.id = 'kit-dialog-at-load';
+        element.classList.remove('crudit-ui-kit__dialog');
+        element.setAttribute('data-2lenet--crudit-ui-bundle--dialog-open-value', 'true');
+        document.body.append(element);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        const state = {modal: element.matches(':modal'), value: element.hasAttribute('data-2lenet--crudit-ui-bundle--dialog-open-value')};
+        element.remove();
+
+        return state;
+    });
+    assert.deepEqual(atLoad, {modal: true, value: false}, 'the value "open" does not show the dialog when it connects');
+
+    // Accessibility of the open dialogs, and the drawer in right to left.
+    const auditOpen = async (path, opener, id) => {
+        await page.goto(new URL(path, url).href, {waitUntil: 'networkidle0'});
+        await openDialog(opener, id);
+        // Once opened: during its animation, the colours are blended with the backdrop.
+        await page.waitForFunction((dialogId) => document.getElementById(dialogId).getAnimations().length === 0, {timeout: 1000}, id);
+        await page.addScriptTag({content: axeSource});
+        const violations = await page.evaluate(async () => (await window.axe.run(document, {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations
+            .map((violation) => `${violation.id} (${violation.nodes.map((node) => node.target.join(' ')).join(', ')}): ${violation.help}`));
+        assert.deepEqual(violations, [], `accessibility of the dialog ${id} open`);
+    };
+    await auditOpen('crudit-ui/kit', 'kit-dialog-confirm-open', 'kit-dialog-confirm');
+    await auditOpen('crudit-ui/kit', 'kit-drawer-open', 'kit-drawer');
+    await page.goto(new URL('crudit-ui/kit/ar', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await drawer(), {end: true, height: true}, 'the drawer is not on the inline end side in right to left');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

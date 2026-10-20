@@ -13,7 +13,8 @@ import { Controller } from '@hotwired/stimulus';
  *   those added later on the document included;
  * - when Turbo has sent the form (turbo:submit-end): the page does not change;
  * - when the page comes back from the cache of the browser (Back button).
- * Not for a form sent to another window or frame (target, formtarget): the page stays as it is. A form whose answer
+ * Not for a form sent to another window or frame (target, formtarget): the page stays as it is; nor for a form
+ * method="dialog" in a dialog, which closes it and sends nothing. A form whose answer
  * is a download (export) cannot be detected: such a button takes busyOnSubmit false (docs/components.md).
  *
  * Events: "busy" and "idle" (2lenet--crudit-ui-bundle--button:busy / :idle), when it goes in loading and back; a
@@ -80,8 +81,12 @@ export default class extends Controller {
         }
     }
 
-    // The form is sent in this page, not in another window or frame.
+    // The form is sent in this page, not in another window or frame, nor closes a dialog (method="dialog").
     sendsHere() {
+        const method = this.element.getAttribute('formmethod') ?? this.element.form?.getAttribute('method') ?? '';
+        if (method.toLowerCase() === 'dialog' && this.element.form?.closest('dialog')) {
+            return false;
+        }
         const target = this.element.getAttribute('formtarget') ?? this.element.form?.getAttribute('target') ?? '';
 
         return target === '' || target === '_self';

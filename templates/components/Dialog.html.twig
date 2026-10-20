@@ -1,0 +1,32 @@
+{#
+ # Dialog: a native <dialog>, opened modal (controller dialog). The browser traps the focus, makes the rest of the page
+ # inert, gives the focus to the element with autofocus (else to the first focusable one: the close button) and gives
+ # it back to the button that opened it. Opened by a button of the page: commandfor="<id>" command="show-modal".
+ # Escape, the close button and a click on the backdrop fire "cancel" first (cancelable), then close it.
+ #
+ # Props: title (required: names the element concerned, "Delete the visit V-0412?"), description (read with the
+ # title), variant (dialog, drawer: a side panel on the inline end side, the whole width on a phone), open (shown modal
+ # when the page loads: a form sent back with its errors).
+ # Blocks: content (the body, which scrolls), footer (the buttons). Attributes: on the <dialog>; its id, given or
+ # generated, is the target of commandfor and names the title (<id>-title) and the description (<id>-description).
+ # Contract: docs/components.md.
+ #}
+{% props title, description = null, variant = 'dialog', open = false %}
+{%- set id = attributes.render('id') ?? ('crudit-ui-dialog-' ~ random()) -%}
+{%- set controller = '2lenet--crudit-ui-bundle--dialog' -%}
+{%- set defaults = {class: 'crudit-ui-dialog crudit-ui-dialog--' ~ variant, 'data-controller': controller, 'aria-labelledby': id ~ '-title'} -%}
+{%- if description is not null %}{% set defaults = defaults|merge({'aria-describedby': id ~ '-description'}) %}{% endif -%}
+{%- if open %}{% set defaults = defaults|merge({('data-' ~ controller ~ '-open-value'): 'true'}) %}{% endif -%}
+<dialog id="{{ id }}" {{ attributes.defaults(defaults) }}>
+    <div class="crudit-ui-dialog__inner">
+        <div class="crudit-ui-dialog__header">
+            <h2 id="{{ id }}-title" class="crudit-ui-dialog__title">{{ title }}</h2>
+            <twig:LleCruditUi:IconButton icon="close" label="{{ 'crudit_ui.action.close'|trans(domain: 'LleCruditUiBundle') }}" class="crudit-ui-dialog__close" data-action="2lenet--crudit-ui-bundle--dialog#dismiss"/>
+        </div>
+        <div class="crudit-ui-dialog__body">
+            {%- if description is not null %}<p id="{{ id }}-description" class="crudit-ui-dialog__description">{{ description }}</p>{% endif -%}
+            {%- block content %}{% endblock -%}
+        </div>
+        <div class="crudit-ui-dialog__footer">{%- block footer %}{% endblock -%}</div>
+    </div>
+</dialog>

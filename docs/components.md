@@ -80,7 +80,7 @@ or link.
 | `type` | `button`, `submit`, `reset` | `button` | |
 | `disabled` | bool | `false` | `disabled` on a button; a link loses its `href` and gets `aria-disabled` |
 | `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form). A loading link loses its `href`, as a disabled one: neither followed (click, middle click, Ctrl+click) nor focused |
-| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
+| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">` in a dialog, which closes it and sends nothing. Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
 | `count` | int | `null` | counter after the label, read with it (`Filters 3`) |
 
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
@@ -285,6 +285,62 @@ Controller `2lenet--crudit-ui-bundle--tooltip`.
 Accessibility (WCAG 1.4.13, RGAA 10.13): it can be hovered without closing; Escape hides the tooltips until the next
 move of the pointer or of the focus (the class `crudit-ui-tooltips-dismissed` on `<html>`); it goes while the menu of
 its button is open.
+
+### Dialogs and drawer
+
+#### LleCruditUi:Dialog
+
+A modal window: the confirmation of an action, an action with fields, an export; with `variant="drawer"`, a side
+panel (the filters on a phone, the configuration of a widget). A native `<dialog>`, opened with `showModal()`: the
+browser keeps the focus in it, makes the rest of the page inert (neither clicked nor read), and gives the focus back to
+the button that opened it. **Its title names the element concerned** ("Delete the visit V-0412?"); a destructive action
+is confirmed in one.
+
+```twig
+<twig:LleCruditUi:Button variant="danger-outline" icon="delete" commandfor="visit-delete" command="show-modal">{{ 'Delete'|trans }}</twig:LleCruditUi:Button>
+
+<twig:LleCruditUi:Dialog id="visit-delete" role="alertdialog" title="{{ 'Delete the visit %name%?'|trans({'%name%': visit}) }}" description="{{ 'This action cannot be undone.'|trans }}">
+    <form id="visit-delete-form" method="post" action="{{ path('visit_delete', {id: visit.id}) }}">…</form>
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button commandfor="visit-delete" command="close" autofocus>{{ 'Cancel'|trans }}</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="danger" icon="delete" type="submit" form="visit-delete-form">{{ 'Delete'|trans }}</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `title` | string | required | the title (`h2`) and the accessible name of the dialog |
+| `description` | string | `null` | under the title, read with it (`aria-describedby`): what the action does, what it changes |
+| `variant` | `dialog`, `drawer` | `dialog` | `dialog`: centred, 32rem wide at most. `drawer`: on the inline end side (the left one in right to left), the whole height, 28rem wide, the whole width on a phone |
+| `open` | bool | `false` | shown modal when the page loads: a form of the dialog sent back with its errors. Never the attribute `open` of `<dialog>`, which shows a dialog that is not modal |
+
+Blocks: `content`, the body, which scrolls (paragraphs, a form); `footer`, the buttons, hidden when empty (one primary
+button, as in any zone). Attributes: on the `<dialog>` (`role="alertdialog"` for a confirmation, `class`, `data-`).
+Its `id`, given or generated, is the target of the buttons and names the title (`<id>-title`) and the description
+(`<id>-description`).
+
+**Open and close it** with the attributes of HTML, `commandfor="<id>"` and `command` on a `<button type="button">`
+(a `Button`): `show-modal` opens it, `close` closes it (the `value` of the button becomes the `returnValue` of the
+dialog), `request-close` closes it as Escape does. The browsers run them (Chrome 135, Safari 26.2); the controller
+runs them in the older ones. A `<form method="dialog">` in the dialog closes it too, without sending anything: its
+submit button is then not put in loading (`busyOnSubmit`). In JavaScript, `dialog.showModal()` and `dialog.close()`,
+or the actions `open`, `close` and `dismiss` of the controller.
+
+Controller `2lenet--crudit-ui-bundle--dialog`, on the `<dialog>`. Events `…dialog:open` and `…dialog:close` on the
+dialog, however it opens or closes; the native `cancel` and `close` of `<dialog>` are there too. **Escape, the close
+button and a click on the backdrop fire `cancel` first**: a project cancels it (`preventDefault()`) to keep the dialog
+open (a form with changes, to confirm); Chrome closes it all the same on a second Escape when nothing was clicked or
+typed in between. A press in the dialog released on the backdrop (a selection of text) does not
+close it. The dialog closes when the controller disconnects and before Turbo caches the page.
+
+Accessibility: `role="dialog"` (native) or `alertdialog`, named by its title, described by its description. **Initial
+focus**: on the element with `autofocus`, else on the first focusable one (the close button). Put `autofocus` on
+Cancel in a confirmation (the least destructive choice), on the first field in a form. Tab stays in the dialog (the
+browser may give it to its own interface on the way, never to the page). Escape closes it, except when a dropdown of
+the dialog is open: Escape closes the dropdown first. The focus goes back to the button that opened it; if that one is
+gone (the row it deleted), to `<main>`, given `tabindex="-1"`. The page under it does not scroll. The opening is
+animated (fade, or slide of the drawer), not when motion is reduced.
 
 ### LleCruditUi:Kit:Section
 

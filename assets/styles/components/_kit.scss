@@ -208,3 +208,10 @@
 .crudit-ui-kit__tooltips {
     padding-block-start: var(--space-6);
 }
+
+// Dialogs: one shown in place, closed, to review it without opening it.
+.crudit-ui-kit__dialog {
+    position: static;
+    display: block;
+    margin: 0;
+}
