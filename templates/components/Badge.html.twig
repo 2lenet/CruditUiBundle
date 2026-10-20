@@ -1,0 +1,13 @@
+{#
+ # Badge: a short text on a coloured pill, also a counter. The colour doubles the text, never the reverse.
+ #
+ # Props: tone (neutral, info, primary, success, warning, danger, a hue such as blue, or a colour of the project
+ # (docs/components.md);
+ # neutral), label (read after the text by assistive technologies only: "12" + "visits to plan").
+ # Block: content (the text shown). Contract: docs/components.md.
+ #}
+{% props tone = 'neutral', label = null %}
+<span {{ attributes.defaults({class: 'crudit-ui-badge crudit-ui-tone--' ~ tone}) }}>
+    {%- block content %}{% endblock -%}
+    {%- if label is not null %}<span class="crudit-ui-visually-hidden">&nbsp;{{ label }}</span>{% endif -%}
+</span>

@@ -1,0 +1,11 @@
+{#
+ # Tag: a toggle button (aria-pressed). Associated: solid border, check and weight; free: dashed, "+". Busy while it
+ # is saved: spinner, and the click is ignored (controller button). The project switches it (pressed, busy).
+ #
+ # Props: pressed, busy. Block: content (the label). Contract: docs/components.md.
+ #}
+{% props pressed = false, busy = false %}
+{{- include('@LleCruditUi/partials/_button_open.html.twig', {attributes: attributes, class: 'crudit-ui-tag', href: null, type: 'button', disabled: false, loading: busy, busyOnSubmit: false, extra: {'aria-pressed': pressed ? 'true' : 'false'}}, with_context: false) -}}
+    {{- ui_icon(busy ? 'loading' : (pressed ? 'check' : 'add'), 'crudit-ui-tag__icon') -}}
+    {%- block content %}{% endblock -%}
+</button>

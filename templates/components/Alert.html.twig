@@ -1,0 +1,28 @@
+{#
+ # Alert: an icon, its type read first ("Error:", before the title if there is one), a title, a text, actions, and a close button. Give an error
+ # role="alert" (announced at once); the others no role, or role="status" for a message that appears.
+ #
+ # Props: tone (info, success, warning, danger; info), title, inline (smaller, on one line), dismissible (a close
+ # button: controller alert). Blocks: content (the text), actions. Contract: docs/components.md.
+ #}
+{% props tone = 'info', title = null, inline = false, dismissible = false %}
+{%- set icons = {info: 'info', success: 'success', warning: 'warning', danger: 'error'} -%}
+{%- set defaults = {class: 'crudit-ui-alert crudit-ui-alert--' ~ tone ~ (inline ? ' crudit-ui-alert--inline' : '')} -%}
+{%- if dismissible -%}
+    {%- set defaults = defaults|merge({'data-controller': '2lenet--crudit-ui-bundle--alert'}) -%}
+{%- endif -%}
+<div {{ attributes.defaults(defaults) }}>
+    {{- ui_icon(icons[tone] ?? 'info', 'crudit-ui-alert__icon') -}}
+    <div class="crudit-ui-alert__body">
+        {%- set type -%}<span class="crudit-ui-visually-hidden">{{ ('crudit_ui.alert.' ~ tone)|trans(domain: 'LleCruditUiBundle') }} </span>{%- endset -%}
+        {%- if title is not null %}<p class="crudit-ui-alert__title">{{ type }}{{ title }}</p>{% endif -%}
+        <div class="crudit-ui-alert__text">
+            {%- if title is null %}{{ type }}{% endif -%}
+            {%- block content %}{% endblock -%}
+        </div>
+    </div>
+    <div class="crudit-ui-alert__actions">{%- block actions %}{% endblock -%}</div>
+    {%- if dismissible -%}
+        <twig:LleCruditUi:IconButton icon="close" label="{{ 'crudit_ui.action.close'|trans(domain: 'LleCruditUiBundle') }}" size="small" class="crudit-ui-alert__close" data-action="2lenet--crudit-ui-bundle--alert#close"/>
+    {%- endif -%}
+</div>

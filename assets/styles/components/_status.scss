@@ -1,0 +1,81 @@
+// Values of a list or a record, from the fields of the crudit-v2 mockup (src/styles/components/_fields.scss).
+
+// Status (workflow): an outlined pill, a dot and the label, always written. Readable on a tinted row too. Its colour
+// comes from its tone (`crudit-ui-tone--<tone>`, components/_tone.scss).
+.crudit-ui-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-2);
+    border: 1px solid currentcolor;
+    border-radius: var(--radius-full);
+    background-color: var(--c-surface);
+    color: var(--crudit-ui-tone-text, var(--c-neutral-text));
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    white-space: nowrap;
+
+    &__dot {
+        width: 0.375rem;
+        height: 0.375rem;
+        flex: none;
+        border-radius: var(--radius-full);
+        background-color: currentcolor;
+    }
+
+    &--small {
+        gap: var(--space-1);
+        padding: 0 var(--space-1);
+    }
+}
+
+// Boolean: an icon and Yes or No, written (not the colour alone).
+.crudit-ui-bool {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    white-space: nowrap;
+
+    &--yes {
+        color: var(--c-success-text);
+        font-weight: var(--font-weight-medium);
+    }
+
+    &--no {
+        color: var(--c-danger-text);
+    }
+}
+
+// Value not filled in: a dash, read as "Not set".
+.crudit-ui-empty-value {
+    color: var(--c-text-muted);
+}
+
+// Colour: a swatch and its code, always written.
+.crudit-ui-color {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    // An SVG (fill="…"): no style attribute. The border is drawn over the colour.
+    &__swatch {
+        width: 1rem;
+        height: 1rem;
+        flex: none;
+        border-radius: var(--radius-sm);
+        fill: transparent;
+        outline: 1px solid rgb(0 0 0 / 15%);
+        outline-offset: -1px;
+    }
+
+    // Not a colour: an empty, dashed swatch.
+    &--invalid &__swatch {
+        outline-style: dashed;
+    }
+
+    code {
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+}

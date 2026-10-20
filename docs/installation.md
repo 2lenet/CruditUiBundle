@@ -63,6 +63,9 @@ Put the language, the direction and the theme chosen by the user on `<html>`, in
 AssetMapper and Encore read `controllers.json` once: run `bin/console cache:clear` after `composer require`
 (AssetMapper does not see a `controllers.json` created or changed before), and rebuild with Encore.
 
+In development, the design kit page shows the tokens and the components of the bundle in the project: import its
+routes under `when@dev` (see [Components](components.md#design-kit)).
+
 ### Project created before Stimulus (Encore)
 
 Flex does not create the Stimulus configuration of a project that did not have the Stimulus recipe. Add:
@@ -72,7 +75,10 @@ Flex does not create the Stimulus configuration of a project that did not have t
 {
     "controllers": {
         "@2lenet/crudit-ui-bundle": {
-            "dropdown": {"enabled": true, "fetch": "eager"}
+            "alert": {"enabled": true, "fetch": "eager"},
+            "button": {"enabled": true, "fetch": "eager"},
+            "dropdown": {"enabled": true, "fetch": "eager"},
+            "theme": {"enabled": true, "fetch": "eager"}
         }
     },
     "entrypoints": []

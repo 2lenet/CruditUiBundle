@@ -49,6 +49,17 @@ npm test        # tokens and contrasts, prefix of the classes, grid, utilities, 
 The bundle must not depend on `2lenet/crudit-bundle` nor on `2lenet/dashboard-bundle`: it knows nothing about
 `CrudConfig`, bricks or the menu.
 
+## A new component
+
+A component is done when:
+
+- it follows the [conventions](components.md#conventions), and its [contract](components.md#contract-of-a-component)
+  is in `docs/components.md`;
+- it has its section in the design kit page, in all its states;
+- it works at 360, 768, 1280 and 1600 px wide, in light and dark, right to left;
+- a PHPUnit test renders it (`RendersTwig` in `tests/phpunit/Functional`: `render()` with `<twig:LleCruditUi:…>`, then
+  `html()` and `querySelector()`), and the smoke test passes, axe included.
+
 ## Test applications
 
 `tests/apps/` holds one Symfony application per asset tool the bundle supports: `assetmapper` and `encore`.
@@ -56,7 +67,9 @@ Each one installs the bundle as a project does (Composer path repository with `s
 **copied** into `vendor/`), loads the stylesheet explicitly, overrides a variable in its own CSS and shows the
 dropdown controller. `tests/apps/smoke.mjs` drives a headless Chrome on the page: the stylesheet and the
 breakpoint variables are loaded, the project wins over the `crudit-ui` layer, the controller opens and closes the
-menu, the page in French, Arabic and Persian has the right direction, texts, numbers and dates, nothing fails to load. The `Test applications` workflow runs it for AssetMapper (dev and prod, with
+menu, the page in French, Arabic and Persian has the right direction, texts, numbers and dates, nothing fails to load,
+and the [design kit](components.md#design-kit) page has no accessibility violation for axe-core (WCAG 2.1 A and AA,
+in light, dark, right to left and on a phone, 360 px wide). The `Test applications` workflow runs it for AssetMapper (dev and prod, with
 `asset-map:compile`) and Encore.
 
 To run one locally (Docker, no local PHP needed):

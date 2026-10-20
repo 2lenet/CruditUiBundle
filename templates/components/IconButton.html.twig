@@ -1,0 +1,14 @@
+{#
+ # Button with an icon only. The label is its accessible name, read but not shown: put the count in it.
+ #
+ # Props: icon, label (required), size (md, small), href, type (button), disabled, loading, busyOnSubmit (as Button),
+ # count (shown on the corner of the icon, hidden from assistive technologies). Contract: docs/components.md.
+ #}
+{% props icon, label, size = 'md', href = null, type = 'button', disabled = false, loading = false, count = null, busyOnSubmit = null %}
+{%- set busyOnSubmit = busyOnSubmit ?? (type == 'submit') -%}
+{%- set class = 'crudit-ui-icon-btn' ~ (size == 'small' ? ' crudit-ui-icon-btn--small' : '') ~ (count is not null ? ' crudit-ui-icon-btn--with-count' : '') -%}
+{{- include('@LleCruditUi/partials/_button_open.html.twig', {attributes: attributes, class: class, href: href, type: type, disabled: disabled, loading: loading, busyOnSubmit: busyOnSubmit, extra: {}}, with_context: false) -}}
+    {{- ui_icon(loading ? 'loading' : icon) -}}
+    <span class="crudit-ui-visually-hidden">{{ label }}</span>
+    {%- if count is not null %}<span class="crudit-ui-icon-btn__count" aria-hidden="true">{{ count }}</span>{% endif -%}
+{%- if href is not null %}</a>{% else %}</button>{% endif -%}

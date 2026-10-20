@@ -1,0 +1,81 @@
+{# Buttons (1.5.a): every variant in every state, sizes, icons, counters, links and groups. Inside a component, its
+ # props hide the variables of the template of the same name (`variant`): hence `row`. #}
+{% set variants = [
+    {id: 'primary', label: 'Save'},
+    {id: 'secondary', label: 'Cancel'},
+    {id: 'ghost', label: 'See all'},
+    {id: 'warning', label: 'Stop'},
+    {id: 'danger', label: 'Delete'},
+    {id: 'danger-outline', label: 'Remove'},
+    {id: 'link', label: 'Details'},
+] %}
+{% set states = [
+    {id: 'default', label: 'Default', class: ''},
+    {id: 'hover', label: 'Hover', class: 'crudit-ui-is-hover'},
+    {id: 'focus', label: 'Focus', class: 'crudit-ui-is-focus'},
+    {id: 'disabled', label: 'Disabled', class: ''},
+    {id: 'loading', label: 'Loading', class: ''},
+] %}
+<p class="crudit-ui-kit__text">One primary button per zone. Hover and focus are forced to be visible; the buttons stay usable.</p>
+<div class="crudit-ui-kit__table-wrap">
+    <table class="crudit-ui-kit__table">
+        <caption class="crudit-ui-visually-hidden">Variants of the buttons in their states</caption>
+        <thead>
+            <tr>
+                <th scope="col">Variant</th>
+                {% for state in states %}<th scope="col">{{ state.label }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in variants %}
+                <tr>
+                    <th scope="row"><code>{{ row.id }}</code></th>
+                    {% for state in states %}
+                        <td>
+                            <twig:LleCruditUi:Button variant="{{ row.id }}" class="{{ state.class }}" :disabled="state.id == 'disabled'" :loading="state.id == 'loading'">{{ row.label }}</twig:LleCruditUi:Button>
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Sizes, icon, count, link</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Button variant="primary" icon="save">Save</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button size="small" icon="add">Small button</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button icon="filter" count="3">Filters</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button variant="primary" count="12">Unread</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button href="#kit-buttons">Link that looks like a button</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button href="#kit-buttons" disabled>Disabled link</twig:LleCruditUi:Button>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Icon buttons (accessible name required)</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:IconButton icon="edit" label="Edit"/>
+    <twig:LleCruditUi:IconButton icon="edit" label="Edit (forced hover)" class="crudit-ui-is-hover"/>
+    <twig:LleCruditUi:IconButton icon="edit" label="Edit (forced focus)" class="crudit-ui-is-focus"/>
+    <twig:LleCruditUi:IconButton icon="edit" label="Edit (small)" size="small"/>
+    <twig:LleCruditUi:IconButton icon="notifications" label="Notifications (3 unread)" count="3"/>
+    <twig:LleCruditUi:IconButton icon="delete" label="Delete (disabled)" disabled/>
+    <twig:LleCruditUi:IconButton icon="save" label="Saving" loading/>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Groups</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:ButtonGroup label="Edit in place">
+        <twig:LleCruditUi:IconButton icon="check" label="Save" size="small"/>
+        <twig:LleCruditUi:IconButton icon="close" label="Cancel" size="small"/>
+    </twig:LleCruditUi:ButtonGroup>
+    <twig:LleCruditUi:ButtonGroup>
+        <twig:LleCruditUi:Button>Cancel</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="primary" icon="save">Save</twig:LleCruditUi:Button>
+    </twig:LleCruditUi:ButtonGroup>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Submit button (busy once it sends its form)</h3>
+<form id="kit-submit-form" action="#kit-buttons" method="get" class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Button variant="primary" type="submit" icon="save">Save</twig:LleCruditUi:Button>
+    <span class="crudit-ui-kit__text">A second click, or Enter, is ignored while the form is sent.</span>
+</form>

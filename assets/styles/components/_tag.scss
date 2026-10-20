@@ -1,0 +1,99 @@
+@use '../tools/a11y' as *;
+
+// Tag: a toggle button (aria-pressed), from the crudit-v2 mockup (src/styles/components/_show.scss).
+.crudit-ui-tag {
+    display: inline-flex;
+    min-height: var(--control-h-small);
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-full);
+    background-color: var(--c-surface);
+    color: var(--c-text);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    @include transition(background-color, border-color, color);
+
+    &:hover:not([aria-busy='true']),
+    &.crudit-ui-is-hover {
+        background-color: var(--c-surface-hover);
+    }
+
+    &__icon {
+        color: var(--c-text-muted);
+        font-size: 0.75rem;
+    }
+
+    // Associated: solid border, background, check and weight (not the colour alone).
+    &[aria-pressed='true'] {
+        border-style: solid;
+        border-color: var(--c-primary);
+        background-color: var(--c-primary-subtle);
+        color: var(--c-primary-text);
+        font-weight: var(--font-weight-semibold);
+
+        .crudit-ui-tag__icon {
+            color: inherit;
+        }
+    }
+
+    &[aria-busy='true'] {
+        cursor: progress;
+    }
+}
+
+// Chip: an active filter, removable one by one, from the crudit-v2 mockup (src/styles/components/_filter-bar.scss).
+.crudit-ui-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.crudit-ui-chip {
+    display: inline-flex;
+    max-width: 100%;
+    min-height: var(--control-h-small);
+    align-items: center;
+    gap: var(--space-1);
+    padding-inline: var(--space-2) 0;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    background-color: var(--c-surface);
+    color: var(--c-text);
+    font-size: var(--font-size-sm);
+
+    &--static {
+        padding-inline-end: var(--space-2);
+    }
+
+    &__text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__remove {
+        display: inline-grid;
+        width: 1.75rem;
+        height: 1.75rem;
+        flex: none;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background-color: transparent;
+        color: var(--c-text-muted);
+        cursor: pointer;
+
+        &:hover,
+        &.crudit-ui-is-hover {
+            background-color: var(--c-surface-hover);
+            color: var(--c-text);
+        }
+    }
+}

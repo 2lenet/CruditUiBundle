@@ -1,0 +1,75 @@
+// Progress bar: a label, the native <progress> and the value, written. From the gauge and the progress field
+// of the crudit-v2 mockup (src/styles/components/_dashboard.scss and _fields.scss).
+.crudit-ui-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 5.5rem;
+
+    &__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-2);
+        font-size: var(--font-size-xs);
+    }
+
+    &__label {
+        font-weight: var(--font-weight-medium);
+    }
+
+    &__value {
+        color: var(--c-text-muted);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    // The native <progress>: its look is set by the pseudo-elements of each engine (one rule each: a selector list
+    // with an unknown pseudo-element would drop the whole rule).
+    &__track {
+        display: block;
+        width: 100%;
+        height: 0.5rem;
+        overflow: hidden;
+        border: 0;
+        border-radius: var(--radius-full);
+        appearance: none;
+        background-color: var(--c-surface-active);
+        color: var(--crudit-ui-progress-bar, var(--c-primary));
+    }
+
+    &__track::-webkit-progress-bar {
+        border-radius: inherit;
+        background-color: var(--c-surface-active);
+    }
+
+    &__track::-webkit-progress-value {
+        border-radius: inherit;
+        background-color: var(--crudit-ui-progress-bar, var(--c-primary));
+    }
+
+    &__track::-moz-progress-bar {
+        border-radius: inherit;
+        background-color: var(--crudit-ui-progress-bar, var(--c-primary));
+    }
+
+    &--success {
+        --crudit-ui-progress-bar: var(--c-success-text);
+    }
+
+    &--warning {
+        --crudit-ui-progress-bar: var(--c-warning-border);
+    }
+
+    &--warning &__value {
+        color: var(--c-warning-text);
+    }
+
+    &--danger {
+        --crudit-ui-progress-bar: var(--c-danger-solid);
+    }
+
+    &--danger &__value {
+        color: var(--c-danger-text);
+    }
+}

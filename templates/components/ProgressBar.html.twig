@@ -1,0 +1,21 @@
+{#
+ # Progress bar: a label, the native <progress> (role progressbar, named by the label) and the value, written in the
+ # format of the locale ("45 %"). No style attribute: works under a strict Content Security Policy.
+ #
+ # Props: value, label (required), max (100), tone (primary, success, warning, danger; primary, success when the value
+ # reaches max), valueText (the value written and read; the percentage by default). The id passed by the project, if
+ # any, names the label too (<id>-label). Contract: docs/components.md.
+ #}
+{% props value, label, max = 100, tone = null, valueText = null %}
+{%- set id = attributes.render('id') ?? ('crudit-ui-progress-' ~ random()) -%}
+{%- set bound = max -%}
+{%- set tone = tone ?? (value >= bound ? 'success' : 'primary') -%}
+{%- set valueText = valueText ?? (bound > 0 ? value / bound : 0)|ui_number(style: 'percent') -%}
+<div id="{{ id }}" {{ attributes.defaults({class: 'crudit-ui-progress crudit-ui-progress--' ~ tone}) }}>
+    <div class="crudit-ui-progress__head">
+        <span id="{{ id }}-label" class="crudit-ui-progress__label">{{ label }}</span>
+        <span class="crudit-ui-progress__value" aria-hidden="true">{{ valueText }}</span>
+    </div>
+    {#- The value of the element stays between 0 and max; the real one is in the text. -#}
+    <progress class="crudit-ui-progress__track" value="{{ min(max(value, 0), bound) }}" max="{{ bound }}" aria-labelledby="{{ id }}-label" aria-valuetext="{{ valueText }}">{{ valueText }}</progress>
+</div>

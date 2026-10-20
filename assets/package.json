@@ -7,6 +7,18 @@
     "type": "module",
     "symfony": {
         "controllers": {
+            "alert": {
+                "main": "dist/controllers/alert_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "button": {
+                "main": "dist/controllers/button_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "dropdown": {
                 "main": "dist/controllers/dropdown_controller.js",
                 "webpackMode": "eager",

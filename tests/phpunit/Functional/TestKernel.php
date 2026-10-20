@@ -13,6 +13,7 @@ use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
@@ -25,9 +26,10 @@ class TestKernel extends Kernel
     use MicroKernelTrait;
 
     /**
-     * @param array<string, mixed> $uiConfig lle_crudit_ui configuration of the project
+     * @param array<string, mixed> $uiConfig    lle_crudit_ui configuration of the project
+     * @param string               $templateDir templates of the project (base.html.twig, overridden components)
      */
-    public function __construct(private readonly array $uiConfig = [])
+    public function __construct(private readonly array $uiConfig = [], private readonly string $templateDir = __DIR__ . '/templates')
     {
         parent::__construct('test', true);
     }
@@ -49,7 +51,7 @@ class TestKernel extends Kernel
 
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir() . '/lle_crudit_ui_bundle/' . md5(serialize($this->uiConfig)) . '/cache';
+        return sys_get_temp_dir() . '/lle_crudit_ui_bundle/' . md5(serialize([$this->uiConfig, $this->templateDir])) . '/cache';
     }
 
     public function getLogDir(): string
@@ -77,6 +79,14 @@ class TestKernel extends Kernel
         }, PassConfig::TYPE_BEFORE_REMOVING);
     }
 
+    /**
+     * The routes a project imports in development: the design kit page.
+     */
+    protected function configureRoutes(RoutingConfigurator $routes): void
+    {
+        $routes->import(\dirname(__DIR__, 3) . '/config/routes/kit.php');
+    }
+
     protected function configureContainer(ContainerConfigurator $container): void
     {
         $container->extension('framework', [
@@ -86,6 +96,7 @@ class TestKernel extends Kernel
             'asset_mapper' => ['enabled' => true],
             'translator' => ['enabled' => true],
         ]);
+        $container->extension('twig', ['default_path' => $this->templateDir, 'strict_variables' => true]);
         $container->extension('twig_component', ['defaults' => [], 'anonymous_template_directory' => 'components/']);
         // Icons of the tests, without calling Iconify
         $container->extension('ux_icons', [

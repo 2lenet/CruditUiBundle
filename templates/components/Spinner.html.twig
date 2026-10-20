@@ -1,0 +1,11 @@
+{#
+ # Spinner: the loading icon and a text read by assistive technologies (role="status").
+ #
+ # Props: label (translated "Loading…" by default). Contract: docs/components.md.
+ #}
+{% props label = null %}
+<span role="status" {{ attributes.defaults({class: 'crudit-ui-spinner'}) }}>
+    {{- ui_icon('loading') -}}
+    <span class="crudit-ui-visually-hidden">{{ label ?? 'crudit_ui.state.loading'|trans(domain: 'LleCruditUiBundle') }}</span>
+{#- -#}
+</span>

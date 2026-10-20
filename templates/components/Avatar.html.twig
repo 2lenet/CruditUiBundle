@@ -1,0 +1,12 @@
+{#
+ # Avatar: the initials of a name (two at most), hidden from assistive technologies: write the name next to it.
+ # Impersonation is read ("(impersonation)").
+ #
+ # Props: name (required), size (small, md, large), impersonated (a ring and a flag). Contract: docs/components.md.
+ #}
+{% props name, size = 'md', impersonated = false %}
+{%- set initials = name|split(' ')|filter(word => word is not empty)|slice(0, 2)|map(word => word|first)|join|upper -%}
+<span {{ attributes.defaults({class: 'crudit-ui-avatar' ~ (size != 'md' ? ' crudit-ui-avatar--' ~ size : '') ~ (impersonated ? ' crudit-ui-avatar--impersonated' : '')}) }}>
+    {#- -#}<span aria-hidden="true">{{ initials }}</span>
+    {%- if impersonated %}{{ ui_icon('impersonate', 'crudit-ui-avatar__flag') }}<span class="crudit-ui-visually-hidden">{{ 'crudit_ui.avatar.impersonated'|trans(domain: 'LleCruditUiBundle') }}</span>{% endif -%}
+</span>

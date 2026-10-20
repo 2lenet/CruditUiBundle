@@ -9,3 +9,9 @@
 caption.crudit-ui-visually-hidden {
     position: static;
 }
+
+// Forced focus, to show the state on the design kit page: the same ring as `:focus-visible`. Its pair
+// `.crudit-ui-is-hover` has no rule of its own: each component adds it next to its `:hover`.
+.crudit-ui-is-focus {
+    @include focus-ring;
+}

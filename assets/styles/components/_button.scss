@@ -1,0 +1,225 @@
+@use '../tools/a11y' as *;
+
+// Buttons. Same as the crudit-v2 mockup (src/styles/components/_button.scss), with the prefix of the bundle:
+// `.button` is `.crudit-ui-btn`, `.icon-button` is `.crudit-ui-icon-btn`, `.link` is the `link` variant, and
+// `.is-hover` is `.crudit-ui-is-hover` (forced hover of the design kit). One primary button per zone. Unlike the
+// mockup, a disabled button does not change on hover.
+.crudit-ui-btn {
+    display: inline-flex;
+    min-height: var(--control-h);
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    text-decoration: none;
+    cursor: pointer;
+    @include transition(background-color, border-color, color);
+
+    &:hover:not(:disabled):not([aria-disabled='true']),
+    &.crudit-ui-is-hover {
+        text-decoration: none;
+    }
+
+    &--primary {
+        background-color: var(--c-primary);
+        color: var(--c-on-primary);
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: var(--c-primary-hover);
+            color: var(--c-on-primary);
+        }
+    }
+
+    &--secondary {
+        border-color: var(--c-border-strong);
+        background-color: var(--c-surface);
+        color: var(--c-text);
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: var(--c-surface-hover);
+            color: var(--c-text);
+        }
+    }
+
+    &--ghost {
+        color: var(--c-link);
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: var(--c-primary-subtle);
+            color: var(--c-link);
+        }
+    }
+
+    // On a warning background: the colours of the banner, inverted.
+    &--warning {
+        background-color: var(--c-warning-text);
+        color: var(--c-warning-bg);
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: var(--c-text);
+            color: var(--c-surface);
+        }
+    }
+
+    &--danger {
+        background-color: var(--c-danger-solid);
+        color: var(--c-on-danger-solid);
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: color-mix(in oklab, var(--c-danger-solid), black 15%);
+            color: var(--c-on-danger-solid);
+        }
+    }
+
+    &--danger-outline {
+        border-color: var(--c-danger-border);
+        background-color: var(--c-surface);
+        color: var(--c-danger-text);
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: var(--c-danger-bg);
+            color: var(--c-danger-text);
+        }
+    }
+
+    // A button that looks like a link (`.link` of the mockup).
+    &--link {
+        min-height: auto;
+        padding: 0;
+        color: var(--c-link);
+        font-weight: var(--font-weight-medium);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.18em;
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            color: var(--c-link);
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+        }
+    }
+
+    &--small {
+        min-height: var(--control-h-small);
+        gap: var(--space-1);
+        padding: 0 var(--space-2);
+    }
+
+    // A link stays a link in the small size: no padding, no height.
+    &--link#{&}--small {
+        min-height: auto;
+        padding: 0;
+    }
+
+    // Counter after the label (active filters…), read with it.
+    &__count {
+        display: inline-grid;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        place-items: center;
+        padding: 0 var(--space-1);
+        border-radius: var(--radius-full);
+        background-color: var(--c-primary);
+        color: var(--c-on-primary);
+        font-size: 0.75rem;
+        font-weight: var(--font-weight-bold);
+    }
+
+    &--primary &__count {
+        background-color: var(--c-on-primary);
+        color: var(--c-primary);
+    }
+}
+
+// Icon button: an accessible name is required (hidden label).
+.crudit-ui-icon-btn {
+    position: relative;
+    display: inline-flex;
+    width: var(--control-h);
+    height: var(--control-h);
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: var(--c-text-muted);
+    font: inherit;
+    font-size: var(--font-size-md);
+    cursor: pointer;
+    @include transition(background-color, color);
+
+    &:hover:not(:disabled):not([aria-disabled='true']),
+    &.crudit-ui-is-hover,
+    &[aria-expanded='true'] {
+        background-color: var(--c-surface-hover);
+        color: var(--c-text);
+    }
+
+    &--small {
+        width: var(--control-h-small);
+        height: var(--control-h-small);
+    }
+
+    // A button with a counter: room for the counter, which overflows the button.
+    &--with-count {
+        margin-inline-end: var(--space-2);
+    }
+
+    // Counter on the corner of the icon, shifted outwards: the icon stays readable.
+    &__count {
+        position: absolute;
+        top: -0.125rem;
+        inset-inline-start: calc(50% + 0.375rem);
+        display: inline-flex;
+        min-width: 1.125rem;
+        height: 1.125rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0 var(--space-1);
+        border: 2px solid var(--c-surface);
+        border-radius: var(--radius-full);
+        background-color: var(--c-danger-solid);
+        color: var(--c-on-danger-solid);
+        font-size: 0.75rem;
+        font-weight: var(--font-weight-bold);
+        line-height: 1;
+    }
+}
+
+// Disabled (`disabled`, or `aria-disabled` to keep the focus), and loading.
+.crudit-ui-btn,
+.crudit-ui-icon-btn {
+    &:disabled,
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    &[aria-busy='true'] {
+        cursor: progress;
+    }
+}
+
+// Buttons side by side (save and cancel of the edit in place, bar of a form).
+.crudit-ui-btn-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}

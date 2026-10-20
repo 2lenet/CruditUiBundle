@@ -1,0 +1,39 @@
+// Loading: skeletons in the shape of the content (the container has aria-busy and a hidden text), and a spinner.
+// From the crudit-v2 mockup (src/styles/components/_page.scss); not animated when motion is reduced.
+.crudit-ui-skeleton {
+    display: block;
+    width: 85%;
+    height: 0.75rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--c-surface-active);
+
+    &--title {
+        width: 45%;
+    }
+
+    &--value {
+        width: 60%;
+        height: 1.75rem;
+    }
+
+    &--cell {
+        width: 100%;
+        height: 0.875rem;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        animation: crudit-ui-skeleton-pulse 1.6s ease-in-out infinite;
+    }
+}
+
+@keyframes crudit-ui-skeleton-pulse {
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.crudit-ui-spinner {
+    display: inline-flex;
+    align-items: center;
+    color: var(--c-text-muted);
+}

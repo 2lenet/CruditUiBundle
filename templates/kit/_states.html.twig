@@ -1,0 +1,39 @@
+{# Loading, empty and messages (1.5.b): what concerns a whole zone (a list, a widget, a form). #}
+<div class="crudit-ui-kit__columns">
+    <div>
+        <h3 class="crudit-ui-kit__subtitle">Loading</h3>
+        <div class="crudit-ui-kit__stack" aria-busy="true">
+            <span class="crudit-ui-visually-hidden">Loading the visits</span>
+            <twig:LleCruditUi:Skeleton variant="title"/>
+            <twig:LleCruditUi:Skeleton variant="value"/>
+            <twig:LleCruditUi:Skeleton/>
+            <twig:LleCruditUi:Skeleton/>
+        </div>
+        <p class="crudit-ui-kit__row"><twig:LleCruditUi:Spinner/> Spinner (its text is read, not shown)</p>
+    </div>
+    <div>
+        <h3 class="crudit-ui-kit__subtitle">Empty, compact</h3>
+        <twig:LleCruditUi:EmptyState compact :icon="null">No visit to plan.</twig:LleCruditUi:EmptyState>
+    </div>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Empty, with an action</h3>
+<twig:LleCruditUi:EmptyState title="No visit yet" :level="4">
+    Visits appear here when they are created.
+    <twig:block name="actions">
+        <twig:LleCruditUi:Button variant="primary" icon="add">Create a visit</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:EmptyState>
+
+<h3 class="crudit-ui-kit__subtitle">Messages</h3>
+<div class="crudit-ui-kit__stack">
+    <twig:LleCruditUi:Alert tone="danger" title="The list could not be loaded" role="alert">
+        The server did not answer. Your filters are kept.
+        <twig:block name="actions"><twig:LleCruditUi:Button size="small">Retry</twig:LleCruditUi:Button></twig:block>
+    </twig:LleCruditUi:Alert>
+    <twig:LleCruditUi:Alert tone="info" inline>The synchronisation runs every 15 minutes.</twig:LleCruditUi:Alert>
+    <twig:LleCruditUi:Alert tone="success" inline>The visit is saved.</twig:LleCruditUi:Alert>
+    <twig:LleCruditUi:Alert tone="warning" inline>The planned date is 5 days late.</twig:LleCruditUi:Alert>
+    <twig:LleCruditUi:Alert tone="danger" inline>The server refused the record.</twig:LleCruditUi:Alert>
+    <twig:LleCruditUi:Alert tone="success" dismissible id="kit-dismissible-alert">This message can be closed.</twig:LleCruditUi:Alert>
+</div>

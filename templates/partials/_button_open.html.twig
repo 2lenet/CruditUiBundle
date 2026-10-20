@@ -1,0 +1,29 @@
+{#
+ # Opening tag of the buttons of the bundle (Button, IconButton, Tag), included with their context: one place for the
+ # attributes, which go through defaults() (one of each, the value of the project wins, data-controller is merged).
+ #
+ # Included with_context false: only these variables, nothing of the template of the caller.
+ # attributes, class, href (null for a button), type, disabled, loading, busyOnSubmit, extra (more defaults).
+ # - A disabled or loading link has no href: neither followed (click, middle click, Ctrl+click) nor focused.
+ # - Loading keeps the focus on a button (aria-disabled, not disabled); the controller "button" ignores the click.
+ # - busyOnSubmit: the controller puts the button in loading when it sends its form.
+ #}
+{%- set defaults = {class: class, 'data-controller': '2lenet--crudit-ui-bundle--button'}|merge(extra) -%}
+{%- if href is not null and (disabled or loading) -%}
+    {#- Without href, an <a> loses its role: it stays a link for assistive technologies. -#}
+    {%- set defaults = defaults|merge({role: 'link', 'aria-disabled': 'true'}) -%}
+{%- endif -%}
+{%- if loading -%}
+    {%- set defaults = defaults|merge({'aria-disabled': 'true', 'aria-busy': 'true'}) -%}
+{%- endif -%}
+{%- if busyOnSubmit and href is null and not loading -%}
+    {%- set defaults = defaults|merge({'data-2lenet--crudit-ui-bundle--button-busy-on-submit-value': 'true'}) -%}
+{%- endif -%}
+{%- if href is not null -%}
+    <a {% if not disabled and not loading %}href="{{ href }}" {% endif %}{{ attributes.defaults(defaults) }}>
+{%- else -%}
+    <button type="{{ type }}"{% if disabled %} disabled{% endif %} {{ attributes.defaults(defaults) }}>
+{%- endif -%}
+{%- if busyOnSubmit and href is null and not loading -%}
+    <template data-2lenet--crudit-ui-bundle--button-target="spinner">{{ ui_icon('loading') }}</template>
+{%- endif -%}

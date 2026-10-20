@@ -1,0 +1,8 @@
+{#
+ # Skeleton: a placeholder in the shape of the content, hidden from assistive technologies. Its container has
+ # aria-busy="true" and a hidden text ("Loading…").
+ #
+ # Props: variant (line, title, value, cell). Contract: docs/components.md.
+ #}
+{% props variant = 'line' %}
+<span aria-hidden="true" {{ attributes.defaults({class: 'crudit-ui-skeleton' ~ (variant != 'line' ? ' crudit-ui-skeleton--' ~ variant : '')}) }}></span>
