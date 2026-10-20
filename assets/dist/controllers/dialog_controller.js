@@ -22,6 +22,8 @@ const NATIVE_COMMANDS = 'commandForElement' in HTMLButtonElement.prototype;
  *   is set again (a page refreshed by a morph of Turbo, which keeps the element); then the value is removed.
  * - Closed when the controller disconnects and before Turbo caches the page: a snapshot is never restored open. A
  *   dialog moved in the page is closed too (Stimulus disconnects it, and a modal dialog moved is no longer modal).
+ * - A page refreshed by a morph of Turbo: the dialog follows the server, closed unless it has the value "open" (it then
+ *   stays open, untouched). A dialog to keep open across refreshes takes data-turbo-permanent.
  *
  * Events: "open" and "close" (2lenet--crudit-ui-bundle--dialog:open / :close), on the dialog, however it opens or
  * closes. The native "cancel" and "close" of <dialog> are there too.
@@ -69,10 +71,23 @@ export default class extends Controller {
             }
         };
         this.onBeforeCache = () => this.close();
+        // A morph of Turbo removes the attribute "open", which the server never renders: the dialog would be hidden but
+        // stay modal, the page locked and inert. It is closed instead, unless the morph has just set the value "open"
+        // (a form sent back with its errors): it then stays open as it is, the focus where it was.
+        this.onBeforeMorphAttribute = (event) => {
+            if (event.target !== this.element || event.detail?.attributeName !== 'open' || event.detail.mutationType !== 'remove') {
+                return;
+            }
+            event.preventDefault();
+            if (!this.element.hasAttribute(`data-${this.identifier}-open-value`)) {
+                this.close();
+            }
+        };
 
         this.element.addEventListener('pointerdown', this.onPointerDown);
         this.element.addEventListener('click', this.onClick);
         this.element.addEventListener('close', this.onClose);
+        this.element.addEventListener('turbo:before-morph-attribute', this.onBeforeMorphAttribute);
         document.addEventListener('turbo:before-cache', this.onBeforeCache);
 
         if (!NATIVE_COMMANDS) {
@@ -105,6 +120,7 @@ export default class extends Controller {
         this.element.removeEventListener('pointerdown', this.onPointerDown);
         this.element.removeEventListener('click', this.onClick);
         this.element.removeEventListener('close', this.onClose);
+        this.element.removeEventListener('turbo:before-morph-attribute', this.onBeforeMorphAttribute);
         document.removeEventListener('turbo:before-cache', this.onBeforeCache);
         if (this.onCommand) {
             document.removeEventListener('click', this.onCommand);

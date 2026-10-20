@@ -1,0 +1,22 @@
+{% extends 'turbo/layout.html.twig' %}
+
+{% block heading %}Second page{% endblock %}
+
+{% block content %}
+    <p>A page reached by a Turbo visit: the controllers of the previous page are disconnected, those of this one connected.</p>
+    <div class="turbo-row">
+        <twig:LleCruditUi:Dropdown id="turbo-second-menu" label="Actions">
+            <twig:LleCruditUi:Menu>
+                <twig:LleCruditUi:MenuItem icon="edit" href="{{ path('turbo_home') }}">Back to the home page</twig:LleCruditUi:MenuItem>
+                <twig:LleCruditUi:MenuItem icon="copy">Duplicate</twig:LleCruditUi:MenuItem>
+            </twig:LleCruditUi:Menu>
+        </twig:LleCruditUi:Dropdown>
+        <twig:LleCruditUi:Button id="turbo-second-dialog-open" commandfor="turbo-second-dialog" command="show-modal">Open the dialog</twig:LleCruditUi:Button>
+    </div>
+    <twig:LleCruditUi:Dialog id="turbo-second-dialog" title="Visit V-0413">
+        <p>The second page has its own dialog.</p>
+        <twig:block name="footer">
+            <twig:LleCruditUi:Button commandfor="turbo-second-dialog" command="close">Close</twig:LleCruditUi:Button>
+        </twig:block>
+    </twig:LleCruditUi:Dialog>
+{% endblock %}

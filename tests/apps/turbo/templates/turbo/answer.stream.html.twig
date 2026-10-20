@@ -1,0 +1,7 @@
+{# Answer of the form sent by a Turbo Stream: a toast in the region of the layout, and the fragment replaced. #}
+<turbo-stream action="append" target="crudit-ui-toasts">
+    <template><twig:LleCruditUi:Toast tone="success">Stream {{ sent }} received.</twig:LleCruditUi:Toast></template>
+</turbo-stream>
+<turbo-stream action="update" target="turbo-fragment">
+    <template>{{ include('turbo/_fragment.html.twig') }}</template>
+</turbo-stream>

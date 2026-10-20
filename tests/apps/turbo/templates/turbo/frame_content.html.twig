@@ -1,0 +1,28 @@
+{# Content of the Turbo Frame of the frame page: the frame alone, a step with a dropdown, a dialog and tabs. #}
+<turbo-frame id="turbo-frame">
+    <div class="turbo-frame">
+        <h2 id="turbo-frame-title">Step {{ step }}</h2>
+        <div class="turbo-row">
+            <twig:LleCruditUi:Dropdown id="turbo-frame-menu" label="Step actions">
+                <twig:LleCruditUi:Menu>
+                    <twig:LleCruditUi:MenuItem icon="copy">Duplicate</twig:LleCruditUi:MenuItem>
+                </twig:LleCruditUi:Menu>
+            </twig:LleCruditUi:Dropdown>
+            <twig:LleCruditUi:Button id="turbo-frame-dialog-open" commandfor="turbo-frame-dialog" command="show-modal">Open the dialog</twig:LleCruditUi:Button>
+            <a id="turbo-frame-next" href="{{ path('turbo_frame_content', {step: step + 1}) }}">Next step</a>
+        </div>
+        <twig:LleCruditUi:Dialog id="turbo-frame-dialog" title="Step {{ step }}">
+            <p>A dialog loaded in the frame.</p>
+            <twig:block name="footer">
+                <twig:LleCruditUi:Button commandfor="turbo-frame-dialog" command="close">Close</twig:LleCruditUi:Button>
+            </twig:block>
+        </twig:LleCruditUi:Dialog>
+        <twig:LleCruditUi:Tabs id="turbo-frame-tabs" label="Step {{ step }}" :tabs="[
+            {id: 'general', label: 'General'},
+            {id: 'parts', label: 'Parts'},
+        ]">
+            <twig:block name="general"><p>General</p></twig:block>
+            <twig:block name="parts"><p>Parts</p></twig:block>
+        </twig:LleCruditUi:Tabs>
+    </div>
+</turbo-frame>

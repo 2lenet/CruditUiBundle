@@ -1,0 +1,10 @@
+{% extends 'turbo/layout.html.twig' %}
+
+{% block heading %}Frame{% endblock %}
+
+{% block content %}
+    <p>A Turbo Frame loaded lazily, then navigated by its own link: its components connect each time.</p>
+    <turbo-frame id="turbo-frame" src="{{ path('turbo_frame_content') }}" loading="lazy">
+        <p>Loading…</p>
+    </turbo-frame>
+{% endblock %}

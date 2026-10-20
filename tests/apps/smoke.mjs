@@ -310,9 +310,10 @@ try {
     await page.click('#kit-menu-panel button.crudit-ui-menu__item:not([aria-disabled])');
     assert.deepEqual(await menu('kit-menu'), {expanded: 'false', hidden: true, focus: 'button'}, 'the choice of an item does not close the dropdown');
 
-    // A link item is followed.
+    // A link item is followed (with Turbo, the address changes a little after the click).
     await page.click('#kit-menu > button');
     await page.click('#kit-menu-panel a.crudit-ui-menu__item');
+    await page.waitForFunction(() => location.hash === '#kit-menus', {timeout: 2000}).catch(() => null);
     assert.deepEqual([await page.evaluate(() => location.hash), (await menu('kit-menu')).hidden], ['#kit-menus', true], 'a link of a menu is not followed');
 
     // The focus given by the action of an item (a dialog it opens) is not taken back by the dropdown.
@@ -391,11 +392,22 @@ try {
     assert.deepEqual(submitted, {busy: 'true', after: null, closed: true}, 'the button of the dropdown is not in loading while its item sends the form');
 
     // The demo of the kit: the form is sent to a route that answers 204, the button stays in loading; Reset reloads
-    // the page.
+    // the page. With Turbo, which sends the form, the button goes back to normal once the answer has come.
     const sendBusy = () => page.evaluate(() => document.querySelector('#kit-menu-submit > button').getAttribute('aria-busy'));
+    const turbo = await page.evaluate(() => 'Turbo' in window);
+    await page.evaluate(() => {
+        window.demoStates = [];
+        const button = document.querySelector('#kit-menu-submit > button');
+        ['busy', 'idle'].forEach((state) => button.addEventListener(`2lenet--crudit-ui-bundle--button:${state}`, () => window.demoStates.push(state)));
+    });
     await page.click('#kit-menu-submit > button');
     await page.click('#kit-menu-submit-panel button[type="submit"]');
-    assert.equal(await sendBusy(), 'true', 'the demo of the kit is not in loading');
+    if (turbo) {
+        await page.waitForFunction(() => window.demoStates.length === 2, {timeout: 5000}).catch(() => null);
+        assert.deepEqual([await page.evaluate(() => window.demoStates), await sendBusy()], [['busy', 'idle'], null], 'the demo of the kit does not go back to normal once Turbo has sent the form');
+    } else {
+        assert.equal(await sendBusy(), 'true', 'the demo of the kit is not in loading');
+    }
     await Promise.all([page.waitForNavigation({waitUntil: 'networkidle0'}), page.click('button[form="kit-menu-reset"]')]);
     assert.equal(await sendBusy(), null, 'Reset does not play the demo of the kit again');
 

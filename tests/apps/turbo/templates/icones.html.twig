@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+    <h1>Icônes : {{ library.value }}</h1>
+    <p>
+        {% for other in libraries %}
+            <a href="{{ path('icons', {library: other.value}) }}">{{ other.value }}</a>
+        {% endfor %}
+    </p>
+    <p>Icône du projet : {{ ui_icon('lucide:truck') }}</p>
+    {% for dir in ['ltr', 'rtl'] %}
+        <h2>{{ dir }}</h2>
+        <ul dir="{{ dir }}">
+            {% for name, icon in icons %}
+                <li>{{ icon ? ui_icon(icon, name in mirrored ? 'crudit-ui-icon--mirror' : '') : '—' }} {{ name }} ({{ icon ?? 'missing' }})</li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+{% endblock %}
