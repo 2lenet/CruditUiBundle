@@ -1,0 +1,28 @@
+{#
+ # Item of a Menu: a button, or a link (href). Chosen, it closes its Dropdown and gives the focus back to its button.
+ #
+ # Props: icon, href, type (button, submit), tone (danger: a destructive action, confirmed in a dialog), disabled,
+ # reason (why it is disabled: written under the label, read with it; disables the item), current (null: no check;
+ # true: checked, aria-current; false: the room of the check is kept, in a list of options).
+ # Block: content (the label). Attributes: on the button or the link (data-action, form…), not on the <li>.
+ # Contract: docs/components.md.
+ #}
+{% props icon = null, href = null, type = 'button', tone = null, disabled = false, reason = null, current = null %}
+{%- set disabled = disabled or reason is not null -%}
+{%- set class = 'crudit-ui-menu__item' ~ (tone == 'danger' and not disabled ? ' crudit-ui-menu__item--danger' : '') -%}
+{#- Disabled: aria-disabled, the focus stays and the reason is read; the controller button ignores the click. A
+ # disabled link loses its href: it is rendered as a button. -#}
+{%- set extra = {} -%}
+{%- if disabled %}{% set extra = extra|merge({'aria-disabled': 'true'}) %}{% endif -%}
+{%- if current %}{% set extra = extra|merge({'aria-current': 'true'}) %}{% endif -%}
+{%- set href = disabled ? null : href -%}
+<li>
+    {{- include('@LleCruditUi/partials/_button_open.html.twig', {attributes: attributes, class: class, href: href, type: type, disabled: false, loading: false, busyOnSubmit: type == 'submit' and not disabled, extra: extra}, with_context: false) -}}
+        {%- if current is not null %}<span class="crudit-ui-menu__check">{% if current %}{{ ui_icon('check') }}{% endif %}</span>{% endif -%}
+        {%- if icon %}{{ ui_icon(icon) }}{% endif -%}
+        <span class="crudit-ui-menu__text">
+            {%- block content %}{% endblock -%}
+            {%- if reason is not null %}<span class="crudit-ui-menu__reason">{{ reason }}</span>{% endif -%}
+        </span>
+    {%- if href is not null %}</a>{% else %}</button>{% endif -%}
+</li>

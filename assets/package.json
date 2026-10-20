@@ -19,6 +19,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "dialog": {
+                "main": "dist/controllers/dialog_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "disclosure": {
                 "main": "dist/controllers/disclosure_controller.js",
                 "webpackMode": "eager",
@@ -39,6 +45,12 @@
             },
             "theme": {
                 "main": "dist/controllers/theme_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "tooltip": {
+                "main": "dist/controllers/tooltip_controller.js",
                 "webpackMode": "eager",
                 "fetch": "eager",
                 "enabled": true

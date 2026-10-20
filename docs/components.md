@@ -80,11 +80,14 @@ or link.
 | `type` | `button`, `submit`, `reset` | `button` | |
 | `disabled` | bool | `false` | `disabled` on a button; a link loses its `href` and gets `aria-disabled` |
 | `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form). A loading link loses its `href`, as a disabled one: neither followed (click, middle click, Ctrl+click) nor focused |
-| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
+| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">`, which sends nothing (it closes its dialog). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
 | `count` | int | `null` | counter after the label, read with it (`Filters 3`) |
 
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
 element; `class` and `data-controller` are added to those of the component, the others replace its own.
+
+Events of its controller: `2lenet--crudit-ui-bundle--button:busy` and `…:idle`, when it goes in loading (busyOnSubmit)
+and back.
 
 To keep a disabled button focusable (a form without change), pass `aria-disabled="true"` instead of `disabled`: it
 looks the same. The controller of the component, `2lenet--crudit-ui-bundle--button`, then ignores the click, Enter on
@@ -189,6 +192,158 @@ What concerns a whole zone: a list, a widget, a form.
 | `LleCruditUi:Skeleton` | `variant` (`line`, `title`, `value`, `cell`) | | hidden; **its container** has `aria-busy="true"` and a hidden text. Not animated when motion is reduced |
 | `LleCruditUi:EmptyState` | `title`, `icon` (`empty`; `null` for none), `compact`, `level` (`3`, level of the title, from 2 to 6) | `content`: the text, paragraphs or a list; `actions` | the icon is hidden; give the title the level that fits the page |
 | `LleCruditUi:Alert` | `tone` (`info`, `success`, `warning`, `danger`; `info`), `title`, `inline`, `dismissible` | `content`: the text, paragraphs or a list; `actions` | the icon is hidden; the type is read first ("Error:"), before the title if there is one. Give an error `role="alert"` (announced at once); a message that appears, `role="status"`. `dismissible` adds a close button (controller `alert`): it dispatches `2lenet--crudit-ui-bundle--alert:close` (cancelable) and removes the alert. If the focus was in the alert, it goes to the closest focusable container, or to `<main>`, which then keeps `tabindex="-1"`; a close called from elsewhere leaves the focus where it is |
+
+### Menus and tooltips
+
+#### LleCruditUi:Dropdown
+
+A button that opens a panel: the actions of a row or of a page, the user menu, a choice of columns. A **disclosure**,
+not an ARIA menu (`role="menu"`): the panel holds links, buttons or fields, Tab goes from one to the next, there are
+no arrow keys.
+
+```twig
+<twig:LleCruditUi:Dropdown label="{{ 'More actions for %name%'|trans({'%name%': visit}) }}" iconOnly floating>
+    <twig:LleCruditUi:Menu>
+        <twig:LleCruditUi:MenuItem icon="edit" href="{{ path('visit_edit', {id: visit.id}) }}">{{ 'Edit'|trans }}</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="delete" tone="danger" data-action="visit#delete">{{ 'Delete'|trans }}</twig:LleCruditUi:MenuItem>
+    </twig:LleCruditUi:Menu>
+</twig:LleCruditUi:Dropdown>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `label` | string | required | text of the button; with `iconOnly`, its accessible name, not shown: name the element (`More actions for V-0412`) |
+| `icon` | string | `null` | before the label; with `iconOnly`, the icon of the button (`more`, ⋮, by default) |
+| `iconOnly` | bool | `false` | an icon button, as `IconButton` |
+| `variant`, `size` | | `secondary`, `md` | as for `Button` (not with `iconOnly`, which takes `size` only) |
+| `align` | `end`, `start` | `end` | edge of the button the panel is aligned on, in the reading direction |
+| `floating` | bool | `false` | the panel in `position: fixed`, placed next to the button by the controller: it is not cut by a container that scrolls or hides its overflow (a table, a card). It closes when the page scrolls, and follows the button when the window is resized or when the page scrolls while the focus is in the panel (the virtual keyboard of a phone, opened by a field); then it closes if the button leaves the screen, unless a field of the panel has the focus |
+
+Blocks: `content`, the panel (a `Menu`, or anything: `crudit-ui-dropdown__header`, `__title`, `__body` and `__footer`
+lay out a panel with a title and buttons); `trigger`, the content of the button in place of the icon, the label and the
+chevron (an avatar and a name). Attributes: on the root; `trigger:` on the button (`trigger:data-action`, added to the
+toggle), `panel:` on the panel (`panel:class`). The `id` passed by the project, if any, names the panel too
+(`<id>-panel`).
+
+Controller `2lenet--crudit-ui-bundle--dropdown`, events `…dropdown:open` and `…dropdown:close` on the root. A project
+that writes its own markup gives the controller to a container, the target `button` and the action `toggle` to the
+button (with `aria-expanded="false"`), the target `panel` to the panel (with `hidden`).
+
+Accessibility: `aria-expanded` and `aria-controls` on the button. Escape closes the panel and gives the focus back to
+the button (and stops there, its default prevented: a dialog around, a native `<dialog>` too, stays open); a click
+outside or the focus leaving the dropdown close it; the choice of an item of a `Menu` closes it and gives the focus
+back to the button, before the action of the item runs: a dialog that the action opens takes the focus, and gives it
+back to the button. While an item sends a form (`type="submit"`), the button of the dropdown is in loading (its spinner
+takes the place of the icon, or of the chevron). A dropdown in the panel of another one handles its own items: the
+choice of one of them, or its loading, leaves the outer one as it is. The panel
+closes when the controller disconnects and before Turbo caches the page. The panel is shifted to stay in the
+screen; the root takes `crudit-ui-dropdown--open` while it is open, so that a sticky container (a cell, a bar) rises
+above its neighbours: `.my-sticky:has(.crudit-ui-dropdown--open) { z-index: … }`.
+
+#### LleCruditUi:Menu, LleCruditUi:MenuItem, LleCruditUi:MenuGroup
+
+The list of a `Dropdown`: a `<ul>` of links and buttons.
+
+```twig
+<twig:LleCruditUi:Menu>
+    <twig:LleCruditUi:MenuGroup label="{{ 'Export'|trans }}">
+        <twig:LleCruditUi:MenuItem icon="file-csv" href="{{ path('visit_export', {format: 'csv'}) }}">CSV</twig:LleCruditUi:MenuItem>
+    </twig:LleCruditUi:MenuGroup>
+    <twig:LleCruditUi:MenuItem icon="locked" reason="{{ 'Only a finished visit can be archived'|trans }}">{{ 'Archive'|trans }}</twig:LleCruditUi:MenuItem>
+</twig:LleCruditUi:Menu>
+```
+
+| Component | Props | Block | Accessibility |
+|---|---|---|---|
+| `LleCruditUi:Menu` | | `content`: the items | a list, not `role="menu"` |
+| `LleCruditUi:MenuItem` | `icon`, `href` (a link, else a button), `type` (`button`), `tone` (`danger`: a destructive action, confirmed in a dialog that names the element), `disabled`, `reason` (why it is disabled: written under the label; disables the item), `current` (`null`: no check; `true`: checked; `false`: the room of the check is kept, in a list of options such as the languages) | `content`: the label | the attributes go on the button or the link (`data-action`, `form`, `hreflang`…), not on the `<li>`. Disabled: `aria-disabled`, still focusable, its reason read with its label; the click is ignored (controller `button`). A disabled link loses its `href` and is rendered as a button. `current`: `aria-current="true"`, the check is hidden |
+| `LleCruditUi:MenuGroup` | `label` (required) | `content`: the items | a heading, then a list named by it; a rule sets the group apart |
+
+#### LleCruditUi:Tooltip
+
+A short text shown on the hover and the focus of the element it wraps: the name of an icon button, the meaning of a
+pictogram. **Visual only** (`aria-hidden`): its text must also be the accessible name of the element (`label` of an
+`IconButton`) or its description (`aria-describedby`). Never essential information nor links: it is not reachable on
+a touch screen.
+
+```twig
+<twig:LleCruditUi:Tooltip text="{{ 'Edit'|trans }}">
+    <twig:LleCruditUi:IconButton icon="edit" label="{{ 'Edit'|trans }}" href="{{ path('visit_edit', {id: visit.id}) }}"/>
+</twig:LleCruditUi:Tooltip>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `text` | string | required | |
+| `placement` | `above`, `below`, `beside` | `above` | `beside`: on the inline end side, centred (the collapsed menu bar); always floating |
+| `align` | `end`, `start` | `end` | edge of the element it is aligned on, above or below |
+| `floating` | bool | `false` | in `position: fixed`, placed by the controller when it is shown, and again when the page scrolls: inside a container that hides its overflow |
+
+Block: `content`, the element (focusable). Attributes: on the host (`<span class="crudit-ui-tooltip-host">`).
+Controller `2lenet--crudit-ui-bundle--tooltip`.
+
+Accessibility (WCAG 1.4.13, RGAA 10.13): it can be hovered without closing; Escape hides the tooltips until the next
+move of the pointer or of the focus (the class `crudit-ui-tooltips-dismissed` on `<html>`); it goes while the menu of
+its button is open.
+
+### Dialogs and drawer
+
+#### LleCruditUi:Dialog
+
+A modal window: the confirmation of an action, an action with fields, an export; with `variant="drawer"`, a side
+panel (the filters on a phone, the configuration of a widget). A native `<dialog>`, opened with `showModal()`: the
+browser keeps the focus in it, makes the rest of the page inert (neither clicked nor read), and gives the focus back to
+the button that opened it. **Its title names the element concerned** ("Delete the visit V-0412?"); a destructive action
+is confirmed in one.
+
+```twig
+<twig:LleCruditUi:Button variant="danger-outline" icon="delete" commandfor="visit-delete" command="show-modal">{{ 'Delete'|trans }}</twig:LleCruditUi:Button>
+
+<twig:LleCruditUi:Dialog id="visit-delete" role="alertdialog" title="{{ 'Delete the visit %name%?'|trans({'%name%': visit}) }}" description="{{ 'This action cannot be undone.'|trans }}">
+    <form id="visit-delete-form" method="post" action="{{ path('visit_delete', {id: visit.id}) }}">…</form>
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button commandfor="visit-delete" command="close" autofocus>{{ 'Cancel'|trans }}</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="danger" icon="delete" type="submit" form="visit-delete-form">{{ 'Delete'|trans }}</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `title` | string | required | the title (`h2`) and the accessible name of the dialog |
+| `description` | string | `null` | under the title, read with it (`aria-describedby`): what the action does, what it changes |
+| `variant` | `dialog`, `drawer` | `dialog` | `dialog`: centred, 32rem wide at most. `drawer`: on the inline end side (the left one in right to left), the whole height, 28rem wide, the whole width on a phone |
+| `open` | bool | `false` | shown modal when the page loads: a form of the dialog sent back with its errors; also when a morph of Turbo puts it back. Never the attribute `open` of `<dialog>`, which shows a dialog that is not modal |
+
+Blocks: `content`, the body, which scrolls (paragraphs, a form); `footer`, the buttons, hidden when empty (one primary
+button, as in any zone). Attributes: on the `<dialog>` (`role="alertdialog"` for a confirmation, `class`, `data-`).
+**Give it an `id`**: the target of the buttons, it names the title (`<id>-title`) and the description
+(`<id>-description`). Without one, an id is generated, different at each rendering: no button can target it, and the
+HTML changes from one rendering to the next.
+
+**Open and close it** with the attributes of HTML, `commandfor="<id>"` and `command` on a `<button type="button">`
+(a `Button`): `show-modal` opens it, `close` closes it (the `value` of the button becomes the `returnValue` of the
+dialog), `request-close` closes it as Escape does. The browsers run them (Chrome 135, Firefox 144, Safari 26.2); the
+controller runs them in the older ones, and dispatches on the dialog the same cancelable `command` event (`command`,
+`source`). A `<form method="dialog">` in the dialog closes it too, without sending anything: its
+submit button is then not put in loading (`busyOnSubmit`). In JavaScript, `dialog.showModal()` and `dialog.close()`,
+or the actions `open`, `close` and `dismiss` of the controller.
+
+Controller `2lenet--crudit-ui-bundle--dialog`, on the `<dialog>`. Events `…dialog:open` and `…dialog:close` on the
+dialog, however it opens or closes; the native `cancel` and `close` of `<dialog>` are there too. **Escape, the close
+button and a click on the backdrop fire `cancel` first**: a project cancels it (`preventDefault()`) to keep the dialog
+open (a form with changes, to confirm). Chrome closes it all the same without a click or a key of the user before
+(a `dismiss` called by a timer), or on a second try with none in between. A press in the dialog released on the backdrop (a selection of text) does not
+close it. The dialog closes when the controller disconnects and before Turbo caches the page, also when it is moved in
+the page (Stimulus disconnects it, and a modal dialog moved is no longer modal): do not move an open dialog.
+
+Accessibility: `role="dialog"` (native) or `alertdialog`, named by its title, described by its description. **Initial
+focus**: on the element with `autofocus`, else on the first focusable one (the close button). Put `autofocus` on
+Cancel in a confirmation (the least destructive choice), on the first field in a form. Tab stays in the dialog (the
+browser may give it to its own interface on the way, never to the page). Escape closes it, except when a dropdown of
+the dialog is open: Escape closes the dropdown first. The focus goes back to the button that opened it; if that one is
+gone (the row it deleted), to `<main>`, given `tabindex="-1"`. The page under it does not scroll. The opening is
+animated (fade, or slide of the drawer), not when motion is reduced.
 
 ### Collapsibles and tabs
 

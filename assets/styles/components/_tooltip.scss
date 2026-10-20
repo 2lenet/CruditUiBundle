@@ -1,0 +1,85 @@
+@use '../tools/a11y' as *;
+
+// Tooltip (component Tooltip): a short text shown on the hover and the focus of its host. Same as `.tooltip` of the
+// crudit-v2 mockup (src/styles/components/_fields.scss). Visual only (aria-hidden): its text is also the name or
+// the description of the element it is on. It can be hovered (WCAG 1.4.13); Escape hides it (controller tooltip).
+.crudit-ui-tooltip-host {
+    position: relative;
+    display: inline-flex;
+}
+
+.crudit-ui-tooltip {
+    position: absolute;
+    z-index: var(--z-popover);
+    inset-block-end: calc(100% + var(--space-2));
+    inset-inline-end: 0;
+    width: max-content;
+    max-width: min(16rem, calc(100vw - 2 * var(--gutter)));
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background-color: var(--c-inverse-bg);
+    box-shadow: var(--shadow-md);
+    color: var(--c-inverse-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+    opacity: 0;
+    pointer-events: none;
+    text-align: start;
+    visibility: hidden;
+    white-space: normal;
+    @include transition(opacity, visibility);
+
+    // Bridge between the host and the tooltip: the pointer goes from one to the other without closing it.
+    &::after {
+        position: absolute;
+        inset-block-start: 100%;
+        inset-inline: 0;
+        height: var(--space-2);
+        content: '';
+    }
+
+    &--start {
+        inset-inline-end: auto;
+        inset-inline-start: 0;
+    }
+
+    &--below {
+        inset-block: calc(100% + var(--space-2)) auto;
+
+        &::after {
+            inset-block: auto 100%;
+        }
+    }
+
+    // Placed by the controller, in physical coordinates (top, left).
+    &--floating {
+        position: fixed;
+        inset: auto;
+
+        &::after {
+            display: none;
+        }
+    }
+
+    .crudit-ui-tooltip-host:hover > &,
+    .crudit-ui-tooltip-host:focus-within > &,
+    .crudit-ui-tooltip-host.crudit-ui-is-hover > & {
+        opacity: 1;
+        pointer-events: auto;
+        visibility: visible;
+    }
+
+    // The menu of its button is open: the tooltip goes.
+    .crudit-ui-tooltip-host:has([aria-expanded='true']) > & {
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+    }
+}
+
+// Hidden by Escape, until the next move of the pointer or of the focus (controller tooltip). As specific as the
+// rules that show it.
+.crudit-ui-tooltips-dismissed .crudit-ui-tooltip-host > .crudit-ui-tooltip {
+    visibility: hidden;
+}

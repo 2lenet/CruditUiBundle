@@ -28,7 +28,7 @@ npm test        # tokens and contrasts, prefix of the classes, grid, utilities, 
 | `assets/styles/` | Sass, in ITCSS order: `settings` → `tools` → `generic` → `elements` → `objects` → `components` → `utilities`. Only `ui.scss` is compiled; it loads each partial with `meta.load-css` inside its layer, so a partial is plain CSS and never declares the layer itself: `generic` and `elements` in `@layer crudit-ui-base`, the rest in `@layer crudit-ui`. |
 | `assets/dist/ui.css` | The compiled stylesheet. |
 | `assets/dist/controllers/` | Stimulus controllers, native ES modules (no build). Their path is public API. |
-| `assets/dist/utils/` | JavaScript helpers shared by the controllers (`breakpoints.js`). |
+| `assets/dist/utils/` | JavaScript helpers shared by the controllers (`breakpoints.js`; `position.js`, the place of a panel next to its button). |
 
 ### Conventions
 

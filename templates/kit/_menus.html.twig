@@ -1,0 +1,128 @@
+{# Menus and tooltips (1.5.c): dropdowns, lists of actions in their states, tooltips. #}
+<p class="crudit-ui-kit__text">Disclosure, not an ARIA menu: Tab goes from one item to the next, Escape closes the panel and gives the focus back to its button, a click outside closes it.</p>
+
+<h3 class="crudit-ui-kit__subtitle">Dropdowns</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Dropdown id="kit-menu" label="Actions" align="start">
+        <twig:LleCruditUi:Menu>
+            <twig:LleCruditUi:MenuItem icon="edit" href="#kit-menus">Edit</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuItem icon="copy">Duplicate</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuGroup label="Export">
+                <twig:LleCruditUi:MenuItem icon="file-csv">CSV</twig:LleCruditUi:MenuItem>
+                <twig:LleCruditUi:MenuItem icon="file-excel">Excel</twig:LleCruditUi:MenuItem>
+            </twig:LleCruditUi:MenuGroup>
+            <twig:LleCruditUi:MenuItem icon="locked" reason="Only a finished visit can be archived">Archive</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuItem icon="delete" tone="danger">Delete the visit V-0412</twig:LleCruditUi:MenuItem>
+        </twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+
+    <twig:LleCruditUi:Dropdown label="Language" icon="language" align="start" size="small">
+        <twig:LleCruditUi:Menu>
+            <twig:LleCruditUi:MenuItem href="#kit-menus" hreflang="fr" lang="fr" :current="true">Français</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuItem href="#kit-menus" hreflang="en" lang="en" :current="false">English</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuItem href="#kit-menus" hreflang="ar" lang="ar" :current="false">العربية</twig:LleCruditUi:MenuItem>
+        </twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+
+    <twig:LleCruditUi:Dropdown label="Columns" icon="settings" align="start">
+        <div class="crudit-ui-dropdown__header"><p class="crudit-ui-dropdown__title">Columns shown</p></div>
+        <div class="crudit-ui-dropdown__body">
+            <p><label><input type="checkbox" checked> Customer</label></p>
+            <p><label><input type="checkbox"> Technician</label></p>
+        </div>
+        <div class="crudit-ui-dropdown__footer"><twig:LleCruditUi:Button size="small">Reset</twig:LleCruditUi:Button></div>
+    </twig:LleCruditUi:Dropdown>
+
+    <twig:LleCruditUi:Dropdown label="Actions (forced hover)" trigger:class="crudit-ui-is-hover">
+        <twig:LleCruditUi:Menu><twig:LleCruditUi:MenuItem>Edit</twig:LleCruditUi:MenuItem></twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+    <twig:LleCruditUi:Dropdown label="Actions (forced focus)" trigger:class="crudit-ui-is-focus">
+        <twig:LleCruditUi:Menu><twig:LleCruditUi:MenuItem>Edit</twig:LleCruditUi:MenuItem></twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+
+    <twig:LleCruditUi:Dropdown id="kit-menu-more" label="More actions for the visit V-0412" iconOnly>
+        <twig:LleCruditUi:Menu>
+            <twig:LleCruditUi:MenuItem icon="edit">Edit</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuItem icon="delete" tone="danger">Delete</twig:LleCruditUi:MenuItem>
+        </twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">An item that sends a form</h3>
+{#- Sent to a route that answers 204: the browser stays on the page, and the button in loading, as after an export
+ # that the bundle cannot detect. Reset reloads the page to play it again: a form, as a link to the same address
+ # would only scroll to its anchor. -#}
+<form id="kit-menu-form" method="get" action="{{ path('crudit_ui_kit_sent') }}" class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Dropdown id="kit-menu-submit" label="Send">
+        <twig:LleCruditUi:Menu>
+            <twig:LleCruditUi:MenuItem icon="email" type="submit" name="channel" value="email">By email</twig:LleCruditUi:MenuItem>
+        </twig:LleCruditUi:Menu>
+    </twig:LleCruditUi:Dropdown>
+    <twig:LleCruditUi:Button type="submit" size="small" icon="undo" form="kit-menu-reset">Reset</twig:LleCruditUi:Button>
+    <span class="crudit-ui-kit__text">The button of the menu is in loading while the form is sent; here the answer is empty (204), the page stays, and the button in loading until Reset.</span>
+</form>
+<form id="kit-menu-reset" method="get" action="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')) }}#kit-menus"></form>
+
+<h3 class="crudit-ui-kit__subtitle">In a container that scrolls (floating)</h3>
+<div class="crudit-ui-kit__table-wrap crudit-ui-kit__scroller">
+    <table class="crudit-ui-kit__table">
+        <caption class="crudit-ui-visually-hidden">Visits, with their actions</caption>
+        <thead><tr><th scope="col">Visit</th><th scope="col">Customer</th><th scope="col">Actions</th></tr></thead>
+        <tbody>
+            {% for visit in ['V-0412', 'V-0413'] %}
+                <tr>
+                    <th scope="row">{{ visit }}</th>
+                    <td>Boulangerie Martin</td>
+                    <td>
+                        <twig:LleCruditUi:Dropdown id="kit-menu-floating-{{ loop.index }}" label="More actions for the visit {{ visit }}" iconOnly floating size="small">
+                            <twig:LleCruditUi:Menu>
+                                <twig:LleCruditUi:MenuItem icon="edit">Edit</twig:LleCruditUi:MenuItem>
+                                <twig:LleCruditUi:MenuItem icon="copy">Duplicate</twig:LleCruditUi:MenuItem>
+                                <twig:LleCruditUi:MenuItem icon="delete" tone="danger">Delete</twig:LleCruditUi:MenuItem>
+                            </twig:LleCruditUi:Menu>
+                        </twig:LleCruditUi:Dropdown>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Items in their states</h3>
+<div class="crudit-ui-dropdown__panel crudit-ui-kit__panel">
+    <twig:LleCruditUi:Menu>
+        <twig:LleCruditUi:MenuItem icon="edit">Default</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="edit" class="crudit-ui-is-hover">Hover</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="edit" class="crudit-ui-is-focus">Focus</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="edit" disabled>Disabled</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="locked" reason="The visit is closed">Disabled, with its reason</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="delete" tone="danger">Danger</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuItem icon="delete" tone="danger" class="crudit-ui-is-hover">Danger, hover</twig:LleCruditUi:MenuItem>
+        <twig:LleCruditUi:MenuGroup label="Group">
+            <twig:LleCruditUi:MenuItem :current="true">Current</twig:LleCruditUi:MenuItem>
+            <twig:LleCruditUi:MenuItem :current="false">Other option</twig:LleCruditUi:MenuItem>
+        </twig:LleCruditUi:MenuGroup>
+    </twig:LleCruditUi:Menu>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Tooltips</h3>
+<p class="crudit-ui-kit__text">Visual only: the text is also the name of the button. They can be hovered; Escape hides them.</p>
+<div class="crudit-ui-kit__row crudit-ui-kit__tooltips">
+    <twig:LleCruditUi:Tooltip text="Edit">
+        <twig:LleCruditUi:IconButton icon="edit" label="Edit"/>
+    </twig:LleCruditUi:Tooltip>
+    <twig:LleCruditUi:Tooltip text="Copy the link" align="start" placement="below">
+        <twig:LleCruditUi:IconButton icon="link" label="Copy the link"/>
+    </twig:LleCruditUi:Tooltip>
+    <twig:LleCruditUi:Tooltip text="Print" placement="beside">
+        <twig:LleCruditUi:IconButton icon="print" label="Print"/>
+    </twig:LleCruditUi:Tooltip>
+    <twig:LleCruditUi:Tooltip text="Download (forced, shown)" class="crudit-ui-is-hover">
+        <twig:LleCruditUi:IconButton icon="download" label="Download (forced, shown)"/>
+    </twig:LleCruditUi:Tooltip>
+    <twig:LleCruditUi:Tooltip text="More actions">
+        <twig:LleCruditUi:Dropdown label="More actions" iconOnly>
+            <twig:LleCruditUi:Menu><twig:LleCruditUi:MenuItem>Its tooltip goes when the menu is open</twig:LleCruditUi:MenuItem></twig:LleCruditUi:Menu>
+        </twig:LleCruditUi:Dropdown>
+    </twig:LleCruditUi:Tooltip>
+</div>

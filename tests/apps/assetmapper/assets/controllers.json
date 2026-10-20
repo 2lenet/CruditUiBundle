@@ -9,6 +9,10 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "dialog": {
+                "enabled": true,
+                "fetch": "eager"
+            },
             "disclosure": {
                 "enabled": true,
                 "fetch": "eager"
@@ -22,6 +26,10 @@
                 "fetch": "eager"
             },
             "theme": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "tooltip": {
                 "enabled": true,
                 "fetch": "eager"
             }
