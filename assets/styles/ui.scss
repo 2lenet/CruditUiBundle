@@ -32,10 +32,12 @@
     @include meta.load-css('components/icon');
     @include meta.load-css('components/kit');
     @include meta.load-css('components/loading');
+    @include meta.load-css('components/menu');
     @include meta.load-css('components/progress');
     @include meta.load-css('components/status');
     @include meta.load-css('components/tag');
     @include meta.load-css('components/tone');
+    @include meta.load-css('components/tooltip');
 
     // Utilities last: at equal specificity, they win over the components.
     @include meta.load-css('utilities/display');

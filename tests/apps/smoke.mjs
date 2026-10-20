@@ -1,6 +1,6 @@
 // Smoke test of a test application: node smoke.mjs <url> [chrome path]
 // The page must show the dropdown controller of the bundle and load its stylesheet; the design kit page must have no
-// accessibility violation (axe-core).
+// accessibility violation (axe-core), and its menus and tooltips must work.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
@@ -31,7 +31,7 @@ try {
     assert.equal(primary, '#b3261e', 'the project must override the variables of the bundle');
 
     // The Stimulus controller of the bundle works.
-    const button = await page.waitForSelector('.crudit-ui-dropdown__button');
+    const button = await page.waitForSelector('.crudit-ui-dropdown .crudit-ui-btn');
     const expanded = () => page.evaluate((b) => b.getAttribute('aria-expanded'), button);
     assert.equal(await expanded(), 'false');
     await button.click();
@@ -42,7 +42,7 @@ try {
     // Bootstrap, in its layer between the two layers of the bundle (assets/styles/layers.css): the components of the
     // bundle win over its reboot, its classes win over the reset of the bundle.
     const style = (selector, property) => page.evaluate((s, p) => getComputedStyle(document.querySelector(s))[p], selector, property);
-    assert.equal(await style('.crudit-ui-dropdown__button', 'paddingTop'), '6px', 'the reboot of Bootstrap wins over a component of the bundle');
+    assert.equal(await style('.crudit-ui-dropdown .crudit-ui-btn', 'paddingLeft'), '12px', 'the reboot of Bootstrap wins over a component of the bundle');
     assert.equal(await style('a.btn', 'color'), 'rgb(255, 255, 255)', 'the reset of the bundle wins over a class of Bootstrap');
 
     // The theme switch: the choice goes on <html> and in a cookie, which the server puts back on the next page.
@@ -205,6 +205,65 @@ try {
         return {cancelled, blank, turboStart, turboEnd: state()};
     });
     assert.deepEqual(states, {cancelled: null, blank: null, turboStart: 'true', turboEnd: null}, 'busyOnSubmit: cancelled sending, other window or Turbo');
+
+    // Dropdowns of the design kit (controller dropdown): Escape, the choice of an item, a disabled item, a click
+    // outside and the focus leaving close it or not, and give the focus back to the button.
+    await page.setViewport({width: 1280, height: 800});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const menu = (id) => page.evaluate((menuId) => ({
+        expanded: document.querySelector(`#${menuId} > button`).getAttribute('aria-expanded'),
+        hidden: document.getElementById(`${menuId}-panel`).hidden,
+        focus: document.activeElement?.closest('.crudit-ui-dropdown__panel') ? 'panel' : document.activeElement === document.querySelector(`#${menuId} > button`) ? 'button' : document.activeElement?.tagName,
+    }), id);
+    await page.click('#kit-menu > button');
+    assert.deepEqual(await menu('kit-menu'), {expanded: 'true', hidden: false, focus: 'button'}, 'the dropdown does not open');
+    await page.keyboard.press('Tab');
+    assert.equal((await menu('kit-menu')).focus, 'panel', 'Tab does not go into the panel');
+    await page.keyboard.press('Escape');
+    assert.deepEqual(await menu('kit-menu'), {expanded: 'false', hidden: true, focus: 'button'}, 'Escape does not close the dropdown, or does not give the focus back');
+
+    await page.click('#kit-menu > button');
+    await page.click('#kit-menu-panel [aria-disabled="true"]');
+    assert.equal((await menu('kit-menu')).hidden, false, 'a disabled item closes the dropdown');
+    await page.click('#kit-menu-panel button.crudit-ui-menu__item:not([aria-disabled])');
+    assert.deepEqual(await menu('kit-menu'), {expanded: 'false', hidden: true, focus: 'button'}, 'the choice of an item does not close the dropdown');
+
+    await page.click('#kit-menu > button');
+    await page.mouse.click(5, 5);
+    assert.equal((await menu('kit-menu')).hidden, true, 'a click outside does not close the dropdown');
+
+    // The focus leaving the panel closes it: Tab from its last item. Opened with the keyboard, as a user who tabs.
+    await page.focus('#kit-menu-more > button');
+    await page.keyboard.press('Enter');
+    assert.equal((await menu('kit-menu-more')).hidden, false, 'Enter does not open the dropdown');
+    await page.focus('#kit-menu-more-panel li:last-child .crudit-ui-menu__item');
+    await page.keyboard.press('Tab');
+    assert.equal((await menu('kit-menu-more')).hidden, true, 'the focus leaving the dropdown does not close it');
+
+    // Floating, in a container that scrolls: in position fixed, whole on the screen, not cut by its container.
+    await page.click('#kit-menu-floating-1 > button');
+    const floating = await page.evaluate(() => {
+        const panel = document.getElementById('kit-menu-floating-1-panel');
+        const rect = panel.getBoundingClientRect();
+        const scroller = panel.closest('.crudit-ui-kit__scroller').getBoundingClientRect();
+
+        return {position: getComputedStyle(panel).position, inside: rect.left >= 0 && rect.right <= innerWidth, outOfScroller: rect.bottom > scroller.bottom || rect.right > scroller.right || rect.left < scroller.left};
+    });
+    assert.deepEqual(floating, {position: 'fixed', inside: true, outOfScroller: true}, 'the floating dropdown is not placed');
+    await page.keyboard.press('Escape');
+
+    // Tooltip: shown on hover, hidden by Escape until the pointer moves (controller tooltip).
+    const tooltip = () => page.evaluate(() => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility);
+    // visibility follows the transition of the opacity: waited for.
+    const settled = (visibility) => page.waitForFunction((v) => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility === v, {timeout: 1000}, visibility).then(() => visibility, () => tooltip());
+    assert.equal(await tooltip(), 'hidden');
+    await page.hover('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button');
+    assert.equal(await settled('visible'), 'visible', 'the tooltip is not shown on hover');
+    await page.keyboard.press('Escape');
+    assert.equal(await settled('hidden'), 'hidden', 'Escape does not hide the tooltip');
+    const box = await (await page.$('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button')).boundingBox();
+    await page.mouse.move(box.x + 2, box.y + 2);
+    assert.equal(await settled('visible'), 'visible', 'the tooltip does not come back when the pointer moves');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

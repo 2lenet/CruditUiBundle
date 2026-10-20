@@ -1,0 +1,26 @@
+{#
+ # Tooltip: a short text shown on the hover and the focus of the element it wraps (controller tooltip). Visual only
+ # (aria-hidden): its text must also be the accessible name of that element (IconButton label) or its description
+ # (aria-describedby). It can be hovered, and Escape hides it (WCAG 1.4.13). Never essential information, nor
+ # interactive content: it is not reachable on a touch screen.
+ #
+ # Props: text (required), placement (above, below, beside: on the inline end side), align (end, start: edge of the
+ # element it is aligned on, above or below), floating (position: fixed, placed by the controller: inside a container
+ # that hides its overflow; required for beside). Block: content (the element, focusable). Contract: docs/components.md.
+ #}
+{% props text, placement = 'above', align = 'end', floating = false %}
+{%- set controller = '2lenet--crudit-ui-bundle--tooltip' -%}
+{%- set floating = floating or placement == 'beside' -%}
+{%- set root = {class: 'crudit-ui-tooltip-host', 'data-controller': controller} -%}
+{%- if floating -%}
+    {%- set root = root|merge({
+        ('data-' ~ controller ~ '-floating-value'): 'true',
+        ('data-' ~ controller ~ '-placement-value'): placement,
+        ('data-' ~ controller ~ '-align-value'): align,
+    }) -%}
+{%- endif -%}
+{%- set class = 'crudit-ui-tooltip' ~ (floating ? ' crudit-ui-tooltip--floating' : (placement == 'below' ? ' crudit-ui-tooltip--below' : '') ~ (align == 'start' ? ' crudit-ui-tooltip--start' : '')) -%}
+<span {{ attributes.defaults(root) }}>
+    {%- block content %}{% endblock -%}
+    <span class="{{ class }}" aria-hidden="true" data-{{ controller }}-target="tooltip">{{ text }}</span>
+</span>

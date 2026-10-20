@@ -1,0 +1,13 @@
+{#
+ # Group of a Menu: a heading, then its items, set apart from the others by a rule. The list is named by the heading.
+ #
+ # Props: label (required, the heading). Block: content (MenuItem). Contract: docs/components.md.
+ #}
+{% props label %}
+{%- set id = 'crudit-ui-menu-group-' ~ random() -%}
+<li {{ attributes.defaults({class: 'crudit-ui-menu__group'}) }}>
+    <span id="{{ id }}" class="crudit-ui-menu__heading">{{ label }}</span>
+    <ul class="crudit-ui-menu__sub" aria-labelledby="{{ id }}">
+        {%- block content %}{% endblock -%}
+    </ul>
+</li>
