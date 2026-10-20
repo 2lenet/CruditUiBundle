@@ -1,0 +1,34 @@
+{% extends 'turbo/layout.html.twig' %}
+
+{% block meta %}
+    <meta name="turbo-refresh-method" content="morph">
+    <meta name="turbo-refresh-scroll" content="preserve">
+{% endblock %}
+
+{% block heading %}Morph{% endblock %}
+
+{% block content %}
+    {% set invalid = invalid ?? false %}
+    <p>A page refreshed by a morph of Turbo: the elements stay, their attributes follow the answer of the server.</p>
+    <p>Refreshes: <output id="turbo-refreshes">{{ refreshes }}</output></p>
+    <div class="turbo-row">
+        <twig:LleCruditUi:Dropdown id="turbo-morph-menu" label="Actions">
+            <twig:LleCruditUi:Menu>
+                <twig:LleCruditUi:MenuItem icon="copy">Duplicate</twig:LleCruditUi:MenuItem>
+            </twig:LleCruditUi:Menu>
+        </twig:LleCruditUi:Dropdown>
+        <twig:LleCruditUi:Button id="turbo-morph-open" icon="calendar" commandfor="turbo-morph-dialog" command="show-modal">Postpone</twig:LleCruditUi:Button>
+    </div>
+    {#- Sent back with its errors (422): the page is morphed, the dialog stays and opens again (value "open"). -#}
+    <twig:LleCruditUi:Dialog id="turbo-morph-dialog" title="Postpone the visit V-0412" :open="invalid">
+        <form id="turbo-morph-form" method="post" action="{{ path('turbo_morph') }}" class="turbo-form">
+            <label for="turbo-morph-reason">Reason (required)</label>
+            <input id="turbo-morph-reason" name="reason"{% if invalid %} aria-invalid="true" aria-describedby="turbo-morph-error"{% endif %}>
+            {% if invalid %}<p id="turbo-morph-error" class="turbo-form__error">Give the reason of the postponement.</p>{% endif %}
+        </form>
+        <twig:block name="footer">
+            <twig:LleCruditUi:Button commandfor="turbo-morph-dialog" command="close">Cancel</twig:LleCruditUi:Button>
+            <twig:LleCruditUi:Button id="turbo-morph-submit" variant="primary" icon="save" type="submit" form="turbo-morph-form">Postpone</twig:LleCruditUi:Button>
+        </twig:block>
+    </twig:LleCruditUi:Dialog>
+{% endblock %}

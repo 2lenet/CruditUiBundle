@@ -1,0 +1,89 @@
+{% extends 'turbo/layout.html.twig' %}
+
+{% block heading %}Turbo{% endblock %}
+
+{% block content %}
+    <p>The components of CruditUiBundle under Turbo Drive: visits, Back, forms answered by a redirect, by their errors or by a Turbo Stream.</p>
+
+    <section aria-labelledby="turbo-components-title">
+        <h2 id="turbo-components-title">Components</h2>
+        <div class="turbo-row">
+            <twig:LleCruditUi:Dropdown id="turbo-menu" label="Actions">
+                <twig:LleCruditUi:Menu>
+                    <twig:LleCruditUi:MenuItem icon="edit" href="{{ path('turbo_second') }}">Second page</twig:LleCruditUi:MenuItem>
+                    <twig:LleCruditUi:MenuItem icon="copy">Duplicate</twig:LleCruditUi:MenuItem>
+                </twig:LleCruditUi:Menu>
+            </twig:LleCruditUi:Dropdown>
+            <twig:LleCruditUi:Button id="turbo-dialog-open" commandfor="turbo-dialog" command="show-modal">Open the dialog</twig:LleCruditUi:Button>
+            <twig:LleCruditUi:Tooltip text="Save the visit">
+                <twig:LleCruditUi:IconButton id="turbo-tooltip-host" icon="save" label="Save the visit"/>
+            </twig:LleCruditUi:Tooltip>
+        </div>
+
+        {#- A link in the dialog: the page changes while the dialog is open. -#}
+        <twig:LleCruditUi:Dialog id="turbo-dialog" title="Visit V-0412" description="Planned on 13 October.">
+            <p><a id="turbo-dialog-link" href="{{ path('turbo_second') }}">See the second page</a></p>
+            <twig:block name="footer">
+                <twig:LleCruditUi:Button commandfor="turbo-dialog" command="close">Close</twig:LleCruditUi:Button>
+            </twig:block>
+        </twig:LleCruditUi:Dialog>
+
+        <twig:LleCruditUi:Disclosure id="turbo-disclosure" title="Address" :level="3">
+            <p>12 rue des Lilas, 59000 Lille</p>
+        </twig:LleCruditUi:Disclosure>
+
+        <twig:LleCruditUi:Tabs id="turbo-tabs" label="Visit" urlParam="tab" :tabs="[
+            {id: 'general', label: 'General'},
+            {id: 'parts', label: 'Parts', count: 3},
+            {id: 'history', label: 'History'},
+        ]">
+            <twig:block name="general"><p>Visit of 13 October.</p></twig:block>
+            <twig:block name="parts"><p>Filter, belt, gasket.</p></twig:block>
+            <twig:block name="history"><p>Created, then planned.</p></twig:block>
+        </twig:LleCruditUi:Tabs>
+    </section>
+
+    <section aria-labelledby="turbo-forms-title">
+        <h2 id="turbo-forms-title">Forms</h2>
+        <div class="turbo-row">
+            {#- Redirect (303) to the second page, which shows the flash message. -#}
+            <form id="turbo-save-form" method="post" action="{{ path('turbo_save') }}">
+                <twig:LleCruditUi:Button id="turbo-save" variant="primary" icon="save" type="submit">Save</twig:LleCruditUi:Button>
+            </form>
+            {#- Turbo Stream: a toast and the fragment below; the page stays. -#}
+            <form id="turbo-stream-form" method="post" action="{{ path('turbo_stream') }}">
+                <twig:LleCruditUi:Button id="turbo-stream" icon="refresh" type="submit">Send by a stream</twig:LleCruditUi:Button>
+            </form>
+            <form id="turbo-slow-form" method="post" action="{{ path('turbo_stream') }}">
+                <input type="hidden" name="slow" value="1">
+                <twig:LleCruditUi:Button id="turbo-slow" icon="refresh" type="submit">Slow answer</twig:LleCruditUi:Button>
+            </form>
+            <twig:LleCruditUi:Button id="turbo-visit-open" icon="calendar" commandfor="turbo-visit-dialog" command="show-modal">Postpone</twig:LleCruditUi:Button>
+        </div>
+
+        {#- Sent back with its errors (422): the page is rendered again, the dialog open. -#}
+        {% set invalid = invalid ?? false %}
+        <twig:LleCruditUi:Dialog id="turbo-visit-dialog" title="Postpone the visit V-0412" :open="invalid">
+            <form id="turbo-visit-form" method="post" action="{{ path('turbo_visit') }}" class="turbo-form">
+                <label for="turbo-visit-reason">Reason (required)</label>
+                <input id="turbo-visit-reason" name="reason"{% if invalid %} aria-invalid="true" aria-describedby="turbo-visit-error"{% endif %}>
+                {% if invalid %}<p id="turbo-visit-error" class="turbo-form__error">Give the reason of the postponement.</p>{% endif %}
+            </form>
+            <twig:block name="footer">
+                <twig:LleCruditUi:Button commandfor="turbo-visit-dialog" command="close">Cancel</twig:LleCruditUi:Button>
+                <twig:LleCruditUi:Button id="turbo-visit-submit" variant="primary" icon="save" type="submit" form="turbo-visit-form">Postpone</twig:LleCruditUi:Button>
+            </twig:block>
+        </twig:LleCruditUi:Dialog>
+
+        <div id="turbo-fragment">{{ include('turbo/_fragment.html.twig', {sent: 0}) }}</div>
+    </section>
+
+    <section aria-labelledby="turbo-languages-title">
+        <h2 id="turbo-languages-title">{{ 'crudit_ui.language.label'|trans(domain: 'LleCruditUiBundle') }}</h2>
+        <p class="turbo-row">
+            {% for locale in ['fr', 'en', 'ar'] %}
+                <a id="turbo-locale-{{ locale }}" href="{{ path('turbo_home_locale', {_locale: locale}) }}" hreflang="{{ locale }}">{{ locale }}</a>
+            {% endfor %}
+        </p>
+    </section>
+{% endblock %}

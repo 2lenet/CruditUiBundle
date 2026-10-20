@@ -1,0 +1,32 @@
+{#
+ # Layout of the Turbo pages: a header with the links between the pages (Turbo Drive visits) and the theme switch, the
+ # region of the toasts once (flash messages, Turbo Streams), and <main>.
+ #}
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ block('heading') }} · CruditUiBundle Turbo test{% endblock %}
+
+{% block body %}
+    <header class="turbo-header">
+        <nav aria-label="Turbo pages">
+            <ul class="turbo-header__links">
+                <li><a id="turbo-link-home" href="{{ path('turbo_home') }}">Home</a></li>
+                <li><a id="turbo-link-second" href="{{ path('turbo_second') }}">Second page</a></li>
+                <li><a id="turbo-link-frame" href="{{ path('turbo_frame') }}">Frame</a></li>
+                <li><a id="turbo-link-morph" href="{{ path('turbo_morph') }}">Morph</a></li>
+                <li><a id="turbo-link-kit" href="{{ path('crudit_ui_kit') }}">Design kit</a></li>
+            </ul>
+        </nav>
+        {% set ui_theme_controller = '@2lenet/crudit-ui-bundle/theme' %}
+        <div role="group" aria-label="{{ 'crudit_ui.theme.label'|trans(domain: 'LleCruditUiBundle') }}" class="turbo-header__theme" {{ stimulus_controller(ui_theme_controller) }}>
+            {% for theme in ['light', 'dark', 'system'] %}
+                <button type="button" value="{{ theme }}" class="crudit-ui-btn crudit-ui-btn--ghost crudit-ui-btn--small" {{ stimulus_target(ui_theme_controller, 'option') }} {{ stimulus_action(ui_theme_controller, 'choose') }}>{{ ('crudit_ui.theme.' ~ theme)|trans(domain: 'LleCruditUiBundle') }}</button>
+            {% endfor %}
+        </div>
+    </header>
+    <twig:LleCruditUi:Toasts/>
+    <main id="main" class="turbo-main">
+        <h1>{{ block('heading') }}</h1>
+        {% block content %}{% endblock %}
+    </main>
+{% endblock %}

@@ -335,7 +335,11 @@ button and a click on the backdrop fire `cancel` first**: a project cancels it (
 open (a form with changes, to confirm). Chrome closes it all the same without a click or a key of the user before
 (a `dismiss` called by a timer), or on a second try with none in between. A press in the dialog released on the backdrop (a selection of text) does not
 close it. The dialog closes when the controller disconnects and before Turbo caches the page, also when it is moved in
-the page (Stimulus disconnects it, and a modal dialog moved is no longer modal): do not move an open dialog.
+the page (Stimulus disconnects it, and a modal dialog moved is no longer modal): do not move an open dialog. A page
+refreshed by a morph of Turbo: the dialog follows the server, closed unless it has `open` (it then stays open as it
+is, the focus where it was); the morph would otherwise remove the attribute `open` and leave the dialog hidden but
+still modal, the page inert. A dialog to keep open across refreshes (a broadcast refresh) takes
+`data-turbo-permanent`.
 
 Accessibility: `role="dialog"` (native) or `alertdialog`, named by its title, described by its description. **Initial
 focus**: on the element with `autofocus`, else on the first focusable one (the close button). Put `autofocus` on

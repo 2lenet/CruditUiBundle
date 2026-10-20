@@ -1,9 +1,10 @@
 {
     "private": true,
-    "description": "Smoke test shared by the test applications (assetmapper, encore)",
+    "description": "Smoke test shared by the test applications (assetmapper, encore, turbo)",
     "type": "module",
     "scripts": {
-        "smoke": "node smoke.mjs"
+        "smoke": "node smoke.mjs",
+        "smoke-turbo": "node smoke-turbo.mjs"
     },
     "devDependencies": {
         "axe-core": "^4.14.0",

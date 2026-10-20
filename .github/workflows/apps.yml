@@ -2,7 +2,8 @@ name: Test applications
 
 # The bundle is installed in a Symfony application for each asset tool it supports (AssetMapper, Webpack Encore),
 # then a headless Chrome checks that the stylesheet is loaded, that the project can override it and that a
-# Stimulus controller of the bundle works (tests/apps/smoke.mjs).
+# Stimulus controller of the bundle works (tests/apps/smoke.mjs). The application turbo (AssetMapper and Symfony UX
+# Turbo) runs the same test, then the components under real Turbo visits (tests/apps/smoke-turbo.mjs).
 
 on:
     push:
@@ -22,6 +23,8 @@ jobs:
                     -   {app: assetmapper, env: dev}
                     -   {app: assetmapper, env: prod}
                     -   {app: encore, env: prod}
+                    -   {app: turbo, env: dev}
+                    -   {app: turbo, env: prod}
 
         env:
             APP_SECRET: ci
@@ -60,7 +63,7 @@ jobs:
                     npm run build
 
             -   name: 'Compile the assets (AssetMapper, production)'
-                if: matrix.app == 'assetmapper' && matrix.env == 'prod'
+                if: matrix.app != 'encore' && matrix.env == 'prod'
                 run: php bin/console asset-map:compile
 
             -   name: 'Start the server'
@@ -76,6 +79,11 @@ jobs:
                 run: |
                     npm install --no-audit --no-fund
                     node smoke.mjs http://127.0.0.1:8080/ "$(which google-chrome)"
+
+            -   name: 'Smoke test under Turbo'
+                if: matrix.app == 'turbo'
+                working-directory: tests/apps
+                run: node smoke-turbo.mjs http://127.0.0.1:8080/ "$(which google-chrome)"
 
             -   name: 'Server log'
                 if: failure()

@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}CruditUiBundle Turbo test{% endblock %}
+
+{% block body %}
+    <h1>CruditUiBundle Turbo test</h1>
+    <div class="crudit-ui-dropdown project-menu" {{ stimulus_controller('@2lenet/crudit-ui-bundle/dropdown') }}>
+        <button type="button" class="crudit-ui-btn crudit-ui-btn--secondary" aria-expanded="false" {{ stimulus_target('@2lenet/crudit-ui-bundle/dropdown', 'button') }} {{ stimulus_action('@2lenet/crudit-ui-bundle/dropdown', 'toggle') }}>Menu</button>
+        <div class="crudit-ui-dropdown__panel" hidden {{ stimulus_target('@2lenet/crudit-ui-bundle/dropdown', 'panel') }}>Panel</div>
+    </div>
+    <a href="#" class="btn">Bootstrap button</a>
+    {% set ui_theme_controller = '@2lenet/crudit-ui-bundle/theme' %}
+    <div role="group" aria-label="{{ 'crudit_ui.theme.label'|trans(domain: 'LleCruditUiBundle') }}" {{ stimulus_controller(ui_theme_controller) }}>
+        {% for theme in ['light', 'dark', 'system'] %}
+            <button type="button" value="{{ theme }}" {{ stimulus_target(ui_theme_controller, 'option') }} {{ stimulus_action(ui_theme_controller, 'choose') }}>{{ ('crudit_ui.theme.' ~ theme)|trans(domain: 'LleCruditUiBundle') }}</button>
+        {% endfor %}
+    </div>
+    <p><a href="{{ path('crudit_ui_kit') }}">Design kit</a> <a href="{{ path('turbo_home') }}">Turbo pages</a></p>
+    <section aria-label="{{ 'crudit_ui.language.label'|trans(domain: 'LleCruditUiBundle') }}">
+        <p>
+            {% for locale in ['fr', 'en', 'de', 'ar_SA', 'ar_MA', 'fa'] %}
+                <a href="{{ path('home_locale', {_locale: locale}) }}" hreflang="{{ locale|replace({'_': '-'}) }}">{{ locale }}</a>
+            {% endfor %}
+        </p>
+        <p>
+            <output id="number">{{ 1234.5|ui_number }}</output>
+            <output id="date">{{ '2026-10-13 12:00'|ui_date('short') }}</output>
+            {# directional icon: ui_icon() gives it the mirror modifier (local SVG, assets/icons/fa7-solid/arrow-right.svg) #}
+            <span id="mirrored">{{ ui_icon('next') }}</span>
+            {# icon of the catalogue, imported by ux:icons:lock: missing in production without the command #}
+            <span id="locked">{{ ui_icon('delete') }}</span>
+        </p>
+    </section>
+{% endblock %}

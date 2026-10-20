@@ -60,11 +60,14 @@ A component is done when:
 - a PHPUnit test renders it (`RendersTwig` in `tests/phpunit/Functional`: `render()` with `<twig:LleCruditUi:…>`, then
   `html()` and `querySelector()`), and the smoke test passes, axe included;
 - if it has a Stimulus controller, the smoke test drives it on the design kit page in a real browser: clicks, keyboard,
-  right to left, the events it dispatches. PHPUnit only sees the HTML rendered by the server.
+  right to left, the events it dispatches. PHPUnit only sees the HTML rendered by the server;
+- it works under Turbo: it is in a page of the application `turbo`, and `smoke-turbo.mjs` checks it after visits,
+  Back, a Turbo Stream or a morph (see below).
 
 ## Test applications
 
-`tests/apps/` holds one Symfony application per asset tool the bundle supports: `assetmapper` and `encore`.
+`tests/apps/` holds one Symfony application per asset tool the bundle supports, `assetmapper` and `encore`, and
+`turbo`: the application `assetmapper` with Symfony UX Turbo (its latest version, Turbo 8).
 Each one installs the bundle as a project does (Composer path repository with `symlink: false`, so the bundle is
 **copied** into `vendor/`), loads the stylesheet explicitly, overrides a variable in its own CSS and shows the
 dropdown controller. `tests/apps/smoke.mjs` drives a headless Chrome on the page: the stylesheet and the
@@ -73,7 +76,36 @@ menu, the page in French, Arabic and Persian has the right direction, texts, num
 and the [design kit](components.md#design-kit) page has no accessibility violation for axe-core (WCAG 2.1 A and AA,
 in light, dark, right to left and on a phone, 360 px wide), and its components work: buttons, alerts, collapsibles
 and tabs (keyboard, right to left, address). The `Test applications` workflow runs it for AssetMapper (dev and prod, with
-`asset-map:compile`) and Encore.
+`asset-map:compile`), Encore and Turbo (dev and prod).
+
+### Turbo
+
+No project uses Turbo yet: the application `turbo` makes sure the bundle already works with it. Turbo changes the
+life of a page: a link or a form does not load a new page, Turbo replaces the `<body>` (the controllers are
+disconnected and connected again, the listeners on `document` and `window` stay if a controller does not remove
+them), keeps a snapshot of the page left and shows it on Back, sends the forms with `fetch` (`turbo:submit-start`,
+`turbo:submit-end`), applies the Turbo Streams of the answer, loads the Turbo Frames, and refreshes a page by a
+morph (the elements stay, their attributes follow the server). The smoke test of the other applications only
+simulates some of its events.
+
+`tests/apps/smoke.mjs` runs on it too (the design kit with Turbo Drive on), then `tests/apps/smoke-turbo.mjs` drives
+the pages of `TurboController` (`/turbo`, layout `templates/turbo/layout.html.twig`, with the region of the toasts):
+
+- visits back and forth: no listener left on `document` or `window` (counted by the DevTools protocol), one controller
+  per element (a toast shown once, a dropdown opened by one click, a dialog opened once);
+- Back: a dropdown, a dialog or a toast open when the page was left are not restored, the page reached from a
+  dialog is not locked, the theme switch shows the current choice, the tabs come back on their tab without a full
+  load (the state of Turbo in the history is kept);
+- forms: a redirect (303) and its flash message as a toast, announced; a Turbo Stream that appends a toast and
+  replaces a fragment; a slow answer (the button in loading, a second click sends nothing); a form in a dialog sent
+  back with its errors (422), the dialog open;
+- a page refreshed by a morph (`/turbo/morph`): the dialog sent back with its errors stays open without closing in
+  between, the focus where it was; the redirect to the same page closes it and frees the page;
+- a Turbo Frame loaded lazily, then navigated by its link; the language by a Turbo visit (`lang` and `dir`);
+- axe-core on the pages reached by Turbo.
+
+A new controller, or a component that keeps a state in the page, gets its case in these pages and in
+`smoke-turbo.mjs`.
 
 To run one locally (Docker, no local PHP needed):
 
@@ -85,6 +117,9 @@ docker build -t php-intl - <<< $'FROM php:8.5-cli\nRUN apt-get update && apt-get
 docker run -d --rm --name ui-app -u $(id -u) --network host -e APP_SECRET=x -v $PWD/../../..:/app -w /app/tests/apps/encore php-intl php -S 127.0.0.1:8081 -t public
 cd .. && npm install && node smoke.mjs http://127.0.0.1:8081/
 ```
+
+The application `turbo` the same way, without the Encore build, then its own smoke test:
+`node smoke-turbo.mjs http://127.0.0.1:8081/`.
 
 Without Node on the machine, the image of Puppeteer runs the smoke test; the path of its Chrome is the second
 argument. Not with `-u`: Chrome does not start.
