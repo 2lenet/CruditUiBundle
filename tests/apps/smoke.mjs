@@ -1,6 +1,6 @@
 // Smoke test of a test application: node smoke.mjs <url> [chrome path]
 // The page must show the dropdown controller of the bundle and load its stylesheet; the design kit page must have no
-// accessibility violation (axe-core).
+// accessibility violation (axe-core), and its menus and tooltips must work.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
@@ -31,7 +31,7 @@ try {
     assert.equal(primary, '#b3261e', 'the project must override the variables of the bundle');
 
     // The Stimulus controller of the bundle works.
-    const button = await page.waitForSelector('.crudit-ui-dropdown__button');
+    const button = await page.waitForSelector('.crudit-ui-dropdown .crudit-ui-btn');
     const expanded = () => page.evaluate((b) => b.getAttribute('aria-expanded'), button);
     assert.equal(await expanded(), 'false');
     await button.click();
@@ -42,7 +42,7 @@ try {
     // Bootstrap, in its layer between the two layers of the bundle (assets/styles/layers.css): the components of the
     // bundle win over its reboot, its classes win over the reset of the bundle.
     const style = (selector, property) => page.evaluate((s, p) => getComputedStyle(document.querySelector(s))[p], selector, property);
-    assert.equal(await style('.crudit-ui-dropdown__button', 'paddingTop'), '6px', 'the reboot of Bootstrap wins over a component of the bundle');
+    assert.equal(await style('.crudit-ui-dropdown .crudit-ui-btn', 'paddingLeft'), '12px', 'the reboot of Bootstrap must not win over a component of the bundle');
     assert.equal(await style('a.btn', 'color'), 'rgb(255, 255, 255)', 'the reset of the bundle wins over a class of Bootstrap');
 
     // The theme switch: the choice goes on <html> and in a cookie, which the server puts back on the next page.
@@ -205,6 +205,206 @@ try {
         return {cancelled, blank, turboStart, turboEnd: state()};
     });
     assert.deepEqual(states, {cancelled: null, blank: null, turboStart: 'true', turboEnd: null}, 'busyOnSubmit: cancelled sending, other window or Turbo');
+
+    // Dropdowns of the design kit (controller dropdown): Escape, the choice of an item, a disabled item, a click
+    // outside and the focus leaving close it or not, and give the focus back to the button.
+    await page.setViewport({width: 1280, height: 800});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const menu = (id) => page.evaluate((menuId) => ({
+        expanded: document.querySelector(`#${menuId} > button`).getAttribute('aria-expanded'),
+        hidden: document.getElementById(`${menuId}-panel`).hidden,
+        focus: document.activeElement?.closest('.crudit-ui-dropdown__panel') ? 'panel' : document.activeElement === document.querySelector(`#${menuId} > button`) ? 'button' : document.activeElement?.tagName,
+    }), id);
+    await page.click('#kit-menu > button');
+    assert.deepEqual(await menu('kit-menu'), {expanded: 'true', hidden: false, focus: 'button'}, 'the dropdown does not open');
+    await page.keyboard.press('Tab');
+    assert.equal((await menu('kit-menu')).focus, 'panel', 'Tab does not go into the panel');
+    await page.keyboard.press('Escape');
+    assert.deepEqual(await menu('kit-menu'), {expanded: 'false', hidden: true, focus: 'button'}, 'Escape does not close the dropdown, or does not give the focus back');
+
+    await page.click('#kit-menu > button');
+    await page.click('#kit-menu-panel [aria-disabled="true"]');
+    assert.equal((await menu('kit-menu')).hidden, false, 'a disabled item closes the dropdown');
+    await page.click('#kit-menu-panel button.crudit-ui-menu__item:not([aria-disabled])');
+    assert.deepEqual(await menu('kit-menu'), {expanded: 'false', hidden: true, focus: 'button'}, 'the choice of an item does not close the dropdown');
+
+    // A link item is followed.
+    await page.click('#kit-menu > button');
+    await page.click('#kit-menu-panel a.crudit-ui-menu__item');
+    assert.deepEqual([await page.evaluate(() => location.hash), (await menu('kit-menu')).hidden], ['#kit-menus', true], 'a link of a menu is not followed');
+
+    // The focus given by the action of an item (a dialog it opens) is not taken back by the dropdown.
+    await page.click('#kit-menu > button');
+    const focusKept = await page.evaluate(() => {
+        const field = document.body.appendChild(Object.assign(document.createElement('input'), {id: 'kit-menu-field', 'aria-label': 'Field'}));
+        document.querySelectorAll('#kit-menu-panel button.crudit-ui-menu__item:not([aria-disabled])')[0].addEventListener('click', () => field.focus(), {once: true});
+        document.querySelectorAll('#kit-menu-panel button.crudit-ui-menu__item:not([aria-disabled])')[0].click();
+        const focus = document.activeElement === field;
+        field.remove();
+
+        return focus;
+    });
+    assert.equal(focusKept, true, 'the dropdown takes back the focus given by the action of an item');
+
+    // Escape closes the dropdown, not the native dialog around it; the next one closes the dialog.
+    const inDialog = await page.evaluate(async () => {
+        const dialog = document.body.appendChild(Object.assign(document.createElement('dialog'), {id: 'kit-menu-dialog'}));
+        dialog.setAttribute('aria-label', 'Dialog');
+        dialog.append(document.getElementById('kit-menu-more'));
+        await new Promise((resolve) => setTimeout(resolve));
+        dialog.showModal();
+        document.querySelector('#kit-menu-more > button').click();
+
+        return document.getElementById('kit-menu-more-panel').hidden;
+    });
+    assert.equal(inDialog, false, 'the dropdown does not open in a dialog');
+    await page.keyboard.press('Escape');
+    assert.deepEqual(await page.evaluate(() => [document.getElementById('kit-menu-dialog').open, document.getElementById('kit-menu-more-panel').hidden]), [true, true], 'Escape in a dropdown closes the dialog around it');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.getElementById('kit-menu-dialog').open), false, 'Escape does not close the dialog');
+    await page.reload({waitUntil: 'networkidle0'});
+
+    // A dropdown in the panel of another one: the choice of one of its items closes it only, not the outer one.
+    const nested = await page.evaluate(() => {
+        document.getElementById('kit-menu-panel').append(document.getElementById('kit-menu-more'));
+
+        return new Promise((resolve) => setTimeout(() => {
+            document.querySelector('#kit-menu > button').click();
+            document.querySelector('#kit-menu-more > button').click();
+            document.querySelector('#kit-menu-more-panel .crudit-ui-menu__item').click();
+            resolve({
+                inner: document.getElementById('kit-menu-more-panel').hidden,
+                outer: document.getElementById('kit-menu-panel').hidden,
+                focus: document.activeElement === document.querySelector('#kit-menu-more > button'),
+            });
+        }));
+    });
+    assert.deepEqual(nested, {inner: true, outer: false, focus: true}, 'the choice in a dropdown inside another one closes the outer one');
+    await page.reload({waitUntil: 'networkidle0'});
+
+    // The markup of a project, without the class crudit-ui-dropdown: the choice of an item closes it all the same.
+    const bare = await page.evaluate(() => {
+        const root = document.getElementById('kit-menu-more');
+        root.classList.remove('crudit-ui-dropdown');
+        root.querySelector(':scope > button').click();
+        root.querySelector('.crudit-ui-menu__item').click();
+
+        return {closed: document.getElementById('kit-menu-more-panel').hidden, focus: document.activeElement === root.querySelector(':scope > button')};
+    });
+    assert.deepEqual(bare, {closed: true, focus: true}, 'the choice of an item does not close a dropdown without its class');
+    await page.reload({waitUntil: 'networkidle0'});
+
+    // An item that sends a form puts the button of the dropdown in loading, and back if the sending is cancelled.
+    const submitted = await page.evaluate(async () => {
+        const form = document.getElementById('kit-menu-form');
+        const button = document.querySelector('#kit-menu-submit > button');
+        form.addEventListener('submit', (event) => event.preventDefault(), {once: true});
+        button.click();
+        document.querySelector('#kit-menu-submit-panel button[type="submit"]').click();
+        const busy = button.getAttribute('aria-busy');
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        return {busy, after: button.getAttribute('aria-busy'), closed: document.getElementById('kit-menu-submit-panel').hidden};
+    });
+    assert.deepEqual(submitted, {busy: 'true', after: null, closed: true}, 'the button of the dropdown is not in loading while its item sends the form');
+
+    // The demo of the kit: nothing is sent (method dialog), the button stays in loading; Reset reloads the page.
+    const sendBusy = () => page.evaluate(() => document.querySelector('#kit-menu-submit > button').getAttribute('aria-busy'));
+    await page.click('#kit-menu-submit > button');
+    await page.click('#kit-menu-submit-panel button[type="submit"]');
+    assert.equal(await sendBusy(), 'true', 'the demo of the kit is not in loading');
+    await Promise.all([page.waitForNavigation({waitUntil: 'networkidle0'}), page.click('button[form="kit-menu-reset"]')]);
+    assert.equal(await sendBusy(), null, 'Reset does not play the demo of the kit again');
+
+    await page.click('#kit-menu > button');
+    await page.mouse.click(5, 5);
+    assert.equal((await menu('kit-menu')).hidden, true, 'a click outside does not close the dropdown');
+
+    // The focus leaving the panel closes it: Tab from its last item. Opened with the keyboard, as a user who tabs.
+    await page.focus('#kit-menu-more > button');
+    await page.keyboard.press('Enter');
+    assert.equal((await menu('kit-menu-more')).hidden, false, 'Enter does not open the dropdown');
+    await page.focus('#kit-menu-more-panel li:last-child .crudit-ui-menu__item');
+    await page.keyboard.press('Tab');
+    assert.equal((await menu('kit-menu-more')).hidden, true, 'the focus leaving the dropdown does not close it');
+
+    // Floating, in a container that scrolls: in position fixed, whole on the screen, not cut by its container.
+    await page.click('#kit-menu-floating-1 > button');
+    const floating = await page.evaluate(() => {
+        const panel = document.getElementById('kit-menu-floating-1-panel');
+        const rect = panel.getBoundingClientRect();
+        const scroller = panel.closest('.crudit-ui-kit__scroller').getBoundingClientRect();
+
+        return {position: getComputedStyle(panel).position, inside: rect.left >= 0 && rect.right <= innerWidth, outOfScroller: rect.bottom > scroller.bottom || rect.right > scroller.right || rect.left < scroller.left};
+    });
+    assert.deepEqual(floating, {position: 'fixed', inside: true, outOfScroller: true}, 'the floating dropdown is not placed');
+    // A resize of the window (the virtual keyboard of a phone) keeps it open, next to its button.
+    await page.setViewport({width: 1200, height: 700});
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const followed = await page.evaluate(() => {
+        const button = document.querySelector('#kit-menu-floating-1 > button').getBoundingClientRect();
+        const panel = document.getElementById('kit-menu-floating-1-panel');
+
+        const rect = panel.getBoundingClientRect();
+
+        // Below its button, or above when there is more room there.
+        return {open: !panel.hidden, near: Math.abs(rect.top - button.bottom) < 10 || Math.abs(rect.bottom - button.top) < 10};
+    });
+    assert.deepEqual(followed, {open: true, near: true}, 'a resize of the window closes the floating dropdown, or leaves it away from its button');
+    await page.keyboard.press('Escape');
+    await page.setViewport({width: 1280, height: 800});
+
+    // Followed while the focus is in it, the floating panel closes when its button leaves the screen, unless a field
+    // of the panel has the focus (the virtual keyboard).
+    const scrolledAway = (withField) => page.evaluate(async (field) => {
+        const frame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+        const root = document.getElementById('kit-menu-floating-1');
+        root.scrollIntoView({block: 'center'});
+        await frame();
+        root.querySelector(':scope > button').click();
+        const panel = document.getElementById('kit-menu-floating-1-panel');
+        const input = field ? panel.appendChild(Object.assign(document.createElement('input'), {'aria-label': 'Search'})) : null;
+        (input ?? panel.querySelector('.crudit-ui-menu__item')).focus();
+        // Up: the button is near the end of the page.
+        window.scrollBy(0, -window.innerHeight);
+        await frame();
+        await frame();
+        const open = !panel.hidden;
+        input?.remove();
+        root.querySelector(':scope > button').focus();
+        if (open) {
+            root.querySelector(':scope > button').click();
+        }
+
+        return open;
+    }, withField);
+    assert.equal(await scrolledAway(false), false, 'a followed panel stays open when its button leaves the screen');
+    assert.equal(await scrolledAway(true), true, 'a followed panel closes while a field of the panel has the focus');
+
+    // Tooltip: shown on hover, hidden by Escape until the pointer moves (controller tooltip).
+    const tooltip = () => page.evaluate(() => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility);
+    // visibility follows the transition of the opacity: waited for.
+    const settled = (visibility) => page.waitForFunction((v) => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility === v, {timeout: 1000}, visibility).then(() => visibility, () => tooltip());
+    assert.equal(await tooltip(), 'hidden');
+    await page.hover('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button');
+    assert.equal(await settled('visible'), 'visible', 'the tooltip is not shown on hover');
+    await page.keyboard.press('Escape');
+    assert.equal(await settled('hidden'), 'hidden', 'Escape does not hide the tooltip');
+    const box = await (await page.$('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button')).boundingBox();
+    await page.mouse.move(box.x + 2, box.y + 2);
+    assert.equal(await settled('visible'), 'visible', 'the tooltip does not come back when the pointer moves');
+
+    // A floating tooltip follows its host when the page scrolls.
+    await page.hover('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host:has(.crudit-ui-tooltip--floating) button');
+    const gap = () => page.evaluate(() => {
+        const host = document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host:has(.crudit-ui-tooltip--floating)');
+
+        return Math.round(host.querySelector('.crudit-ui-tooltip').getBoundingClientRect().top - host.getBoundingClientRect().top);
+    });
+    const before = await gap();
+    await page.evaluate(() => window.scrollBy(0, 40));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(await gap(), before, 'a floating tooltip does not follow its host when the page scrolls');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

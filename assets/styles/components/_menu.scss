@@ -1,0 +1,99 @@
+// List of actions or links in a dropdown panel (components Menu, MenuItem, MenuGroup). Same as `.menu-list` of the
+// crudit-v2 mockup (src/styles/components/_popover.scss). Not an ARIA menu: a list of links and buttons.
+.crudit-ui-menu {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    &__item {
+        display: flex;
+        width: 100%;
+        min-height: var(--control-h);
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-1) var(--space-3);
+        border: 0;
+        border-radius: var(--radius-md);
+        background-color: transparent;
+        color: var(--c-text);
+        font: inherit;
+        text-align: start;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover,
+        &.crudit-ui-is-hover {
+            background-color: var(--c-surface-hover);
+            color: var(--c-text);
+            text-decoration: none;
+        }
+
+        > .crudit-ui-icon {
+            flex: none;
+            color: var(--c-text-muted);
+        }
+
+        &--danger,
+        &--danger:hover,
+        &--danger.crudit-ui-is-hover,
+        &--danger > .crudit-ui-icon {
+            color: var(--c-danger-text);
+        }
+
+        // Disabled, focusable: its reason is read. No hover.
+        &[aria-disabled='true'],
+        &[aria-disabled='true']:hover {
+            background-color: transparent;
+            color: var(--c-text-muted);
+            cursor: not-allowed;
+        }
+
+        &[aria-current='true'],
+        &[aria-current='page'] {
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    &__text {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+    }
+
+    &__reason {
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-regular);
+    }
+
+    // Check of the current option; its room is kept on the other options of the menu.
+    &__check {
+        display: inline-flex;
+        width: 1rem;
+        flex: none;
+        justify-content: center;
+        color: var(--c-primary);
+    }
+
+    // Group: a heading, a rule between a group and what is around it.
+    &__group + li,
+    li + &__group {
+        padding-block-start: var(--space-1);
+        margin-block-start: var(--space-1);
+        border-block-start: 1px solid var(--c-border);
+    }
+
+    &__heading {
+        display: block;
+        padding: var(--space-1) var(--space-3);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__sub {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+}

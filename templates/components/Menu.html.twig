@@ -1,0 +1,9 @@
+{#
+ # Menu: the list of actions or links of a Dropdown, not an ARIA menu (a list of links and buttons, Tab from one to
+ # the next). Its items are MenuItem and MenuGroup.
+ #
+ # Block: content (the items). Contract: docs/components.md.
+ #}
+<ul {{ attributes.defaults({class: 'crudit-ui-menu'}) }}>
+    {%- block content %}{% endblock -%}
+</ul>

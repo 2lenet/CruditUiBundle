@@ -16,6 +16,10 @@
             "theme": {
                 "enabled": true,
                 "fetch": "eager"
+            },
+            "tooltip": {
+                "enabled": true,
+                "fetch": "eager"
             }
         }
     },
