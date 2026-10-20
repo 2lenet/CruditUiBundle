@@ -225,3 +225,8 @@
     display: block;
     margin: 0;
 }
+
+// Toasts shown in place: the width of the region.
+.crudit-ui-kit__toasts {
+    max-width: 28rem;
+}

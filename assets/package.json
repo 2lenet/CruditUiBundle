@@ -49,6 +49,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "toasts": {
+                "main": "dist/controllers/toasts_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "tooltip": {
                 "main": "dist/controllers/tooltip_controller.js",
                 "webpackMode": "eager",

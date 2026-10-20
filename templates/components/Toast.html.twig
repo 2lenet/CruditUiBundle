@@ -1,0 +1,19 @@
+{#
+ # Toast: a short message on the result of an action ("The visit is saved."), in the region of the page (Toasts), on
+ # the top inline end side. An icon, its type read first ("Error:"), the message and a close button. It is announced
+ # by the region (controller toasts), not by itself: a toast outside a region is only shown.
+ #
+ # Props: tone (info, success, warning, danger; info), persistent (stays until it is closed; by default an error
+ # only, the others go after the duration of the region). Block: content (the message, text only). Attributes: on the
+ # toast. Contract: docs/components.md.
+ #}
+{% props tone = 'info', persistent = null %}
+{%- set icons = {info: 'info', success: 'success', warning: 'warning', danger: 'error'} -%}
+{%- set defaults = {class: 'crudit-ui-toast crudit-ui-toast--' ~ tone, 'data-2lenet--crudit-ui-bundle--toasts-target': 'toast'} -%}
+{%- if persistent ?? (tone == 'danger') %}{% set defaults = defaults|merge({'data-persistent': 'true'}) %}{% endif -%}
+{%- if tone == 'danger' %}{% set defaults = defaults|merge({'data-assertive': 'true'}) %}{% endif -%}
+<div {{ attributes.defaults(defaults) }}>
+    {{- ui_icon(icons[tone] ?? 'info', 'crudit-ui-toast__icon') -}}
+    <p class="crudit-ui-toast__message"><span class="crudit-ui-visually-hidden">{{ ('crudit_ui.alert.' ~ tone)|trans(domain: 'LleCruditUiBundle') }} </span>{% block content %}{% endblock %}</p>
+    <twig:LleCruditUi:IconButton icon="close" label="{{ 'crudit_ui.toast.close'|trans(domain: 'LleCruditUiBundle') }}" size="small" class="crudit-ui-toast__close" data-action="2lenet--crudit-ui-bundle--toasts#dismiss"/>
+</div>

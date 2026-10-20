@@ -1,0 +1,78 @@
+@use '../tools/a11y' as *;
+
+// Toasts (components Toasts and Toast, controller toasts): a stack on the top inline end side, under the header, the
+// whole width on a phone. Same as `.toast-region` and `.toast` of the crudit-v2 mockup
+// (src/styles/components/_floating.scss). The tone is told by the icon, the colour and the type read first.
+.crudit-ui-toasts {
+    position: fixed;
+    z-index: var(--z-popover);
+    inset-block-start: calc(var(--topbar-h) + var(--space-3));
+    inset-inline-end: var(--gutter);
+    display: flex;
+    width: min(28rem, calc(100vw - 2 * var(--gutter)));
+    flex-direction: column;
+    gap: var(--space-2);
+    // The gaps between the toasts do not catch the clicks of the page.
+    pointer-events: none;
+
+    @media print {
+        display: none;
+    }
+}
+
+.crudit-ui-toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4) var(--space-2);
+    border-radius: var(--radius-lg);
+    background-color: var(--c-inverse-bg);
+    box-shadow: var(--shadow-lg);
+    color: var(--c-inverse-text);
+    pointer-events: auto;
+    @include transition(opacity, translate);
+
+    @starting-style {
+        opacity: 0;
+        translate: 0 calc(-1 * var(--space-3));
+    }
+
+    &--success .crudit-ui-toast__icon {
+        color: var(--c-success-border);
+    }
+
+    &--warning {
+        background-color: var(--c-warning-bg);
+        box-shadow: var(--shadow-lg), inset 0 0 0 1px var(--c-warning-border);
+        color: var(--c-warning-text);
+    }
+
+    &--danger {
+        background-color: var(--c-danger-solid);
+        color: var(--c-on-danger-solid);
+    }
+
+    &__icon {
+        flex: none;
+    }
+
+    &__message {
+        min-width: 0;
+        flex: 1;
+        margin: 0;
+        font-size: var(--font-size-sm);
+        overflow-wrap: anywhere;
+    }
+
+    // The close button takes the colour of the toast.
+    &__close {
+        color: inherit;
+
+        &:hover:not(:disabled):not([aria-disabled='true']),
+        &.crudit-ui-is-hover {
+            background-color: color-mix(in srgb, currentcolor 15%, transparent);
+            color: inherit;
+        }
+    }
+}

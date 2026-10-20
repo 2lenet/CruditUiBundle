@@ -29,6 +29,10 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "toasts": {
+                "enabled": true,
+                "fetch": "eager"
+            },
             "tooltip": {
                 "enabled": true,
                 "fetch": "eager"

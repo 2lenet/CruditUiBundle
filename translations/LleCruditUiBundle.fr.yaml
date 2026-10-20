@@ -22,5 +22,7 @@ crudit_ui:
         system: Système
     state:
         loading: Chargement…
+    toast:
+        close: Fermer le message
     value:
         empty: Non renseigné

@@ -39,6 +39,7 @@
     @include meta.load-css('components/status');
     @include meta.load-css('components/tabs');
     @include meta.load-css('components/tag');
+    @include meta.load-css('components/toast');
     @include meta.load-css('components/tone');
     @include meta.load-css('components/tooltip');
 
