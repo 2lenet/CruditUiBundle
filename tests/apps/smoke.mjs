@@ -1,6 +1,6 @@
 // Smoke test of a test application: node smoke.mjs <url> [chrome path]
 // The page must show the dropdown controller of the bundle and load its stylesheet; the design kit page must have no
-// accessibility violation (axe-core), and its menus, tooltips and dialogs must work.
+// accessibility violation (axe-core), and its menus, tooltips, dialogs and toasts must work.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
@@ -566,6 +566,109 @@ try {
     await auditOpen('crudit-ui/kit', 'kit-drawer-open', 'kit-drawer');
     await page.goto(new URL('crudit-ui/kit/ar', url).href, {waitUntil: 'networkidle0'});
     assert.deepEqual(await drawer(), {end: true, height: true}, 'the drawer is not on the inline end side in right to left');
+
+    // Toasts of the design kit (controller toasts). Those of the page (?toast=, as flash messages after a redirect),
+    // announced a little after the load, by the polite or the assertive live region.
+    await page.setViewport({width: 1280, height: 800});
+    const toasts = () => page.evaluate(() => Array.from(document.querySelectorAll('#kit-toasts-region > .crudit-ui-toast'))
+        .map((toast) => toast.querySelector('.crudit-ui-toast__message').textContent));
+    const announced = (live) => page.evaluate((target) => document.querySelector(`#kit-toasts-region [data-2lenet--crudit-ui-bundle--toasts-target="${target}"]`).textContent, live);
+    await page.goto(new URL('crudit-ui/kit?toast=success', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await toasts(), ['Success: The visit V-0412 is saved.']);
+    await page.waitForFunction(() => document.querySelector('#kit-toasts-region [aria-live="polite"]').textContent !== '', {timeout: 2000});
+    assert.deepEqual([await announced('polite'), await announced('assertive')], ['Success: The visit V-0412 is saved.', ''], 'a toast of the page is not announced');
+    // On the top inline end side.
+    const place = () => page.evaluate(() => {
+        const rect = document.getElementById('kit-toasts-region').getBoundingClientRect();
+        const width = document.documentElement.clientWidth;
+
+        return {top: rect.top > 0 && rect.top < 120, end: document.dir === 'rtl' ? rect.left < 40 : width - rect.right < 40, width: Math.round(rect.width)};
+    });
+    assert.deepEqual(await place(), {top: true, end: true, width: 448}, 'the toasts are not on the top inline end side');
+
+    // Five toasts: four kept, the oldest that is not an error goes; an error is announced at once (assertive).
+    await page.goto(new URL('crudit-ui/kit?toast=all', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await toasts(), [
+        'Error: The server refused the record. Try again later.',
+        'Information: The export has started: you will be told when it is ready.',
+        'Warning: The visit is saved, but its planned date is 5 days late.',
+        'Success: The visit V-0412 is saved.',
+    ], 'beyond four toasts, the oldest that is not an error does not go');
+    await page.waitForFunction(() => document.querySelector('#kit-toasts-region [aria-live="assertive"]').textContent !== '', {timeout: 2000});
+    assert.equal(await announced('assertive'), 'Error: The server refused the record. Try again later.', 'an error is not announced at once');
+    await page.addScriptTag({content: axeSource});
+    const toastViolations = await page.evaluate(async () => (await window.axe.run(document.getElementById('kit-toasts-region'), {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations.map((violation) => violation.id));
+    assert.deepEqual(toastViolations, [], 'accessibility of the toasts');
+
+    // The JavaScript of the page: the event crudit-ui:toast, a text never read as HTML. With a short duration: removed
+    // after it, except an error, and not while the pointer is on the region.
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const show = (detail) => page.evaluate((toast) => document.dispatchEvent(new CustomEvent('crudit-ui:toast', {detail: toast})), detail);
+    await page.evaluate(() => document.getElementById('kit-toasts-region').setAttribute('data-2lenet--crudit-ui-bundle--toasts-duration-value', '1500'));
+    await show({message: '<b>Saved</b>', tone: 'success'});
+    await show({message: 'Refused.', tone: 'danger'});
+    assert.deepEqual(await toasts(), ['Success: <b>Saved</b>', 'Error: Refused.'], 'the event crudit-ui:toast does not show a toast');
+    assert.equal(await page.$('#kit-toasts-region b'), null, 'the message of a toast is read as HTML');
+    // Once they have slid in: the pointer on the middle of a toast, not in the gap between two.
+    await page.waitForFunction(() => document.getElementById('kit-toasts-region').getAnimations({subtree: true}).length === 0, {timeout: 1000});
+    const errorBox = await (await page.$('#kit-toasts-region .crudit-ui-toast--danger')).boundingBox();
+    await page.mouse.move(errorBox.x + errorBox.width / 2, errorBox.y + errorBox.height / 2);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    assert.equal((await toasts()).length, 2, 'a toast is removed while the pointer is on the region');
+    await page.mouse.move(5, 5);
+    await page.waitForFunction(() => document.querySelectorAll('#kit-toasts-region > .crudit-ui-toast').length === 1, {timeout: 3000});
+    assert.deepEqual(await toasts(), ['Error: Refused.'], 'a toast is not removed after its duration, or an error is');
+
+    // Closed by its button, from the keyboard: the focus goes to the next toast, then to the container.
+    await show({message: 'Started.', tone: 'info', persistent: true});
+    await page.focus('#kit-toasts-region .crudit-ui-toast--danger .crudit-ui-toast__close');
+    await page.keyboard.press('Enter');
+    const afterClose = await page.evaluate(() => [document.activeElement.closest('.crudit-ui-toast')?.querySelector('.crudit-ui-toast__message').textContent, document.querySelectorAll('#kit-toasts-region > .crudit-ui-toast').length]);
+    assert.deepEqual(afterClose, ['Information: Started.', 1], 'the close button does not remove the toast, or the focus is lost');
+    await page.keyboard.press('Enter');
+    assert.deepEqual(await page.evaluate(() => [document.activeElement.className, document.querySelectorAll('#kit-toasts-region > .crudit-ui-toast').length]), ['crudit-ui-kit', 0], 'the focus is lost when the last toast is closed');
+
+    // A toast added while a modal dialog is open is shown in it (the page under it is inert): seen, read and closed;
+    // the region goes back to its place when the dialog closes.
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    await show({message: 'Refused.', tone: 'danger'});
+    await page.waitForFunction(() => document.querySelector('#kit-toasts-region [aria-live="assertive"]').textContent !== '', {timeout: 2000});
+    const toastInDialog = await page.evaluate(() => {
+        const toast = document.querySelector('#kit-toasts-region .crudit-ui-toast');
+        const rect = toast.getBoundingClientRect();
+
+        return {
+            moved: document.getElementById('kit-dialog-confirm').contains(toast),
+            shown: toast.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)),
+        };
+    });
+    assert.deepEqual(toastInDialog, {moved: true, shown: true}, 'a toast added while a dialog is open is not shown in it');
+    const tree = JSON.stringify(await page.accessibility.snapshot());
+    assert.ok(tree.includes('Error: Refused.'), 'a toast in a dialog is not in the accessibility tree');
+    await page.click('#kit-toasts-region .crudit-ui-toast__close');
+    assert.equal((await dialog('kit-dialog-confirm')).open, true, 'closing a toast closes the dialog');
+    await show({message: 'Saved.', tone: 'success', persistent: true});
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('kit-toasts-region').parentElement.closest('#kit-toasts'), {timeout: 1000});
+    assert.deepEqual(await toasts(), ['Success: Saved.'], 'the region does not go back to its place with its toasts');
+
+    // Removed with the dialog it is in (a row deleted with its dialog): back in its place. Emptied before Turbo
+    // caches the page.
+    await openDialog('kit-dialog-form-open', 'kit-dialog-form');
+    await show({message: 'Postponed.', tone: 'success', persistent: true});
+    assert.equal(await page.evaluate(() => document.getElementById('kit-dialog-form').contains(document.getElementById('kit-toasts-region'))), true);
+    await page.evaluate(() => document.getElementById('kit-dialog-form').remove());
+    await page.waitForFunction(() => document.getElementById('kit-toasts-region')?.parentElement.closest('#kit-toasts'), {timeout: 1000});
+    assert.deepEqual(await toasts(), ['Success: Saved.', 'Success: Postponed.'], 'the region is lost with the dialog it was in');
+    await page.evaluate(() => document.dispatchEvent(new Event('turbo:before-cache')));
+    assert.deepEqual(await toasts(), [], 'the toasts are not removed before Turbo caches the page');
+
+    // Right to left: on the top left; on a phone: the whole width, less the margins.
+    await page.goto(new URL('crudit-ui/kit/ar?toast=success', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await place(), {top: true, end: true, width: 448}, 'the toasts are not on the inline end side in right to left');
+    await page.setViewport({width: 360, height: 740, isMobile: true, hasTouch: true});
+    await page.goto(new URL('crudit-ui/kit?toast=success', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await place(), {top: true, end: true, width: 328}, 'the toasts do not take the width of a phone');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

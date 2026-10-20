@@ -90,6 +90,8 @@ for (const [theme, selector] of [['light', ':root'], ['dark', ':root[data-theme=
 const componentPairs = [
     ['--c-border-strong', '--c-surface'],
     ['--c-border-strong', '--c-bg'],
+    // Icon of a success toast
+    ['--c-success-border', '--c-inverse-bg'],
     ...[2, 3, 4, 5, 6].map((series) => [`--chart-${series}`, '--c-surface']),
 ];
 

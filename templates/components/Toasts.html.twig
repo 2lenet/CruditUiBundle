@@ -1,0 +1,32 @@
+{#
+ # Toasts: the region of the toasts of the page, once in the layout (controller toasts). On the top inline end side,
+ # under the header (--topbar-h). It shows the flash messages of the session, the toasts of its block, those appended
+ # by a Turbo Stream (target: its id) and those of the JavaScript (event crudit-ui:toast on the document).
+ #
+ # The controller announces each new toast (polite, an error assertive), removes a toast that is not persistent after
+ # `duration` ms, paused while the region is hovered or has the focus and while the page is hidden, and keeps `max`
+ # toasts: the oldest that is not persistent goes first. A toast added while a modal dialog is open is shown in it.
+ #
+ # Props: flashes (shows app.flashes, translated, escaped; true), duration (6000), max (4). Block: content (toasts of
+ # the page). Attributes: on the region; id crudit-ui-toasts by default. Contract: docs/components.md.
+ #}
+{% props flashes = true, duration = 6000, max = 4 %}
+{%- set controller = '2lenet--crudit-ui-bundle--toasts' -%}
+{#- The types of the flash messages of Symfony (notice, error) and of Bootstrap (danger) -#}
+{%- set tones = {success: 'success', info: 'info', notice: 'info', warning: 'warning', danger: 'danger', error: 'danger'} -%}
+<div {{ attributes.defaults({id: 'crudit-ui-toasts', class: 'crudit-ui-toasts', 'data-controller': controller, ('data-' ~ controller ~ '-duration-value'): duration, ('data-' ~ controller ~ '-max-value'): max}) }}>
+    {#- The toasts of the JavaScript are copies of these ones. -#}
+    {%- for tone in ['info', 'success', 'warning', 'danger'] -%}
+        <template data-{{ controller }}-target="template" data-tone="{{ tone }}"><twig:LleCruditUi:Toast tone="{{ tone }}"/></template>
+    {%- endfor -%}
+    <div class="crudit-ui-visually-hidden" aria-live="polite" data-{{ controller }}-target="polite"></div>
+    <div class="crudit-ui-visually-hidden" aria-live="assertive" data-{{ controller }}-target="assertive"></div>
+    {%- if flashes and app is defined -%}
+        {%- for type, messages in app.flashes -%}
+            {%- for message in messages -%}
+                <twig:LleCruditUi:Toast tone="{{ tones[type] ?? 'info' }}">{{ message|trans }}</twig:LleCruditUi:Toast>
+            {%- endfor -%}
+        {%- endfor -%}
+    {%- endif -%}
+    {%- block content %}{% endblock -%}
+</div>
