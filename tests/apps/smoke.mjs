@@ -264,6 +264,24 @@ try {
     assert.equal(await page.evaluate(() => document.getElementById('kit-menu-dialog').open), false, 'Escape does not close the dialog');
     await page.reload({waitUntil: 'networkidle0'});
 
+    // A dropdown in the panel of another one: the choice of one of its items closes it only, not the outer one.
+    const nested = await page.evaluate(() => {
+        document.getElementById('kit-menu-panel').append(document.getElementById('kit-menu-more'));
+
+        return new Promise((resolve) => setTimeout(() => {
+            document.querySelector('#kit-menu > button').click();
+            document.querySelector('#kit-menu-more > button').click();
+            document.querySelector('#kit-menu-more-panel .crudit-ui-menu__item').click();
+            resolve({
+                inner: document.getElementById('kit-menu-more-panel').hidden,
+                outer: document.getElementById('kit-menu-panel').hidden,
+                focus: document.activeElement === document.querySelector('#kit-menu-more > button'),
+            });
+        }));
+    });
+    assert.deepEqual(nested, {inner: true, outer: false, focus: true}, 'the choice in a dropdown inside another one closes the outer one');
+    await page.reload({waitUntil: 'networkidle0'});
+
     // An item that sends a form puts the button of the dropdown in loading, and back if the sending is cancelled.
     const submitted = await page.evaluate(async () => {
         const form = document.getElementById('kit-menu-form');
@@ -315,6 +333,33 @@ try {
     assert.deepEqual(followed, {open: true, near: true}, 'a resize of the window closes the floating dropdown, or leaves it away from its button');
     await page.keyboard.press('Escape');
     await page.setViewport({width: 1280, height: 800});
+
+    // Followed while the focus is in it, the floating panel closes when its button leaves the screen, unless a field
+    // of the panel has the focus (the virtual keyboard).
+    const scrolledAway = (withField) => page.evaluate(async (field) => {
+        const frame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+        const root = document.getElementById('kit-menu-floating-1');
+        root.scrollIntoView({block: 'center'});
+        await frame();
+        root.querySelector(':scope > button').click();
+        const panel = document.getElementById('kit-menu-floating-1-panel');
+        const input = field ? panel.appendChild(Object.assign(document.createElement('input'), {'aria-label': 'Search'})) : null;
+        (input ?? panel.querySelector('.crudit-ui-menu__item')).focus();
+        // Up: the button is near the end of the page.
+        window.scrollBy(0, -window.innerHeight);
+        await frame();
+        await frame();
+        const open = !panel.hidden;
+        input?.remove();
+        root.querySelector(':scope > button').focus();
+        if (open) {
+            root.querySelector(':scope > button').click();
+        }
+
+        return open;
+    }, withField);
+    assert.equal(await scrolledAway(false), false, 'a followed panel stays open when its button leaves the screen');
+    assert.equal(await scrolledAway(true), true, 'a followed panel closes while a field of the panel has the focus');
 
     // Tooltip: shown on hover, hidden by Escape until the pointer moves (controller tooltip).
     const tooltip = () => page.evaluate(() => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility);

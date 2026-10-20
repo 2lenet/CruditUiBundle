@@ -29,7 +29,9 @@
         ('data-' ~ controller ~ '-target'): 'button',
         'data-action': controller ~ '#toggle',
     }}, with_context: false) -}}
-        {#- Spinner of the loading state, while an item of the panel sends a form (controllers dropdown and button). -#}
+        {#- Spinner of the loading state, while an item of the panel sends a form (controllers dropdown and button). It
+         # takes the place of the first svg child of the button: the icon, or the chevron when there is none. Keep
+         # this order if the button is reordered. -#}
         <template data-2lenet--crudit-ui-bundle--button-target="spinner">{{ ui_icon('loading') }}</template>
         {%- block trigger -%}
             {%- if iconOnly -%}

@@ -15,10 +15,12 @@ const BUTTON = '2lenet--crudit-ui-bundle--button';
  *   button, before the action of the item runs (capture): a dialog that the action opens takes the focus, and gives
  *   it back to the button when it closes.
  * - An item that sends a form (busyOnSubmit) puts the button of the dropdown in loading, as long as it is itself.
+ *   The items of a dropdown inside the panel concern that one only (choice, loading).
  * - Shown under the button, shifted to stay in the screen. With the value "floating", in position: fixed, placed
  *   next to the button: it is not cut by a container that scrolls (a table). It closes when the page scrolls, and
  *   follows the button when the window is resized, or when the page scrolls while the focus is in it (the virtual
- *   keyboard of a phone, opened by a field of the panel).
+ *   keyboard of a phone, opened by a field of the panel); then it closes if the button leaves the screen, unless a
+ *   field of the panel has the focus.
  * - Closed when the controller disconnects and before Turbo caches the page: a snapshot is never restored open.
  * - The root takes the class crudit-ui-dropdown--open: a sticky container can rise above its neighbours with :has().
  *
@@ -59,13 +61,13 @@ export default class extends Controller {
         };
         this.onPanelClick = (event) => {
             const item = event.target.closest('.crudit-ui-menu__item');
-            if (item && this.panelTarget.contains(item) && item.getAttribute('aria-disabled') !== 'true') {
+            if (item && this.owns(item) && item.getAttribute('aria-disabled') !== 'true') {
                 this.close();
                 this.buttonTarget.focus();
             }
         };
-        this.onItemBusy = () => this.trigger()?.busy();
-        this.onItemIdle = () => this.trigger()?.restore();
+        this.onItemBusy = (event) => this.owns(event.target) && this.trigger()?.busy();
+        this.onItemIdle = (event) => this.owns(event.target) && this.trigger()?.restore();
         this.onDocumentPointerDown = (event) => {
             if (!this.element.contains(event.target)) {
                 this.close();
@@ -76,6 +78,16 @@ export default class extends Controller {
                 return;
             }
             this.panelTarget.contains(document.activeElement) ? this.follow() : this.close();
+        };
+        // The button scrolled out of the screen: the panel would stay on the edge, away from it. Kept while a field
+        // of the panel has the focus (the virtual keyboard).
+        this.onFollowed = () => {
+            const rect = this.buttonTarget.getBoundingClientRect();
+            const visible = rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
+            if (!visible && !document.activeElement?.matches('input, select, textarea, [contenteditable]')) {
+                this.close();
+                this.buttonTarget.focus({preventScroll: true});
+            }
         };
         this.onResize = () => this.follow();
         this.onBeforeCache = () => this.close();
@@ -152,10 +164,20 @@ export default class extends Controller {
         placeFloating(this.buttonTarget, this.panelTarget, {align: this.alignValue});
     }
 
-    // Places the floating panel again, once per frame.
+    // Places the floating panel again, once per frame; closes it if its button left the screen.
     follow() {
         cancelAnimationFrame(this.frame);
-        this.frame = requestAnimationFrame(() => this.isOpen() && this.place());
+        this.frame = requestAnimationFrame(() => {
+            if (this.isOpen()) {
+                this.place();
+                this.onFollowed();
+            }
+        });
+    }
+
+    // An element of this dropdown, not of a dropdown in its panel.
+    owns(element) {
+        return this.panelTarget.contains(element) && element.closest('.crudit-ui-dropdown') === this.element;
     }
 
     // The controller "button" of the button of the dropdown (its loading state).

@@ -217,7 +217,7 @@ no arrow keys.
 | `iconOnly` | bool | `false` | an icon button, as `IconButton` |
 | `variant`, `size` | | `secondary`, `md` | as for `Button` (not with `iconOnly`, which takes `size` only) |
 | `align` | `end`, `start` | `end` | edge of the button the panel is aligned on, in the reading direction |
-| `floating` | bool | `false` | the panel in `position: fixed`, placed next to the button by the controller: it is not cut by a container that scrolls or hides its overflow (a table, a card). It closes when the page scrolls, and follows the button when the window is resized or when the page scrolls while the focus is in the panel (the virtual keyboard of a phone, opened by a field) |
+| `floating` | bool | `false` | the panel in `position: fixed`, placed next to the button by the controller: it is not cut by a container that scrolls or hides its overflow (a table, a card). It closes when the page scrolls, and follows the button when the window is resized or when the page scrolls while the focus is in the panel (the virtual keyboard of a phone, opened by a field); then it closes if the button leaves the screen, unless a field of the panel has the focus |
 
 Blocks: `content`, the panel (a `Menu`, or anything: `crudit-ui-dropdown__header`, `__title`, `__body` and `__footer`
 lay out a panel with a title and buttons); `trigger`, the content of the button in place of the icon, the label and the
@@ -233,7 +233,9 @@ Accessibility: `aria-expanded` and `aria-controls` on the button. Escape closes 
 the button (and stops there, its default prevented: a dialog around, a native `<dialog>` too, stays open); a click
 outside or the focus leaving the dropdown close it; the choice of an item of a `Menu` closes it and gives the focus
 back to the button, before the action of the item runs: a dialog that the action opens takes the focus, and gives it
-back to the button. While an item sends a form (`type="submit"`), the button of the dropdown is in loading. The panel
+back to the button. While an item sends a form (`type="submit"`), the button of the dropdown is in loading (its spinner
+takes the place of the icon, or of the chevron). A dropdown in the panel of another one handles its own items: the
+choice of one of them, or its loading, leaves the outer one as it is. The panel
 closes when the controller disconnects and before Turbo caches the page. The panel is shifted to stay in the
 screen; the root takes `crudit-ui-dropdown--open` while it is open, so that a sticky container (a cell, a bar) rises
 above its neighbours: `.my-sticky:has(.crudit-ui-dropdown--open) { z-index: … }`.
