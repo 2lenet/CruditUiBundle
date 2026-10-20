@@ -7,19 +7,22 @@ import { Controller } from '@hotwired/stimulus';
  *     document.dispatchEvent(new CustomEvent('crudit-ui:toast', {detail: {message: 'Saved.', tone: 'success'}}));
  *
  * (tone: info, success, warning, danger; persistent: true or false to change the default, an error only). The
- * message is text, never HTML. The first region of the page takes the event.
+ * message is text, never HTML. One region per page: if there are several, the one in the open modal dialog takes
+ * the event, else the first one of the page out of a dialog.
  *
  * - Announced: the toasts are not a live region, a toast moved in the page would be read again. Its text goes in one
  *   of the two live regions of the region, hidden, polite or assertive (an error), a little after it is added: a live
- *   region is not read in Chrome and Safari when it is filled at once (a page that loads, a region just moved).
+ *   region is not read in Chrome and Safari when it is filled at once (a page that loads, a region just moved). They
+ *   are emptied when the region moves: some screen readers would read them again.
  * - Removed after the value "duration" (ms), unless persistent; the time stops while the region is hovered or has the
  *   focus (WCAG 2.2.1), and while the page is hidden. "max" toasts at most: the oldest that is not persistent goes.
  * - In a modal dialog: the rest of the page is inert, a toast under it would be neither seen nor read nor closed. A
  *   toast added while a dialog is open moves the region into it (it is in position: fixed, the dialog does not cut
- *   it), until the dialog closes. Stimulus then disconnects and connects the controller again: the state of the
+ *   it), once the dialog has finished its opening (during it, the translate of the dialog would place and cut the
+ *   region), until the dialog closes. Stimulus then disconnects and connects the controller again: the state of the
  *   toasts is kept by element, out of the controller.
- * - Closed by its button (action dismiss): the focus goes to the next toast, else to the close button of the dialog,
- *   to the closest focusable container or to <main> (as for an alert).
+ * - Closed by its button (action dismiss): the focus goes to the next toast, else to the close button of the dialog
+ *   (or the dialog), to the closest focusable container or to <main> (as for an alert).
  * - Turbo: emptied before Turbo caches the page (a page restored by Back does not show the toasts again).
  */
 const TICK = 250;
@@ -60,13 +63,20 @@ function goBack(region, intoDialog = true) {
         return;
     }
     homes.delete(region);
+    silence(region);
     home.parent.insertBefore(region, home.next?.parentNode === home.parent ? home.next : null);
+}
+
+// Empties the live regions of a region that moves: their texts would be read again.
+function silence(region) {
+    region.querySelectorAll('[aria-live]').forEach((live) => live.replaceChildren());
 }
 
 function moveInto(region, dialog) {
     if (!homes.has(region)) {
         homes.set(region, {parent: region.parentNode, next: region.nextSibling});
     }
+    silence(region);
     dialog.append(region);
     dialog.addEventListener('close', () => region.parentNode === dialog && goBack(region), {once: true});
 }
@@ -78,8 +88,9 @@ export default class extends Controller {
 
     connect() {
         this.onToast = (event) => {
-            event.stopImmediatePropagation();
-            this.show(event.detail ?? {});
+            if (this.takes()) {
+                this.show(event.detail ?? {});
+            }
         };
         this.onBeforeCache = () => this.clear();
         document.addEventListener('crudit-ui:toast', this.onToast);
@@ -105,12 +116,29 @@ export default class extends Controller {
         }
         remaining.set(toast, toast.dataset.persistent === 'true' ? null : this.durationValue);
         this.trim(toast);
+        this.start();
+        this.follow().then(() => setTimeout(() => this.announce(toast), ANNOUNCE_DELAY));
+    }
+
+    // Moves the region into the open modal dialog, once its opening is over.
+    async follow() {
         const dialog = topDialog();
-        if (dialog && !dialog.contains(this.element)) {
+        if (!dialog || dialog.contains(this.element)) {
+            return;
+        }
+        await Promise.allSettled(dialog.getAnimations().map((animation) => animation.finished));
+        if (dialog.matches(':modal') && !dialog.contains(this.element)) {
             moveInto(this.element, dialog);
         }
-        setTimeout(() => this.announce(toast), ANNOUNCE_DELAY);
-        this.start();
+    }
+
+    // The region that takes the event crudit-ui:toast: the one in the open modal dialog, else the first one of the
+    // page out of a dialog (the order of the listeners changes when a region moves).
+    takes() {
+        const regions = Array.from(document.querySelectorAll(`[data-controller~="${this.identifier}"]`));
+        const dialog = topDialog();
+
+        return this.element === ((dialog && regions.find((region) => dialog.contains(region))) ?? regions.find((region) => !region.closest('dialog')) ?? regions[0]);
     }
 
     // A toast of the JavaScript, copy of the template of its tone.
@@ -120,7 +148,7 @@ export default class extends Controller {
         if (!toast) {
             return;
         }
-        toast.querySelector('.crudit-ui-toast__message').append(String(message));
+        toast.querySelector('.crudit-ui-toast__message').append(String(message ?? ''));
         if (persistent === true) {
             toast.dataset.persistent = 'true';
         } else if (persistent === false) {
@@ -143,8 +171,8 @@ export default class extends Controller {
         if (hadFocus) {
             const dialog = this.element.closest('dialog');
             const container = dialog ? null : this.element.parentElement?.closest('[tabindex], main') ?? document.querySelector('main');
-            const target = next?.querySelector('button') ?? dialog?.querySelector('.crudit-ui-dialog__close') ?? container;
-            if (target === container && target && !target.hasAttribute('tabindex')) {
+            const target = next?.querySelector('button') ?? (dialog ? dialog.querySelector('.crudit-ui-dialog__close') ?? dialog : container);
+            if ((target === container || target === dialog) && target && !target.hasAttribute('tabindex')) {
                 target.setAttribute('tabindex', '-1');
             }
             target?.focus({preventScroll: true});
@@ -157,10 +185,11 @@ export default class extends Controller {
         goBack(this.element, false);
     }
 
-    // Beyond "max", the oldest toast that is not persistent goes, else the oldest; never the one just added.
+    // Beyond "max" (1 at least), the oldest toast that is not persistent goes, else the oldest; never the one just
+    // added.
     trim(added) {
         const others = this.toastTargets.filter((toast) => toast !== added);
-        while (others.length > 0 && others.length >= this.maxValue) {
+        while (others.length > 0 && others.length >= Math.max(this.maxValue, 1)) {
             const oldest = others.find((toast) => toast.dataset.persistent !== 'true') ?? others[0];
             others.splice(others.indexOf(oldest), 1);
             oldest.remove();

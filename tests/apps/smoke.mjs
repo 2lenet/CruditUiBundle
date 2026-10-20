@@ -629,10 +629,16 @@ try {
     assert.deepEqual(await page.evaluate(() => [document.activeElement.className, document.querySelectorAll('#kit-toasts-region > .crudit-ui-toast').length]), ['crudit-ui-kit', 0], 'the focus is lost when the last toast is closed');
 
     // A toast added while a modal dialog is open is shown in it (the page under it is inert): seen, read and closed;
-    // the region goes back to its place when the dialog closes.
+    // the region goes back to its place when the dialog closes. Sent during the opening of the dialog: moved once it
+    // is over, not placed and cut by the dialog. The live regions are emptied when the region moves (read again).
+    await show({message: 'Kept.', tone: 'info', persistent: true});
+    await page.waitForFunction(() => document.querySelector('#kit-toasts-region [aria-live="polite"]').textContent.includes('Kept.'), {timeout: 2000});
     await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
-    await show({message: 'Refused.', tone: 'danger'});
-    await page.waitForFunction(() => document.querySelector('#kit-toasts-region [aria-live="assertive"]').textContent !== '', {timeout: 2000});
+    await show({message: 'Not deleted.', tone: 'danger'});
+    await page.waitForFunction(() => document.querySelector('#kit-toasts-region [aria-live="assertive"]').textContent.includes('Not deleted.'), {timeout: 2000});
+    assert.deepEqual([await announced('polite'), await announced('assertive')], ['', 'Error: Not deleted.'], 'the live regions are not emptied when the region moves');
+    assert.deepEqual(await place(), {top: true, end: true, width: 448}, 'a toast sent during the opening of a dialog is not in its place');
+    await page.evaluate(() => document.querySelector('#kit-toasts-region .crudit-ui-toast--info').remove());
     const toastInDialog = await page.evaluate(() => {
         const toast = document.querySelector('#kit-toasts-region .crudit-ui-toast');
         const rect = toast.getBoundingClientRect();
@@ -644,7 +650,7 @@ try {
     });
     assert.deepEqual(toastInDialog, {moved: true, shown: true}, 'a toast added while a dialog is open is not shown in it');
     const tree = JSON.stringify(await page.accessibility.snapshot());
-    assert.ok(tree.includes('Error: Refused.'), 'a toast in a dialog is not in the accessibility tree');
+    assert.ok(tree.includes('Error: Not deleted.'), 'a toast in a dialog is not in the accessibility tree');
     await page.click('#kit-toasts-region .crudit-ui-toast__close');
     assert.equal((await dialog('kit-dialog-confirm')).open, true, 'closing a toast closes the dialog');
     await show({message: 'Saved.', tone: 'success', persistent: true});
@@ -656,12 +662,33 @@ try {
     // caches the page.
     await openDialog('kit-dialog-form-open', 'kit-dialog-form');
     await show({message: 'Postponed.', tone: 'success', persistent: true});
-    assert.equal(await page.evaluate(() => document.getElementById('kit-dialog-form').contains(document.getElementById('kit-toasts-region'))), true);
+    await page.waitForFunction(() => document.getElementById('kit-dialog-form').contains(document.getElementById('kit-toasts-region')), {timeout: 1000});
     await page.evaluate(() => document.getElementById('kit-dialog-form').remove());
     await page.waitForFunction(() => document.getElementById('kit-toasts-region')?.parentElement.closest('#kit-toasts'), {timeout: 1000});
     assert.deepEqual(await toasts(), ['Success: Saved.', 'Success: Postponed.'], 'the region is lost with the dialog it was in');
     await page.evaluate(() => document.dispatchEvent(new Event('turbo:before-cache')));
     assert.deepEqual(await toasts(), [], 'the toasts are not removed before Turbo caches the page');
+
+    // Two regions (a page that adds its own to a layout that has one): the first one of the page takes the event,
+    // the one in the open dialog while it is open, whatever the order of their listeners.
+    await page.evaluate(() => {
+        const first = document.getElementById('kit-toasts-region').cloneNode(true);
+        first.id = 'kit-toasts-first';
+        document.body.prepend(first);
+    });
+    const regionOf = async (detail) => {
+        await show(detail);
+
+        return page.evaluate(() => Array.from(document.querySelectorAll('.crudit-ui-toasts > .crudit-ui-toast')).map((toast) => `${toast.parentElement.id}: ${toast.querySelector(".crudit-ui-toast__message").textContent.trim()}`));
+    };
+    assert.deepEqual(await regionOf({message: null}), ['kit-toasts-first: Information:'], 'the first region of the page does not take the event, or a message null is shown');
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    assert.deepEqual(await regionOf({message: 'In the dialog.', persistent: true}), ['kit-toasts-first: Information:', 'kit-toasts-first: Information: In the dialog.'], 'the region of the page does not take the event while a dialog is open');
+    await page.waitForFunction(() => document.getElementById('kit-dialog-confirm').contains(document.getElementById('kit-toasts-first')), {timeout: 1000});
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => document.querySelectorAll('.crudit-ui-toast').forEach((toast) => toast.closest('.crudit-ui-toasts') && toast.remove()));
+    assert.deepEqual(await regionOf({message: 'Again.', persistent: true}), ['kit-toasts-first: Information: Again.'], 'the region that takes the event changes once a dialog has opened');
+    await page.evaluate(() => document.getElementById('kit-toasts-first').remove());
 
     // Right to left: on the top left; on a phone: the whole width, less the margins.
     await page.goto(new URL('crudit-ui/kit/ar?toast=success', url).href, {waitUntil: 'networkidle0'});

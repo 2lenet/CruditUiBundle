@@ -10,7 +10,7 @@
 {% props tone = 'info', persistent = null %}
 {%- set icons = {info: 'info', success: 'success', warning: 'warning', danger: 'error'} -%}
 {%- set defaults = {class: 'crudit-ui-toast crudit-ui-toast--' ~ tone, 'data-2lenet--crudit-ui-bundle--toasts-target': 'toast'} -%}
-{%- if persistent ?? tone == 'danger' %}{% set defaults = defaults|merge({'data-persistent': 'true'}) %}{% endif -%}
+{%- if persistent ?? (tone == 'danger') %}{% set defaults = defaults|merge({'data-persistent': 'true'}) %}{% endif -%}
 {%- if tone == 'danger' %}{% set defaults = defaults|merge({'data-assertive': 'true'}) %}{% endif -%}
 <div {{ attributes.defaults(defaults) }}>
     {{- ui_icon(icons[tone] ?? 'info', 'crudit-ui-toast__icon') -}}

@@ -354,7 +354,7 @@ messages of the session become toasts. On the top inline end side (the left one 
 (`--topbar-h`), the whole width on a phone. **Not for what the user must read to go on** (the errors of a form go in
 the form, an `Alert` of the zone): a toast goes away.
 
-The region, once in the layout of the page:
+The region, **once per page**, in its layout:
 
 ```twig
 <twig:LleCruditUi:Toasts/>
@@ -364,7 +364,7 @@ The region, once in the layout of the page:
 |---|---|---|---|
 | `flashes` | bool | `true` | shows the flash messages of the session (`app.flashes`, which reads them once): `success`; `info` and `notice`; `warning`; `danger` and `error` (an error); another type is an information. The message is translated (`trans`, domain `messages`) and **escaped**: a message that holds HTML shows its tags |
 | `duration` | int | `6000` | ms before a toast that is not persistent goes |
-| `max` | int | `4` | toasts at most; beyond, the oldest that is not persistent goes (never the one just added) |
+| `max` | int | `4` | toasts at most (1 at least); beyond, the oldest that is not persistent goes (never the one just added) |
 
 Block: `content`, toasts of the page (`Toast`). Attributes: on the region; its `id` is `crudit-ui-toasts` by default,
 the target of a Turbo Stream (`<turbo-stream action="append" target="crudit-ui-toasts">` with a `Toast` in its
@@ -384,8 +384,7 @@ A toast:
 Block: `content`, the message (text, one or two short sentences). Attributes: on the toast. Outside a region, a toast
 is only shown (neither announced nor removed).
 
-**From the JavaScript** (an edit in place, an action in Ajax), an event on the document, which the first region of the
-page takes:
+**From the JavaScript** (an edit in place, an action in Ajax), an event on the document:
 
 ```js
 document.dispatchEvent(new CustomEvent('crudit-ui:toast', {detail: {message: 'The visit is saved.', tone: 'success'}}));
@@ -393,23 +392,25 @@ document.dispatchEvent(new CustomEvent('crudit-ui:toast', {detail: {message: 'Th
 
 `detail`: `message` (text, never read as HTML), `tone` (`info` by default), `persistent` (to change the default). The
 toast is a copy of a template of the region, with its icon and its translated texts: the JavaScript has no text of
-its own to translate, only the message.
+its own to translate, only the message. With several regions in the page (a page that adds its own to a layout that
+has one: avoid it), the one in the open modal dialog takes the event, else the first one of the page.
 
 Controller `2lenet--crudit-ui-bundle--toasts`, on the region; action `dismiss` on the close button of a toast.
 
 - **In a modal dialog**: the page under it is inert, a toast there would be neither seen, nor read, nor closed. A toast
   added while a dialog is open moves the region into the dialog (in `position: fixed`, it stays in its place on the
-  screen), until the dialog closes; then the region goes back with its toasts. A toast already shown when a dialog
+  screen), once the opening of the dialog is over, until the dialog closes; then the region goes back with its toasts. A toast already shown when a dialog
   opens stays under it.
 - **Turbo**: each page has its region and its flash messages; the toasts are removed before Turbo caches the page (a
   page shown again by Back does not show them again).
 
 Accessibility: each new toast is announced, a little after it appears, by one of the two hidden live regions of the
 region: polite, assertive for an error (the type first, "Error: The server refused the record."). The toasts are not a
-live region themselves: a region moved into a dialog would read them again. A toast that is not persistent goes after
+live region themselves: a region moved into a dialog would read them again; the hidden live regions are emptied when
+the region moves, for the same reason. A toast that is not persistent goes after
 6 seconds; **the time stops** while the pointer is on the region or the focus in it (WCAG 2.2.1), and while the page is
 hidden. An error stays until it is closed. The close button ("Close the message") is a real button; when it is
-pressed, the focus goes to the next toast, else to the close button of the dialog, to the closest focusable
+pressed, the focus goes to the next toast, else to the close button of the dialog (or the dialog), to the closest focusable
 container or to `<main>`. The toasts appear with a slide, not when motion is reduced; they are not printed.
 
 ### LleCruditUi:Kit:Section
