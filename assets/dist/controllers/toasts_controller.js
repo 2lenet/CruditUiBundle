@@ -31,7 +31,7 @@ const ANNOUNCE_KEEP = 10000;
 
 // Time left of each toast (null: persistent). A toast known here is not announced again when the region moves.
 const remaining = new WeakMap();
-// Place of a region moved into a dialog: parent and next sibling.
+// Place of a region moved into a dialog: a comment left where it was.
 const homes = new WeakMap();
 
 // The modal dialog on top: the one that has the focus, else the last one of the page.
@@ -51,7 +51,7 @@ function goBack(region, intoDialog = true) {
     if (!home) {
         return;
     }
-    if (!home.parent.isConnected) {
+    if (!home.isConnected) {
         homes.delete(region);
 
         return;
@@ -64,7 +64,7 @@ function goBack(region, intoDialog = true) {
     }
     homes.delete(region);
     silence(region);
-    home.parent.insertBefore(region, home.next?.parentNode === home.parent ? home.next : null);
+    home.replaceWith(region);
 }
 
 // Empties the live regions of a region that moves: their texts would be read again.
@@ -74,7 +74,9 @@ function silence(region) {
 
 function moveInto(region, dialog) {
     if (!homes.has(region)) {
-        homes.set(region, {parent: region.parentNode, next: region.nextSibling});
+        const home = document.createComment(' crudit-ui-toasts ');
+        region.before(home);
+        homes.set(region, home);
     }
     silence(region);
     dialog.append(region);
@@ -120,8 +122,12 @@ export default class extends Controller {
         this.follow().then(() => setTimeout(() => this.announce(toast), ANNOUNCE_DELAY));
     }
 
-    // Moves the region into the open modal dialog, once its opening is over.
+    // Moves the region into the open modal dialog, once its opening is over. A region still in a dialog that has just
+    // closed (its event "close" comes later) goes back first: it would not be shown.
     async follow() {
+        if (homes.has(this.element) && !this.element.closest('dialog')?.matches(':modal')) {
+            goBack(this.element);
+        }
         const dialog = topDialog();
         if (!dialog || dialog.contains(this.element)) {
             return;
@@ -133,12 +139,20 @@ export default class extends Controller {
     }
 
     // The region that takes the event crudit-ui:toast: the one in the open modal dialog, else the first one of the
-    // page out of a dialog (the order of the listeners changes when a region moves).
+    // page out of a dialog, at its own place for a region moved into a dialog (even one that has just closed). Not the
+    // order of the listeners, which changes when a region moves.
     takes() {
         const regions = Array.from(document.querySelectorAll(`[data-controller~="${this.identifier}"]`));
         const dialog = topDialog();
+        const inDialog = dialog && regions.find((region) => dialog.contains(region));
+        if (inDialog) {
+            return this.element === inDialog;
+        }
+        const places = regions.map((region) => ({region, place: homes.get(region) ?? region}))
+            .filter(({place}) => place.isConnected && !place.parentElement?.closest('dialog'))
+            .sort((a, b) => (a.place.compareDocumentPosition(b.place) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
 
-        return this.element === ((dialog && regions.find((region) => dialog.contains(region))) ?? regions.find((region) => !region.closest('dialog')) ?? regions[0]);
+        return this.element === (places[0]?.region ?? regions[0]);
     }
 
     // A toast of the JavaScript, copy of the template of its tone.

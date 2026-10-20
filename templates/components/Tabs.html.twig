@@ -1,0 +1,35 @@
+{#
+ # Tabs, ARIA pattern: a tablist, one tab per entry, one tabpanel per tab. All the panels are rendered by the server,
+ # only the selected one is shown: the page is right before the JavaScript.
+ #
+ # Props: id (base of the ids), label (name of the tablist), tabs (list of {id, label, count?}; each id names the block
+ # of its panel: letters, digits and _, starting with a letter or _, as a Twig block), selected (the first tab if unknown), urlParam (null: the
+ # address follows the tab, ?<urlParam>=<id>, and a valid value in the address wins over selected).
+ # Blocks: one per tab, named by its id. Controller: tabs. Contract: docs/components.md.
+ #}
+{% props id, label, tabs, selected = null, urlParam = null %}
+{%- set ids = tabs|map(tab => tab.id) -%}
+{#- all[…], not get(): get() throws (error 500) on an array typed in the address (?tab[]=x), which `in ids` rejects. -#}
+{%- set fromUrl = urlParam is not null and app.request is not null ? (app.request.query.all[urlParam] ?? null) : null -%}
+{%- set selected = fromUrl in ids ? fromUrl : (selected in ids ? selected : ids|first) -%}
+{%- set defaults = {id: id, class: 'crudit-ui-tabs', 'data-controller': '2lenet--crudit-ui-bundle--tabs'} -%}
+{%- if urlParam is not null -%}
+    {%- set defaults = defaults|merge({'data-2lenet--crudit-ui-bundle--tabs-url-param-value': urlParam}) -%}
+{%- endif -%}
+<div {{ attributes.defaults(defaults) }}>
+    <div class="crudit-ui-tabs__list" role="tablist" aria-label="{{ label }}" data-action="keydown->2lenet--crudit-ui-bundle--tabs#keydown">
+        {%- for tab in tabs -%}
+            {%- set active = tab.id == selected -%}
+            <button type="button" class="crudit-ui-tabs__tab" role="tab" id="{{ id }}-tab-{{ tab.id }}" aria-selected="{{ active ? 'true' : 'false' }}" aria-controls="{{ id }}-panel-{{ tab.id }}" tabindex="{{ active ? '0' : '-1' }}" data-2lenet--crudit-ui-bundle--tabs-target="tab" data-2lenet--crudit-ui-bundle--tabs-id-param="{{ tab.id }}" data-action="2lenet--crudit-ui-bundle--tabs#select">
+                {{- tab.label -}}
+                {#- A space before the count: "Parts 3" is read, not "Parts3". Read as it is, like the count of a button. -#}
+                {%- if tab.count is defined and tab.count is not null %} <span class="crudit-ui-tabs__count">{{ tab.count }}</span>{% endif -%}
+            </button>
+        {%- endfor -%}
+    </div>
+    {%- for tab in tabs -%}
+        <div class="crudit-ui-tabs__panel" role="tabpanel" id="{{ id }}-panel-{{ tab.id }}" aria-labelledby="{{ id }}-tab-{{ tab.id }}" tabindex="0" data-2lenet--crudit-ui-bundle--tabs-target="panel"{% if tab.id != selected %} hidden{% endif %}>
+            {{- block(tab.id) -}}
+        </div>
+    {%- endfor -%}
+</div>

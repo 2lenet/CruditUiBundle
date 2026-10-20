@@ -1,0 +1,25 @@
+{#
+ # Disclosure: a button shows or hides a panel (sections of a record, sub-menus, FAQ). The panel is rendered by the
+ # server, hidden when closed (class --closed, not the hidden attribute, so that the print can open it): the page is
+ # right before the JavaScript. Printed open.
+ #
+ # Props: title, open (false), level (null, or 2 to 6: the button is in a heading of that level), icon (dropdown: the
+ # chevron, down when closed, up when open), id (base of the ids, random otherwise). Block: content (the panel).
+ # Controller: disclosure. Contract: docs/components.md.
+ #}
+{% props title, open = false, level = null, icon = 'dropdown', id = null %}
+{%- set base = id ?? ('crudit-ui-disclosure-' ~ random()) -%}
+{%- set heading = level in 2..6 -%}
+{%- set defaults = {class: 'crudit-ui-disclosure', 'data-controller': '2lenet--crudit-ui-bundle--disclosure'} -%}
+{%- if id is not null %}{% set defaults = defaults|merge({id: id}) %}{% endif -%}
+<div {{ attributes.defaults(defaults) }}>
+    {%- if heading %}<h{{ level }} class="crudit-ui-disclosure__heading">{% endif -%}
+    <button type="button" class="crudit-ui-disclosure__toggle" aria-expanded="{{ open ? 'true' : 'false' }}" aria-controls="{{ base }}-panel" data-2lenet--crudit-ui-bundle--disclosure-target="toggle" data-action="2lenet--crudit-ui-bundle--disclosure#toggle">
+        <span class="crudit-ui-disclosure__title">{{ title }}</span>
+        {{- ui_icon(icon, 'crudit-ui-disclosure__chevron') -}}
+    </button>
+    {%- if heading %}</h{{ level }}>{% endif -%}
+    <div class="crudit-ui-disclosure__panel{{ open ? '' : ' crudit-ui-disclosure__panel--closed' }}" id="{{ base }}-panel" data-2lenet--crudit-ui-bundle--disclosure-target="panel">
+        {%- block content %}{% endblock -%}
+    </div>
+</div>

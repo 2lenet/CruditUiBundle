@@ -413,6 +413,74 @@ hidden. An error stays until it is closed. The close button ("Close the message"
 pressed, the focus goes to the next toast, else to the close button of the dialog (or the dialog), to the closest focusable
 container or to `<main>`. The toasts appear with a slide, not when motion is reduced; they are not printed.
 
+### Collapsibles and tabs
+
+#### LleCruditUi:Disclosure
+
+A button that shows or hides a panel: sections of a record, sub-menus, a FAQ. It is **the only collapsible** of the
+bundle: use it for a FAQ too (no styled `<details>`), the look stays the same everywhere.
+
+```twig
+<twig:LleCruditUi:Disclosure title="{{ 'Address'|trans }}" :level="2" open>
+    …
+</twig:LleCruditUi:Disclosure>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `title` | string | required | text of the button |
+| `open` | bool | `false` | state when the page is rendered |
+| `level` | int | `null` | from 2 to 6: the button is in a heading of that level (a section of a record). `null`, or another value: the button alone (a sub-menu) |
+| `icon` | string | `dropdown` | the chevron: down when closed, up when open (turned by 180°, the same right to left) |
+| `id` | string | random | base of the ids: the panel is `<id>-panel`. Give one for an anchor or a test, and for a disclosure rendered again (a Live Component, a morph of Turbo): without one, the ids change at each rendering |
+
+Block: `content`, the panel. The button is a `<button type="button">` with `aria-expanded` and `aria-controls`: Enter
+and Space work, and the focus stays on it. The server renders the state: the page is right before the JavaScript.
+A closed panel has the class `crudit-ui-disclosure__panel--closed`, not the `hidden` attribute: `[hidden]` of the
+reset is `!important`, the print could not open it. **Printed open.** The state is not remembered.
+
+Controller `2lenet--crudit-ui-bundle--disclosure`: actions `toggle`, `open` and `close`, and the event
+`2lenet--crudit-ui-bundle--disclosure:toggle` (`detail.open`) when the state changes. A disclosure inside another
+one (a sub-menu of a sub-menu) has its own controller: it opens and closes by itself.
+
+#### LleCruditUi:Tabs
+
+Tabs, ARIA pattern: a `tablist` named by `label`, one `tab` per entry, one `tabpanel` per tab. All the panels are in
+the page; only the selected one is shown.
+
+```twig
+<twig:LleCruditUi:Tabs id="visit" label="{{ 'Visit'|trans }}" urlParam="tab" :tabs="[
+    {id: 'general', label: 'General'|trans},
+    {id: 'parts', label: 'Parts'|trans, count: visit.parts|length},
+]">
+    <twig:block name="general">…</twig:block>
+    <twig:block name="parts">…</twig:block>
+</twig:LleCruditUi:Tabs>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `id` | string | required | base of the ids: `<id>-tab-<tab>`, `<id>-panel-<tab>` |
+| `label` | string | required | name of the list of tabs, read by screen readers |
+| `tabs` | list of `{id, label, count?}` | required | `id` names the block of the panel: letters, digits and `_`, starting with a letter or `_`, as a Twig block (`2024` or `1_general` cannot name a block). A tab without its block is an error of Twig (`Block "parts" … does not exist`). `count`: a counter after the label, read with it (`Parts 3`), like the one of a button; `0` is shown |
+| `selected` | string | the first tab | id of the selected tab; an unknown id gives the first one |
+| `urlParam` | string | `null` | the address follows the tab: `?<urlParam>=<id>` |
+
+Keyboard: Tab reaches the selected tab only, then the panel (`tabindex="0"`, as the ARIA pattern advises: a panel that starts with text is reached too; in a panel that starts with a field, it is one more stop before the field). ← and → select the next or previous tab at once (they
+follow the screen: right to left, → goes to the previous tab), and loop; Home and End go to the first and the last
+one. Controller `2lenet--crudit-ui-bundle--tabs`, event `2lenet--crudit-ui-bundle--tabs:change` (`detail.id`).
+
+**The tab chosen by the server.** With `urlParam`, the component reads the parameter of the request: a valid tab
+in the address wins over `selected`, and a reload, a bookmark or a shared link opens the same tab. After a form saved
+in a tab, redirect to the address with the parameter (`path('visit_show', {id: visit.id, tab: 'parts'})`). The
+address changes without a new entry in the history: Back leaves the page, it does not go through the tabs (five tabs
+seen would need five Back to leave).
+
+Printed: the selected tab only, as on the screen (and in the mockup). A project that needs all of them on paper
+prints a page made for it.
+
+Not in this component: a panel loaded when it is opened, the title of the window per tab (dashboard, lot 4.2).
+
 ### LleCruditUi:Kit:Section
 
 A section of the design kit page, with its title; used by the kit only.

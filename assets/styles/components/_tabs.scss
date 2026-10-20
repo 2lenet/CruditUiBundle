@@ -1,0 +1,73 @@
+@use '../tools/a11y' as *;
+
+// Tabs. Same as `.tabs` of the crudit-v2 mockup (src/styles/components/_show.scss), with the prefix of the bundle, a
+// border under the list instead of its wrapper (`.tabs__list-wrapper` with the negative margins of `.show-tabs`, a
+// brick of CruditBundle), and the count read as it is, like the one of a button.
+.crudit-ui-tabs {
+    // Wraps when the tabs do not fit (phone): they all stay visible, a horizontal scroll would hide the last ones.
+    &__list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 var(--space-1);
+        margin-block-end: var(--space-3);
+        border-block-end: 1px solid var(--c-border);
+    }
+
+    &__tab {
+        position: relative;
+        display: inline-flex;
+        min-block-size: var(--control-h);
+        // A long label (a translation) wraps inside its tab instead of leaving the list on a phone.
+        max-inline-size: 100%;
+        flex: none;
+        align-items: center;
+        gap: var(--space-2);
+        // Vertical padding: a label on two lines does not touch the focus ring nor the line of the selected tab.
+        padding: var(--space-1) var(--space-3);
+        border: 0;
+        background-color: transparent;
+        color: var(--c-text-muted);
+        font: inherit;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        overflow-wrap: anywhere;
+        text-align: start;
+        cursor: pointer;
+
+        &:hover {
+            color: var(--c-text);
+        }
+
+        &:focus-visible {
+            @include focus-ring(-2px);
+        }
+
+        // Selected tab: colour, and a thick line (a shape, not the colour alone).
+        &[aria-selected='true'] {
+            color: var(--c-primary-text);
+
+            &::after {
+                position: absolute;
+                inset-block-end: -1px;
+                inset-inline: var(--space-2);
+                block-size: 3px;
+                border-radius: 3px 3px 0 0;
+                background-color: var(--c-primary);
+                content: '';
+            }
+        }
+    }
+
+    &__count {
+        display: inline-grid;
+        min-inline-size: 1.375rem;
+        block-size: 1.25rem;
+        place-items: center;
+        padding: 0 var(--space-1);
+        border-radius: var(--radius-full);
+        background-color: var(--c-neutral-bg);
+        color: var(--c-neutral-text);
+        font-size: var(--font-size-2xs);
+        font-weight: var(--font-weight-semibold);
+    }
+}

@@ -44,7 +44,10 @@ class ComponentsTest extends TestCase
         self::assertSame('ltr', $html->documentElement?->getAttribute('dir'));
         self::assertSame('Design kit', $html->querySelector('div.crudit-ui-kit h1')?->textContent);
         $links = array_map(static fn (\Dom\Element $link): ?string => $link->getAttribute('href'), iterator_to_array($html->querySelectorAll('nav[aria-label] a')));
-        self::assertSame(['#kit-colors', '#kit-typography', '#kit-buttons', '#kit-status', '#kit-states', '#kit-menus', '#kit-dialogs', '#kit-toasts'], $links);
+        self::assertSame(['#kit-colors', '#kit-typography', '#kit-buttons', '#kit-status', '#kit-states', '#kit-menus', '#kit-dialogs', '#kit-toasts', '#kit-navigation'], $links);
+        // Each section is written apart (a sub-lot each): their ids must not collide.
+        $ids = array_map(static fn (\Dom\Element $element): string => (string) $element->getAttribute('id'), iterator_to_array($html->querySelectorAll('[id]')));
+        self::assertSame([], array_keys(array_filter(array_count_values($ids), static fn (int $count): bool => $count > 1)), 'ids of the kit used twice');
         self::assertNotNull($html->querySelector('#kit-colors code'));
         self::assertNotNull($html->querySelector('#kit-typography .crudit-ui-kit__space-bar'));
         self::assertCount(35, $html->querySelectorAll('#kit-buttons table .crudit-ui-btn'));

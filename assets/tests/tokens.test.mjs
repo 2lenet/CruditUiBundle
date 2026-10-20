@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readdirSync, readFileSync} from 'node:fs';
 
 const css = readFileSync(new URL('../dist/ui.css', import.meta.url), 'utf8');
 const hues = readFileSync(new URL('../styles/settings/_hues.scss', import.meta.url), 'utf8');
@@ -108,4 +108,13 @@ for (const [theme, selector] of [['light', ':root'], ['dark', ':root[data-theme=
 test('the brand is the only colour a project has to provide', () => {
     assert.equal(variables(':root')['--c-primary'], 'var(--brand)');
     assert.match(variables(':root')['--brand'], /^#[0-9a-f]{3,6}$/);
+});
+
+test('the components take their text sizes from the tokens', () => {
+    const components = new URL('../styles/components/', import.meta.url);
+    const fixed = readdirSync(components).flatMap((file) => [...readFileSync(new URL(file, components), 'utf8')
+        .matchAll(/font-size:\s*[\d.]+(rem|px)/g)].map(([declaration]) => `${file}: ${declaration}`));
+    // The initials of a small avatar follow the size of its circle (1.375rem), not the scale of the text.
+    assert.deepEqual(fixed, ['_avatar.scss: font-size: 0.6875rem']);
+    assert.ok(css.includes('--font-size-2xs: 0.75rem'));
 });
