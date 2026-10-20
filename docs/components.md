@@ -364,7 +364,7 @@ bundle: use it for a FAQ too (no styled `<details>`), the look stays the same ev
 | `open` | bool | `false` | state when the page is rendered |
 | `level` | int | `null` | from 2 to 6: the button is in a heading of that level (a section of a record). `null`, or another value: the button alone (a sub-menu) |
 | `icon` | string | `dropdown` | the chevron: down when closed, up when open (turned by 180°, the same right to left) |
-| `id` | string | random | base of the ids: the panel is `<id>-panel`. Give one for an anchor or a test |
+| `id` | string | random | base of the ids: the panel is `<id>-panel`. Give one for an anchor or a test, and for a disclosure rendered again (a Live Component, a morph of Turbo): without one, the ids change at each rendering |
 
 Block: `content`, the panel. The button is a `<button type="button">` with `aria-expanded` and `aria-controls`: Enter
 and Space work, and the focus stays on it. The server renders the state: the page is right before the JavaScript.
@@ -394,11 +394,11 @@ the page; only the selected one is shown.
 |---|---|---|---|
 | `id` | string | required | base of the ids: `<id>-tab-<tab>`, `<id>-panel-<tab>` |
 | `label` | string | required | name of the list of tabs, read by screen readers |
-| `tabs` | list of `{id, label, count?}` | required | `id` names the block of the panel: letters, digits and `_`, as a Twig block. A tab without its block is an error of Twig (`Block "parts" … does not exist`). `count`: a counter after the label, read with it (`Parts 3`), like the one of a button; `0` is shown |
+| `tabs` | list of `{id, label, count?}` | required | `id` names the block of the panel: letters, digits and `_`, starting with a letter or `_`, as a Twig block (`2024` or `1_general` cannot name a block). A tab without its block is an error of Twig (`Block "parts" … does not exist`). `count`: a counter after the label, read with it (`Parts 3`), like the one of a button; `0` is shown |
 | `selected` | string | the first tab | id of the selected tab; an unknown id gives the first one |
 | `urlParam` | string | `null` | the address follows the tab: `?<urlParam>=<id>` |
 
-Keyboard: Tab reaches the selected tab only, then the panel. ← and → select the next or previous tab at once (they
+Keyboard: Tab reaches the selected tab only, then the panel (`tabindex="0"`, as the ARIA pattern advises: a panel that starts with text is reached too; in a panel that starts with a field, it is one more stop before the field). ← and → select the next or previous tab at once (they
 follow the screen: right to left, → goes to the previous tab), and loop; Home and End go to the first and the last
 one. Controller `2lenet--crudit-ui-bundle--tabs`, event `2lenet--crudit-ui-bundle--tabs:change` (`detail.id`).
 

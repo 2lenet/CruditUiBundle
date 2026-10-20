@@ -54,7 +54,10 @@ export default class extends Controller {
         this.tabTargets.forEach((other, i) => {
             other.setAttribute('aria-selected', String(i === index));
             other.tabIndex = i === index ? 0 : -1;
-            this.panelTargets[i].hidden = i !== index;
+            // A panel missing from a markup written by hand: its tab is still selected.
+            if (this.panelTargets[i]) {
+                this.panelTargets[i].hidden = i !== index;
+            }
         });
 
         const id = tab.getAttribute(`data-${this.identifier}-id-param`);

@@ -3,7 +3,7 @@
  # only the selected one is shown: the page is right before the JavaScript.
  #
  # Props: id (base of the ids), label (name of the tablist), tabs (list of {id, label, count?}; each id names the block
- # of its panel: letters, digits and _, as a Twig block), selected (the first tab if unknown), urlParam (null: the
+ # of its panel: letters, digits and _, starting with a letter or _, as a Twig block), selected (the first tab if unknown), urlParam (null: the
  # address follows the tab, ?<urlParam>=<id>, and a valid value in the address wins over selected).
  # Blocks: one per tab, named by its id. Controller: tabs. Contract: docs/components.md.
  #}

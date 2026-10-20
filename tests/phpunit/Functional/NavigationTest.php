@@ -174,12 +174,23 @@ class NavigationTest extends TestCase
         $this->tabs(['tabs' => [['id' => 'general', 'label' => 'General'], ['id' => 'invoices', 'label' => 'Invoices']]]);
     }
 
-    public function testTabIdThatIsNotTheNameOfItsBlockFails(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function idsThatAreNotTheNameOfABlock(): iterable
+    {
+        yield 'another case' => ['Parts'];
+        // A Twig block cannot start with a digit: no block can have this name.
+        yield 'starting with a digit' => ['1_general'];
+    }
+
+    #[DataProvider('idsThatAreNotTheNameOfABlock')]
+    public function testTabIdThatIsNotTheNameOfItsBlockFails(string $id): void
     {
         $this->expectException(RuntimeError::class);
-        $this->expectExceptionMessage('Block "Parts"');
+        $this->expectExceptionMessage(sprintf('Block "%s"', $id));
 
-        $this->tabs(['tabs' => [['id' => 'Parts', 'label' => 'Parts']]]);
+        $this->tabs(['tabs' => [['id' => $id, 'label' => 'Parts']]]);
     }
 
     public function testCountOfATab(): void
