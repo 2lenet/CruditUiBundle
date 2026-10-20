@@ -14,6 +14,8 @@
     background-color: var(--c-surface);
     box-shadow: var(--shadow-lg);
     color: var(--c-text);
+    // The body scrolls, not the dialog: its border would make it scroll by 2 px (overflow: auto of the browser).
+    overflow: hidden;
     // Opening only: the closing of a <dialog> cannot be animated in Safari.
     @include transition(opacity, translate);
 

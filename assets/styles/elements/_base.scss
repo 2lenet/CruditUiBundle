@@ -35,6 +35,12 @@ a {
     @include focus-ring;
 }
 
+// <main>, focused by a script when the element that had the focus is gone (a closed alert, a dialog whose button was
+// deleted): not interactive, no ring around the whole page, even after a key.
+main[tabindex='-1']:focus {
+    outline: none;
+}
+
 ::selection {
     background-color: var(--c-primary-subtle-hover);
     color: var(--c-text);

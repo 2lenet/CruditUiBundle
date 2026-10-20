@@ -1,6 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 
-// Invoker Commands (commandfor, command): Chrome 135, Safari 26.2. Before, the controller runs them.
+// Invoker Commands (commandfor, command): Chrome 135, Firefox 144, Safari 26.2. Before, the controller runs them.
 const NATIVE_COMMANDS = 'commandForElement' in HTMLButtonElement.prototype;
 
 /*
@@ -9,14 +9,19 @@ const NATIVE_COMMANDS = 'commandForElement' in HTMLButtonElement.prototype;
  * focusable one, and gives it back to the element that had it when the dialog closes. The controller adds:
  *
  * - The commands of a button of the page, commandfor="<id of the dialog>" with command="show-modal", "close" or
- *   "request-close", in the browsers that do not run them yet. As natively, not for a submit button of a form, nor
- *   when the click is cancelled (a button in loading or disabled with aria-disabled).
+ *   "request-close", in the browsers that do not run them yet. As natively, the dialog receives the event "command"
+ *   (command, source; cancelable), and nothing runs for a submit button of a form, nor when the click is cancelled
+ *   (a button in loading or disabled with aria-disabled).
  * - dismiss (the close button, a click on the backdrop): fires "cancel" first, as Escape does, then closes the
- *   dialog. A project cancels it (preventDefault()) to keep the dialog open (a form with changes).
+ *   dialog. A project cancels it (preventDefault()) to keep the dialog open (a form with changes). requestClose() of
+ *   the browser when it has it, with its rules (Chrome closes all the same on a second try without an action of the
+ *   user in between).
  * - The focus put on <main> when the element that opened the dialog is gone (the row it deleted): it does not fall
  *   back to the top of the page.
- * - The value "open": the dialog is shown modal when it connects (a form sent back with its errors), once.
- * - Closed when the controller disconnects and before Turbo caches the page: a snapshot is never restored open.
+ * - The value "open": the dialog is shown modal when it connects (a form sent back with its errors), or when the value
+ *   is set again (a page refreshed by a morph of Turbo, which keeps the element); then the value is removed.
+ * - Closed when the controller disconnects and before Turbo caches the page: a snapshot is never restored open. A
+ *   dialog moved in the page is closed too (Stimulus disconnects it, and a modal dialog moved is no longer modal).
  *
  * Events: "open" and "close" (2lenet--crudit-ui-bundle--dialog:open / :close), on the dialog, however it opens or
  * closes. The native "cancel" and "close" of <dialog> are there too.
@@ -75,13 +80,26 @@ export default class extends Controller {
             document.addEventListener('click', this.onCommand);
         }
 
+        this.connected = true;
         if (this.openValue) {
-            this.element.removeAttribute(`data-${this.identifier}-open-value`);
-            this.open();
+            this.openFromValue();
         }
     }
 
+    // Also called before connect(), which then opens the dialog once its listeners are there.
+    openValueChanged(open) {
+        if (open && this.connected) {
+            this.openFromValue();
+        }
+    }
+
+    openFromValue() {
+        this.element.removeAttribute(`data-${this.identifier}-open-value`);
+        this.open();
+    }
+
     disconnect() {
+        this.connected = false;
         this.close();
         this.observer.disconnect();
         this.element.removeEventListener('pointerdown', this.onPointerDown);
@@ -108,7 +126,12 @@ export default class extends Controller {
 
     // Closes the dialog unless "cancel" is cancelled: the close button, the backdrop.
     dismiss() {
-        if (this.element.open && this.element.dispatchEvent(new Event('cancel', {cancelable: true}))) {
+        if (!this.element.open) {
+            return;
+        }
+        if (typeof this.element.requestClose === 'function') {
+            this.element.requestClose();
+        } else if (this.element.dispatchEvent(new Event('cancel', {cancelable: true}))) {
             this.element.close();
         }
     }
@@ -128,12 +151,16 @@ export default class extends Controller {
         if (button.form && button.type !== 'button') {
             return;
         }
+        const command = button.getAttribute('command') ?? '';
+        if (!this.element.dispatchEvent(Object.assign(new Event('command', {cancelable: true}), {command, source: button}))) {
+            return;
+        }
         const commands = {
             'show-modal': () => this.open(),
             // The value of the button becomes the returnValue of the dialog, as natively.
             close: () => this.element.open && this.element.close(button.hasAttribute('value') ? button.value : undefined),
             'request-close': () => this.dismiss(),
         };
-        commands[button.getAttribute('command')]?.();
+        commands[command]?.();
     }
 }

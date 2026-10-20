@@ -80,7 +80,7 @@ or link.
 | `type` | `button`, `submit`, `reset` | `button` | |
 | `disabled` | bool | `false` | `disabled` on a button; a link loses its `href` and gets `aria-disabled` |
 | `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form). A loading link loses its `href`, as a disabled one: neither followed (click, middle click, Ctrl+click) nor focused |
-| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">` in a dialog, which closes it and sends nothing. Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
+| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">`, which sends nothing (it closes its dialog). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
 | `count` | int | `null` | counter after the label, read with it (`Filters 3`) |
 
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
@@ -313,26 +313,29 @@ is confirmed in one.
 | `title` | string | required | the title (`h2`) and the accessible name of the dialog |
 | `description` | string | `null` | under the title, read with it (`aria-describedby`): what the action does, what it changes |
 | `variant` | `dialog`, `drawer` | `dialog` | `dialog`: centred, 32rem wide at most. `drawer`: on the inline end side (the left one in right to left), the whole height, 28rem wide, the whole width on a phone |
-| `open` | bool | `false` | shown modal when the page loads: a form of the dialog sent back with its errors. Never the attribute `open` of `<dialog>`, which shows a dialog that is not modal |
+| `open` | bool | `false` | shown modal when the page loads: a form of the dialog sent back with its errors; also when a morph of Turbo puts it back. Never the attribute `open` of `<dialog>`, which shows a dialog that is not modal |
 
 Blocks: `content`, the body, which scrolls (paragraphs, a form); `footer`, the buttons, hidden when empty (one primary
 button, as in any zone). Attributes: on the `<dialog>` (`role="alertdialog"` for a confirmation, `class`, `data-`).
-Its `id`, given or generated, is the target of the buttons and names the title (`<id>-title`) and the description
-(`<id>-description`).
+**Give it an `id`**: the target of the buttons, it names the title (`<id>-title`) and the description
+(`<id>-description`). Without one, an id is generated, different at each rendering: no button can target it, and the
+HTML changes from one rendering to the next.
 
 **Open and close it** with the attributes of HTML, `commandfor="<id>"` and `command` on a `<button type="button">`
 (a `Button`): `show-modal` opens it, `close` closes it (the `value` of the button becomes the `returnValue` of the
-dialog), `request-close` closes it as Escape does. The browsers run them (Chrome 135, Safari 26.2); the controller
-runs them in the older ones. A `<form method="dialog">` in the dialog closes it too, without sending anything: its
+dialog), `request-close` closes it as Escape does. The browsers run them (Chrome 135, Firefox 144, Safari 26.2); the
+controller runs them in the older ones, and dispatches on the dialog the same cancelable `command` event (`command`,
+`source`). A `<form method="dialog">` in the dialog closes it too, without sending anything: its
 submit button is then not put in loading (`busyOnSubmit`). In JavaScript, `dialog.showModal()` and `dialog.close()`,
 or the actions `open`, `close` and `dismiss` of the controller.
 
 Controller `2lenet--crudit-ui-bundle--dialog`, on the `<dialog>`. Events `…dialog:open` and `…dialog:close` on the
 dialog, however it opens or closes; the native `cancel` and `close` of `<dialog>` are there too. **Escape, the close
 button and a click on the backdrop fire `cancel` first**: a project cancels it (`preventDefault()`) to keep the dialog
-open (a form with changes, to confirm); Chrome closes it all the same on a second Escape when nothing was clicked or
+open (a form with changes, to confirm); Chrome closes it all the same on a second try when nothing was clicked or
 typed in between. A press in the dialog released on the backdrop (a selection of text) does not
-close it. The dialog closes when the controller disconnects and before Turbo caches the page.
+close it. The dialog closes when the controller disconnects and before Turbo caches the page, also when it is moved in
+the page (Stimulus disconnects it, and a modal dialog moved is no longer modal): do not move an open dialog.
 
 Accessibility: `role="dialog"` (native) or `alertdialog`, named by its title, described by its description. **Initial
 focus**: on the element with `autofocus`, else on the first focusable one (the close button). Put `autofocus` on

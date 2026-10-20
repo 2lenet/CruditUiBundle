@@ -17,7 +17,8 @@ try {
     const page = await browser.newPage();
     page.on('pageerror', (error) => errors.push(`page error: ${error.message}`));
     page.on('console', (message) => message.type() === 'error' && !message.location().url?.endsWith('/favicon.ico') && errors.push(`console: ${message.text()}`));
-    page.on('requestfailed', (request) => errors.push(`request failed: ${request.url()}`));
+    // A navigation answered with 204 (the demos of the kit that send a form) is aborted by Chrome: the page stays.
+    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && errors.push(`request failed: ${request.url()}`));
     page.on('response', (response) => response.status() >= 400 && !response.url().endsWith('/favicon.ico') && errors.push(`${response.status()}: ${response.url()}`));
 
     await page.goto(url, {waitUntil: 'networkidle0'});
@@ -308,7 +309,8 @@ try {
     });
     assert.deepEqual(submitted, {busy: 'true', after: null, closed: true}, 'the button of the dropdown is not in loading while its item sends the form');
 
-    // The demo of the kit: nothing is sent (method dialog), the button stays in loading; Reset reloads the page.
+    // The demo of the kit: the form is sent to a route that answers 204, the button stays in loading; Reset reloads
+    // the page.
     const sendBusy = () => page.evaluate(() => document.querySelector('#kit-menu-submit > button').getAttribute('aria-busy'));
     await page.click('#kit-menu-submit > button');
     await page.click('#kit-menu-submit-panel button[type="submit"]');
@@ -490,11 +492,12 @@ try {
         element.close();
         await new Promise((resolve) => setTimeout(resolve, 20));
         const focus = document.activeElement === main;
+        const outline = getComputedStyle(main).outlineStyle;
         main.remove();
 
-        return {events, focus};
+        return {events, focus, outline};
     });
-    assert.deepEqual(lost, {events: ['open', 'close'], focus: true}, 'the events of the dialog, or the focus put on <main> when its button is gone');
+    assert.deepEqual(lost, {events: ['open', 'close'], focus: true, outline: 'none'}, 'the events of the dialog, or the focus put on <main> (without a ring) when its button is gone');
 
     // A form method="dialog" closes it; its submit button does not stay in loading (nothing is sent).
     await openDialog('kit-dialog-form-open', 'kit-dialog-form');
@@ -537,11 +540,16 @@ try {
         document.body.append(element);
         await new Promise((resolve) => setTimeout(resolve, 20));
         const state = {modal: element.matches(':modal'), value: element.hasAttribute('data-2lenet--crudit-ui-bundle--dialog-open-value')};
+        // Set again on the element, connected (a morph of Turbo).
+        element.close();
+        element.setAttribute('data-2lenet--crudit-ui-bundle--dialog-open-value', 'true');
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        state.morphed = element.matches(':modal');
         element.remove();
 
         return state;
     });
-    assert.deepEqual(atLoad, {modal: true, value: false}, 'the value "open" does not show the dialog when it connects');
+    assert.deepEqual(atLoad, {modal: true, value: false, morphed: true}, 'the value "open" does not show the dialog when it connects, or when it is set again');
 
     // Accessibility of the open dialogs, and the drawer in right to left.
     const auditOpen = async (path, opener, id) => {
