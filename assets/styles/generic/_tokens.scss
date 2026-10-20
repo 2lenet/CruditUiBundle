@@ -151,6 +151,9 @@
     // Typography (body text of 16 px at least)
     --font-sans: 'Inter Variable', 'Noto Sans Arabic Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --font-mono: sfmono-regular, menlo, monaco, consolas, 'Liberation Mono', 'Courier New', monospace;
+    // Not in the scale of the mockup, which writes 0.75rem in each component: counters (of a button, of a tab),
+    // statuses, tags.
+    --font-size-2xs: 0.75rem;
     --font-size-xs: 0.8125rem;
     --font-size-sm: 0.875rem;
     --font-size-md: 1rem;

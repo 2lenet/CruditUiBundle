@@ -1,0 +1,68 @@
+{# Collapsibles and tabs (1.5.f). One collapsible for all the cases (sections, sub-menus, FAQ): Disclosure. #}
+<h3 class="crudit-ui-kit__subtitle">Sections of a record</h3>
+<p class="crudit-ui-kit__text">With <code>level</code>, the button is in a heading. The chevron points down when closed and up when open. Printed open.</p>
+<div class="crudit-ui-kit__stack">
+    <twig:LleCruditUi:Disclosure id="kit-address" title="Address" :level="4" open>
+        <p>12 rue des Lilas, 59000 Lille</p>
+    </twig:LleCruditUi:Disclosure>
+    <twig:LleCruditUi:Disclosure id="kit-contacts" title="Contacts of the customer, the site and the subcontractors in charge of the maintenance" :level="4">
+        <p>Claire Martin, site manager</p>
+    </twig:LleCruditUi:Disclosure>
+</div>
+
+<h3 class="crudit-ui-kit__subtitle">Sub-menu</h3>
+<p class="crudit-ui-kit__text">Without <code>level</code>: a button alone. A disclosure inside another one opens and closes by itself.</p>
+<twig:LleCruditUi:Disclosure id="kit-menu" title="Planning">
+    <ul class="crudit-ui-kit__links">
+        <li><a href="#kit-navigation">Visits</a></li>
+        <li><a href="#kit-navigation">Technicians</a></li>
+        <li>
+            <twig:LleCruditUi:Disclosure id="kit-submenu" title="Settings">
+                <ul class="crudit-ui-kit__links">
+                    <li><a href="#kit-navigation">Types of visit</a></li>
+                    <li><a href="#kit-navigation">Holidays</a></li>
+                </ul>
+            </twig:LleCruditUi:Disclosure>
+        </li>
+    </ul>
+</twig:LleCruditUi:Disclosure>
+
+<h3 class="crudit-ui-kit__subtitle">Tabs</h3>
+<p class="crudit-ui-kit__text">Arrows, Home and End move between the tabs (→ goes to the previous one right to left). The address follows the tab (<code>?kit-tab=</code>), without a new entry in the history: a reload opens the same tab.</p>
+<twig:LleCruditUi:Tabs id="kit-tabs" label="Visit" urlParam="kit-tab" :tabs="[
+    {id: 'general', label: 'General'},
+    {id: 'parts', label: 'Parts', count: 3},
+    {id: 'history', label: 'History'},
+]">
+    <twig:block name="general"><p>Visit of 13 October, planned by Claire Martin.</p></twig:block>
+    <twig:block name="parts">
+        <ul>
+            <li>Filter, 2</li>
+            <li>Belt, 1</li>
+            <li>Gasket, 4</li>
+        </ul>
+    </twig:block>
+    <twig:block name="history"><p>Created, then planned.</p></twig:block>
+</twig:LleCruditUi:Tabs>
+
+<h3 class="crudit-ui-kit__subtitle">Many tabs</h3>
+<p class="crudit-ui-kit__text">They wrap on a phone: all of them stay visible.</p>
+<twig:LleCruditUi:Tabs id="kit-many-tabs" label="Customer" :tabs="[
+    {id: 'general', label: 'General'},
+    {id: 'sites', label: 'Sites', count: 4},
+    {id: 'contacts', label: 'Contacts'},
+    {id: 'contracts', label: 'Contracts', count: 0},
+    {id: 'visits', label: 'Visits', count: 27},
+    {id: 'invoices', label: 'Invoices'},
+    {id: 'documents', label: 'Documents and certificates of conformity of the installation'},
+    {id: 'history', label: 'History'},
+]">
+    <twig:block name="general"><p>General</p></twig:block>
+    <twig:block name="sites"><p>Sites</p></twig:block>
+    <twig:block name="contacts"><p>Contacts</p></twig:block>
+    <twig:block name="contracts"><p>Contracts</p></twig:block>
+    <twig:block name="visits"><p>Visits</p></twig:block>
+    <twig:block name="invoices"><p>Invoices</p></twig:block>
+    <twig:block name="documents"><p>Documents</p></twig:block>
+    <twig:block name="history"><p>History</p></twig:block>
+</twig:LleCruditUi:Tabs>

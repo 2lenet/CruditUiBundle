@@ -1,6 +1,6 @@
 // Smoke test of a test application: node smoke.mjs <url> [chrome path]
 // The page must show the dropdown controller of the bundle and load its stylesheet; the design kit page must have no
-// accessibility violation (axe-core).
+// accessibility violation (axe-core), and its components work in a real browser (buttons, alerts, collapsibles, tabs).
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
@@ -120,6 +120,8 @@ try {
     const widths = await page.evaluate(() => ({client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth}));
     assert.equal(widths.client, 360, 'the page is not laid out on the width of the phone: <meta name="viewport"> missing?');
     assert.ok(widths.scroll <= widths.client, `the page scrolls horizontally on a phone (${widths.scroll} px)`);
+    const rows = await page.$$eval('#kit-many-tabs [role="tab"]', (tabs) => new Set(tabs.map((tab) => tab.offsetTop)).size);
+    assert.ok(rows > 1, 'the tabs do not wrap on a phone');
 
     // The button controller ignores the click of a loading button (aria-disabled): no second sending.
     const clicked = await page.evaluate(() => {
@@ -205,6 +207,84 @@ try {
         return {cancelled, blank, turboStart, turboEnd: state()};
     });
     assert.deepEqual(states, {cancelled: null, blank: null, turboStart: 'true', turboEnd: null}, 'busyOnSubmit: cancelled sending, other window or Turbo');
+
+    // A disclosure opens on a click and keeps the focus on its button; the one inside a sub-menu does not close its
+    // parent. Each change dispatches "toggle".
+    await page.setViewport({width: 1280, height: 800});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    await page.evaluate(() => {
+        window.toggles = [];
+        document.addEventListener('2lenet--crudit-ui-bundle--disclosure:toggle', (event) => window.toggles.push([event.target.id, event.detail.open]));
+    });
+    await page.click('#kit-contacts .crudit-ui-disclosure__toggle');
+    await page.click('#kit-menu > .crudit-ui-disclosure__toggle');
+    await page.click('#kit-submenu .crudit-ui-disclosure__toggle');
+    const disclosures = await page.evaluate(() => {
+        const state = (id) => {
+            const toggle = document.querySelector(`#${id} > .crudit-ui-disclosure__toggle, #${id} > .crudit-ui-disclosure__heading > .crudit-ui-disclosure__toggle`);
+            const panel = document.getElementById(toggle.getAttribute('aria-controls'));
+
+            return [toggle.getAttribute('aria-expanded'), getComputedStyle(panel).display !== 'none'];
+        };
+
+        return {
+            contacts: state('kit-contacts'),
+            menu: state('kit-menu'),
+            submenu: state('kit-submenu'),
+            focus: document.activeElement?.closest('.crudit-ui-disclosure')?.id,
+            toggles: window.toggles,
+        };
+    });
+    assert.deepEqual(disclosures, {
+        contacts: ['true', true],
+        menu: ['true', true],
+        submenu: ['true', true],
+        focus: 'kit-submenu',
+        toggles: [['kit-contacts', true], ['kit-menu', true], ['kit-submenu', true]],
+    }, 'disclosure: is the disclosure controller registered?');
+    await page.click('#kit-submenu .crudit-ui-disclosure__toggle');
+    assert.equal(await page.$eval('#kit-menu > .crudit-ui-disclosure__toggle', (toggle) => toggle.getAttribute('aria-expanded')), 'true', 'closing a sub-menu closes its parent');
+
+    // Printed: every panel open, no chevron.
+    await page.emulateMediaType('print');
+    const printed = await page.evaluate(() => ({
+        closed: [...document.querySelectorAll('.crudit-ui-disclosure__panel')].filter((panel) => getComputedStyle(panel).display === 'none').length,
+        chevrons: [...document.querySelectorAll('.crudit-ui-disclosure__chevron')].filter((chevron) => getComputedStyle(chevron).display !== 'none').length,
+    }));
+    await page.emulateMediaType(null);
+    assert.deepEqual(printed, {closed: 0, chevrons: 0}, 'printed: a panel stays closed, or a chevron is printed');
+
+    // Tabs on the keyboard: Tab reaches the selected tab only, the arrows select at once and loop, Home and End.
+    // The address follows the tab without a new entry in the history, and a reload opens the same tab.
+    await page.evaluate(() => {
+        window.changes = [];
+        document.addEventListener('2lenet--crudit-ui-bundle--tabs:change', (event) => window.changes.push(event.detail.id));
+    });
+    const history = await page.evaluate(() => window.history.length);
+    await page.focus('#kit-tabs-tab-general');
+    const selected = async () => page.evaluate(() => ({
+        tab: document.querySelector('#kit-tabs [aria-selected="true"]').id,
+        focus: document.activeElement.id,
+        panels: [...document.querySelectorAll('#kit-tabs [role="tabpanel"]:not([hidden])')].map((panel) => panel.id),
+    }));
+    const path = [];
+    for (const key of ['ArrowRight', 'End', 'ArrowRight', 'ArrowLeft', 'Home']) {
+        await page.keyboard.press(key);
+        path.push((await selected()).tab);
+    }
+    assert.deepEqual(path, ['kit-tabs-tab-parts', 'kit-tabs-tab-history', 'kit-tabs-tab-general', 'kit-tabs-tab-history', 'kit-tabs-tab-general'], 'tabs on the keyboard: is the tabs controller registered?');
+    await page.click('#kit-tabs-tab-parts');
+    assert.deepEqual(await selected(), {tab: 'kit-tabs-tab-parts', focus: 'kit-tabs-tab-parts', panels: ['kit-tabs-panel-parts']});
+    assert.deepEqual(await page.evaluate(() => window.changes), ['parts', 'history', 'general', 'history', 'general', 'parts'], 'tabs: "change" is dispatched once per change');
+    assert.deepEqual(await page.evaluate(() => [new URL(window.location.href).searchParams.get('kit-tab'), window.history.length]), ['parts', history], 'tabs: the address does not follow the tab, or the history grows');
+    await page.reload({waitUntil: 'networkidle0'});
+    assert.equal((await selected()).tab, 'kit-tabs-tab-parts', 'tabs: a reload does not open the tab of the address');
+
+    // Right to left, → goes to the previous tab, as on the screen.
+    await page.goto(new URL('crudit-ui/kit/ar', url).href, {waitUntil: 'networkidle0'});
+    await page.focus('#kit-tabs-tab-general');
+    await page.keyboard.press('ArrowRight');
+    assert.equal((await selected()).tab, 'kit-tabs-tab-history', 'tabs right to left: → must go to the previous tab');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);
