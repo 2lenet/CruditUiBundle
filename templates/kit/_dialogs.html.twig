@@ -1,0 +1,66 @@
+{# Dialogs and drawer (1.5.d): a confirmation, a dialog with fields, a drawer; one shown in place. #}
+<p class="crudit-ui-kit__text">Native modal dialogs: the focus stays in the dialog, the page under it is inert. Escape, the close button and a click on the backdrop close it, and the focus goes back to the button that opened it.</p>
+
+<h3 class="crudit-ui-kit__subtitle">Open a dialog</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Button id="kit-dialog-confirm-open" variant="danger-outline" icon="delete" commandfor="kit-dialog-confirm" command="show-modal">Delete the visit V-0412</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button id="kit-dialog-form-open" icon="calendar" commandfor="kit-dialog-form" command="show-modal">Postpone</twig:LleCruditUi:Button>
+    <twig:LleCruditUi:Button id="kit-drawer-open" icon="filter" commandfor="kit-drawer" command="show-modal">Filters</twig:LleCruditUi:Button>
+</div>
+
+{#- A confirmation: it names the element, the focus starts on Cancel (autofocus), the least destructive choice. -#}
+<twig:LleCruditUi:Dialog id="kit-dialog-confirm" role="alertdialog" title="Delete the visit V-0412?" description="This action cannot be undone.">
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button commandfor="kit-dialog-confirm" command="close" autofocus>Cancel</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="danger" icon="delete" commandfor="kit-dialog-confirm" command="close" value="delete">Delete</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>
+
+{#- method dialog: the form sends nothing (a demo) and closes the dialog; the date is required. -#}
+<twig:LleCruditUi:Dialog id="kit-dialog-form" title="Postpone the visit V-0412" description="The customer and the technician are told by email.">
+    <form id="kit-dialog-form-form" method="dialog" class="crudit-ui-kit__stack">
+        <label for="kit-dialog-date">New date (required)</label>
+        <input id="kit-dialog-date" type="date" name="date" required>
+        <label for="kit-dialog-reason">Reason</label>
+        <textarea id="kit-dialog-reason" name="reason" rows="3"></textarea>
+    </form>
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button commandfor="kit-dialog-form" command="close">Cancel</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="primary" icon="save" type="submit" form="kit-dialog-form-form">Postpone</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>
+
+{#- A drawer: long enough to scroll, with a dropdown (Escape closes it first) and a tooltip. -#}
+<twig:LleCruditUi:Dialog id="kit-drawer" variant="drawer" title="Filters">
+    <form id="kit-drawer-form" method="dialog" class="crudit-ui-kit__stack">
+        <div class="crudit-ui-kit__row">
+            <twig:LleCruditUi:Dropdown id="kit-drawer-saved" label="Saved filters" align="start" size="small">
+                <twig:LleCruditUi:Menu>
+                    <twig:LleCruditUi:MenuItem>To plan this week</twig:LleCruditUi:MenuItem>
+                    <twig:LleCruditUi:MenuItem>Late visits</twig:LleCruditUi:MenuItem>
+                </twig:LleCruditUi:Menu>
+            </twig:LleCruditUi:Dropdown>
+            <twig:LleCruditUi:Tooltip text="Save the filters" align="start">
+                <twig:LleCruditUi:IconButton icon="save" label="Save the filters" size="small"/>
+            </twig:LleCruditUi:Tooltip>
+        </div>
+        {% for filter in ['Status', 'Customer', 'Technician', 'City', 'Type of visit', 'Contract', 'Zone', 'Created by'] %}
+            <label for="kit-drawer-field-{{ loop.index }}">{{ filter }}</label>
+            <input id="kit-drawer-field-{{ loop.index }}" type="text" name="filter-{{ loop.index }}">
+        {% endfor %}
+    </form>
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button icon="undo" type="reset" form="kit-drawer-form">Reset</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="primary" type="submit" form="kit-drawer-form">Apply</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>
+
+<h3 class="crudit-ui-kit__subtitle">Shown in place</h3>
+<p class="crudit-ui-kit__text">The same component, displayed in the page to review it without opening it (the kit only).</p>
+<twig:LleCruditUi:Dialog id="kit-dialog-preview" class="crudit-ui-kit__dialog" title="Delete the visit V-0413?" description="This action cannot be undone.">
+    <p>The history of the visit and its photos are deleted too.</p>
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button>Cancel</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="danger" icon="delete">Delete</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>

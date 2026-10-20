@@ -49,16 +49,17 @@
 </div>
 
 <h3 class="crudit-ui-kit__subtitle">An item that sends a form</h3>
-{#- method dialog: the browser sends nothing (no reload during a demo); the button stays in loading. Reset reloads
- # the page to play it again: a form, as a link to the same address would only scroll to its anchor. -#}
-<form id="kit-menu-form" method="dialog" class="crudit-ui-kit__row">
+{#- Sent to a route that answers 204: the browser stays on the page, and the button in loading, as after an export
+ # that the bundle cannot detect. Reset reloads the page to play it again: a form, as a link to the same address
+ # would only scroll to its anchor. -#}
+<form id="kit-menu-form" method="get" action="{{ path('crudit_ui_kit_sent') }}" class="crudit-ui-kit__row">
     <twig:LleCruditUi:Dropdown id="kit-menu-submit" label="Send">
         <twig:LleCruditUi:Menu>
             <twig:LleCruditUi:MenuItem icon="email" type="submit" name="channel" value="email">By email</twig:LleCruditUi:MenuItem>
         </twig:LleCruditUi:Menu>
     </twig:LleCruditUi:Dropdown>
     <twig:LleCruditUi:Button type="submit" size="small" icon="undo" form="kit-menu-reset">Reset</twig:LleCruditUi:Button>
-    <span class="crudit-ui-kit__text">The button of the menu is in loading while the form is sent; here nothing is sent, and it stays in loading until Reset.</span>
+    <span class="crudit-ui-kit__text">The button of the menu is in loading while the form is sent; here the answer is empty (204), the page stays, and the button in loading until Reset.</span>
 </form>
 <form id="kit-menu-reset" method="get" action="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')) }}#kit-menus"></form>
 

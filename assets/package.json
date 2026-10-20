@@ -19,6 +19,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "dialog": {
+                "main": "dist/controllers/dialog_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "dropdown": {
                 "main": "dist/controllers/dropdown_controller.js",
                 "webpackMode": "eager",

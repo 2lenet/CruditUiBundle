@@ -1,0 +1,116 @@
+@use '../tools/a11y' as *;
+
+// Dialog (component Dialog, controller dialog): a native <dialog>, modal, with a header (title and close button), a
+// body that scrolls and a footer (the buttons). Same as `.dialog` of the crudit-v2 mockup
+// (src/styles/components/_dialog.scss). `--drawer`: a side panel on the inline end side, the whole width on a phone.
+.crudit-ui-dialog {
+    width: min(32rem, calc(100vw - 2 * var(--gutter)));
+    max-width: 100%;
+    max-height: calc(100vh - 2 * var(--space-5));
+    max-height: calc(100dvh - 2 * var(--space-5));
+    padding: 0;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--c-surface);
+    box-shadow: var(--shadow-lg);
+    color: var(--c-text);
+    // The body scrolls, not the dialog: its border would make it scroll by 2 px (overflow: auto of the browser).
+    overflow: hidden;
+    // Opening only: the closing of a <dialog> cannot be animated in Safari.
+    @include transition(opacity, translate);
+
+    &::backdrop {
+        background-color: var(--c-backdrop);
+        @include transition(opacity);
+    }
+
+    @starting-style {
+        opacity: 0;
+        translate: 0 var(--space-3);
+
+        &::backdrop {
+            opacity: 0;
+        }
+    }
+
+    &__inner {
+        display: flex;
+        max-height: inherit;
+        flex-direction: column;
+    }
+
+    &__header {
+        display: flex;
+        flex: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding-block: var(--space-3) var(--space-2);
+        padding-inline: var(--space-5) var(--space-3);
+    }
+
+    &__title {
+        margin: 0;
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--line-height-tight);
+    }
+
+    &__close {
+        flex: none;
+    }
+
+    &__body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 var(--space-5) var(--space-4);
+    }
+
+    &__description {
+        margin: 0 0 var(--space-4);
+        color: var(--c-text-muted);
+    }
+
+    &__footer {
+        display: flex;
+        flex: none;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-5);
+        border-block-start: 1px solid var(--c-border);
+
+        // No block footer passed.
+        &:not(:has(*)) {
+            display: none;
+        }
+    }
+
+    // Side panel (filters, configuration of a widget): on the inline end side, the whole height; the whole width
+    // below 28rem.
+    &--drawer {
+        width: min(28rem, 100vw);
+        height: 100vh;
+        height: 100dvh;
+        max-height: none;
+        margin-block: 0;
+        margin-inline: auto 0;
+        border-width: 0;
+        border-inline-start-width: 1px;
+        border-radius: 0;
+
+        @starting-style {
+            translate: calc(var(--dir) * 100%) 0;
+        }
+
+        .crudit-ui-dialog__inner {
+            height: 100%;
+        }
+    }
+}
+
+// The page under a modal dialog does not scroll. Its scrollbar goes, behind the backdrop: scrollbar-gutter would keep
+// its room, but would narrow the top layer too, and leave a strip of the page between a drawer and the edge.
+:root:has(.crudit-ui-dialog:modal) {
+    overflow: hidden;
+}

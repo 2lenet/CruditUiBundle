@@ -27,6 +27,7 @@
     @include meta.load-css('components/avatar');
     @include meta.load-css('components/badge');
     @include meta.load-css('components/button');
+    @include meta.load-css('components/dialog');
     @include meta.load-css('components/dropdown');
     @include meta.load-css('components/empty-state');
     @include meta.load-css('components/icon');

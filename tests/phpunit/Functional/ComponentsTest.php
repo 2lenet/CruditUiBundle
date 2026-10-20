@@ -44,11 +44,12 @@ class ComponentsTest extends TestCase
         self::assertSame('ltr', $html->documentElement?->getAttribute('dir'));
         self::assertSame('Design kit', $html->querySelector('div.crudit-ui-kit h1')?->textContent);
         $links = array_map(static fn (\Dom\Element $link): ?string => $link->getAttribute('href'), iterator_to_array($html->querySelectorAll('nav[aria-label] a')));
-        self::assertSame(['#kit-colors', '#kit-typography', '#kit-buttons', '#kit-status', '#kit-states', '#kit-menus'], $links);
+        self::assertSame(['#kit-colors', '#kit-typography', '#kit-buttons', '#kit-status', '#kit-states', '#kit-menus', '#kit-dialogs'], $links);
         self::assertNotNull($html->querySelector('#kit-colors code'));
         self::assertNotNull($html->querySelector('#kit-typography .crudit-ui-kit__space-bar'));
         self::assertCount(35, $html->querySelectorAll('#kit-buttons table .crudit-ui-btn'));
         self::assertNotNull($html->querySelector('#kit-menus #kit-menu-panel .crudit-ui-menu'));
+        self::assertCount(4, $html->querySelectorAll('#kit-dialogs dialog.crudit-ui-dialog'));
     }
 
     public function testDesignKitPageInARightToLeftLanguage(): void
