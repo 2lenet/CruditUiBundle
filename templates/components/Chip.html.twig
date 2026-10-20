@@ -13,7 +13,8 @@
             {{- ui_icon('close') -}}
             {%- if removeLabel is null -%}
                 {#- The text of the block is HTML, already escaped (L&#039;Isle): it goes as it is into the translation,
-                 # escaped itself, so that nothing is escaped twice. Its blanks (indentation) are normalised. -#}
+                 # escaped itself, so that nothing is escaped twice. Its blanks (indentation) are normalised.
+                 # The block is rendered a second time here: keep it to text, without a component with a random id. -#}
                 {%- set text %}{{ block('content') }}{% endset -%}
                 {%- set text = text|striptags|replace({"\n": ' ', "\t": ' ', "\r": ' '})|split(' ')|filter(word => word is not same as(''))|join(' ') -%}
                 {%- set labelHtml = ('crudit_ui.chip.remove'|trans({}, 'LleCruditUiBundle')|e)|replace({'%label%': text}) -%}

@@ -8,9 +8,13 @@ import { Controller } from '@hotwired/stimulus';
  *
  * busyOnSubmit (value, true on a submit button by default): once the button sends its form, it is put in loading
  * (aria-disabled, aria-busy, the spinner of its template "spinner" in place of its icon), so a second click is
- * ignored. The submit is watched on the document, after the listeners of the form: a submit cancelled by a check of
- * the project (preventDefault()) leaves the button as it is. A page restored from the cache of the browser (back
- * button) gets its button back.
+ * ignored. It goes back to normal:
+ * - when the submit is cancelled (preventDefault()), checked once the event has gone through all its listeners,
+ *   those added later on the document included;
+ * - when Turbo has sent the form (turbo:submit-end): the page does not change;
+ * - when the page comes back from the cache of the browser (Back button).
+ * Not for a form sent to another window or frame (target, formtarget): the page stays as it is. A form whose answer
+ * is a download (export) cannot be detected: such a button takes busyOnSubmit false (docs/components.md).
  */
 export default class extends Controller {
     static targets = ['spinner'];
@@ -28,8 +32,27 @@ export default class extends Controller {
 
         if (this.busyOnSubmitValue) {
             this.onSubmit = (event) => {
-                if (event.submitter === this.element && !event.defaultPrevented) {
+                if (event.submitter !== this.element || !this.sendsHere()) {
+                    return;
+                }
+                this.busy();
+                // Once every listener has run, those added later on the document too.
+                setTimeout(() => {
+                    if (event.defaultPrevented && !this.turbo) {
+                        this.restore();
+                    }
+                });
+            };
+            this.onTurboStart = (event) => {
+                if (event.detail?.formSubmission?.submitter === this.element) {
+                    this.turbo = true;
                     this.busy();
+                }
+            };
+            this.onTurboEnd = (event) => {
+                if (event.detail?.formSubmission?.submitter === this.element) {
+                    this.turbo = false;
+                    this.restore();
                 }
             };
             this.onPageShow = (event) => {
@@ -38,6 +61,8 @@ export default class extends Controller {
                 }
             };
             document.addEventListener('submit', this.onSubmit);
+            document.addEventListener('turbo:submit-start', this.onTurboStart);
+            document.addEventListener('turbo:submit-end', this.onTurboEnd);
             window.addEventListener('pageshow', this.onPageShow);
         }
     }
@@ -46,8 +71,17 @@ export default class extends Controller {
         this.element.removeEventListener('click', this.guard, {capture: true});
         if (this.onSubmit) {
             document.removeEventListener('submit', this.onSubmit);
+            document.removeEventListener('turbo:submit-start', this.onTurboStart);
+            document.removeEventListener('turbo:submit-end', this.onTurboEnd);
             window.removeEventListener('pageshow', this.onPageShow);
         }
+    }
+
+    // The form is sent in this page, not in another window or frame.
+    sendsHere() {
+        const target = this.element.getAttribute('formtarget') ?? this.element.form?.getAttribute('target') ?? '';
+
+        return target === '' || target === '_self';
     }
 
     busy() {

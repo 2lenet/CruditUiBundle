@@ -159,12 +159,12 @@ try {
     assert.deepEqual(kept, {removed: true, focus: true}, 'closing an alert from elsewhere moves the focus');
 
     // A double click on a submit button sends its form once: the first sending puts it in loading.
+    // The test cancels the sending to stay on the page: the button is in loading at once, before the second click,
+    // and only goes back to normal once the event has gone through its listeners.
     const sent = await page.evaluate(() => {
         const form = document.getElementById('kit-submit-form');
-        const frame = document.body.appendChild(Object.assign(document.createElement('iframe'), {name: 'kit-submit-frame', hidden: true}));
-        form.target = frame.name;
         let count = 0;
-        form.addEventListener('submit', () => { count++; });
+        form.addEventListener('submit', (event) => { count++; event.preventDefault(); });
         const button = form.querySelector('button[type="submit"]');
         button.click();
         button.click();
@@ -172,6 +172,39 @@ try {
         return {count, busy: button.getAttribute('aria-busy'), spinner: button.querySelector(':scope > svg')?.classList.contains('crudit-ui-icon--spin')};
     });
     assert.deepEqual(sent, {count: 1, busy: 'true', spinner: true}, 'a double click sends the form twice: busyOnSubmit');
+
+    // The button goes back to normal when the sending is cancelled by a listener added later on the document, when
+    // Turbo has sent the form, and it does not go in loading for a form sent to another window.
+    await page.reload({waitUntil: 'networkidle0'});
+    const states = await page.evaluate(async () => {
+        const form = document.getElementById('kit-submit-form');
+        const button = form.querySelector('button[type="submit"]');
+        const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
+        const state = () => button.getAttribute('aria-busy');
+
+        const cancel = (event) => event.preventDefault();
+        document.addEventListener('submit', cancel);
+        button.click();
+        await tick();
+        const cancelled = state();
+        document.removeEventListener('submit', cancel);
+
+        form.target = '_blank';
+        form.addEventListener('submit', cancel);
+        button.click();
+        await tick();
+        const blank = state();
+        form.removeEventListener('submit', cancel);
+        form.removeAttribute('target');
+
+        const submission = {formSubmission: {submitter: button}};
+        document.dispatchEvent(new CustomEvent('turbo:submit-start', {detail: submission}));
+        const turboStart = state();
+        document.dispatchEvent(new CustomEvent('turbo:submit-end', {detail: submission}));
+
+        return {cancelled, blank, turboStart, turboEnd: state()};
+    });
+    assert.deepEqual(states, {cancelled: null, blank: null, turboStart: 'true', turboEnd: null}, 'busyOnSubmit: cancelled sending, other window or Turbo');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

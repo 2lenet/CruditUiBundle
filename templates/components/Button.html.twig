@@ -10,7 +10,7 @@
 {%- set busyOnSubmit = busyOnSubmit ?? (type == 'submit') -%}
 {%- set icon = loading ? 'loading' : icon -%}
 {%- set class = 'crudit-ui-btn crudit-ui-btn--' ~ variant ~ (size == 'small' ? ' crudit-ui-btn--small' : '') -%}
-{{- include('@LleCruditUi/partials/_button_open.html.twig') -}}
+{{- include('@LleCruditUi/partials/_button_open.html.twig', {attributes: attributes, class: class, href: href, type: type, disabled: disabled, loading: loading, busyOnSubmit: busyOnSubmit, extra: {}}, with_context: false) -}}
     {%- if icon %}{{ ui_icon(icon) }}{% endif -%}
     {%- block content %}{% endblock -%}
     {%- if count is not null %}<span class="crudit-ui-btn__count">{{ count }}</span>{% endif -%}

@@ -110,6 +110,21 @@ class ButtonTest extends TestCase
 
         self::assertFalse($link->hasAttribute('href'));
         self::assertSame('true', $link->getAttribute('aria-busy'));
+        // Without href, an <a> would lose its role.
+        self::assertSame('link', $link->getAttribute('role'));
+    }
+
+    public function testVariablesOfTheCallerDoNotReachTheButton(): void
+    {
+        $template = "{% set extra = {'data-leak': 'yes'} %}{% set class = 'leak' %}{% set busyOnSubmit = true %}"
+            . '<twig:LleCruditUi:Button>Save</twig:LleCruditUi:Button><twig:LleCruditUi:Tag>Lift</twig:LleCruditUi:Tag>';
+        $html = $this->html($this->render(new TestKernel(), $template));
+
+        foreach ($html->querySelectorAll('button') as $button) {
+            self::assertFalse($button->hasAttribute('data-leak'));
+            self::assertStringNotContainsString('leak', (string) $button->getAttribute('class'));
+            self::assertFalse($button->hasAttribute('data-2lenet--crudit-ui-bundle--button-busy-on-submit-value'));
+        }
     }
 
     public function testGuardOfTheClickIsMergedWithTheControllersOfTheProject(): void
