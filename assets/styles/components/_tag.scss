@@ -23,7 +23,7 @@
 
     &__icon {
         color: var(--c-text-muted);
-        font-size: 0.75rem;
+        font-size: var(--font-size-2xs);
     }
 
     // Associated: solid border, background, check and weight (not the colour alone).

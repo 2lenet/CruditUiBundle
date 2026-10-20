@@ -58,7 +58,9 @@ A component is done when:
 - it has its section in the design kit page, in all its states;
 - it works at 360, 768, 1280 and 1600 px wide, in light and dark, right to left;
 - a PHPUnit test renders it (`RendersTwig` in `tests/phpunit/Functional`: `render()` with `<twig:LleCruditUi:…>`, then
-  `html()` and `querySelector()`), and the smoke test passes, axe included.
+  `html()` and `querySelector()`), and the smoke test passes, axe included;
+- if it has a Stimulus controller, the smoke test drives it on the design kit page in a real browser: clicks, keyboard,
+  right to left, the events it dispatches. PHPUnit only sees the HTML rendered by the server.
 
 ## Test applications
 
@@ -69,7 +71,8 @@ dropdown controller. `tests/apps/smoke.mjs` drives a headless Chrome on the page
 breakpoint variables are loaded, the project wins over the `crudit-ui` layer, the controller opens and closes the
 menu, the page in French, Arabic and Persian has the right direction, texts, numbers and dates, nothing fails to load,
 and the [design kit](components.md#design-kit) page has no accessibility violation for axe-core (WCAG 2.1 A and AA,
-in light, dark, right to left and on a phone, 360 px wide). The `Test applications` workflow runs it for AssetMapper (dev and prod, with
+in light, dark, right to left and on a phone, 360 px wide), and its components work: buttons, alerts, collapsibles
+and tabs (keyboard, right to left, address). The `Test applications` workflow runs it for AssetMapper (dev and prod, with
 `asset-map:compile`) and Encore.
 
 To run one locally (Docker, no local PHP needed):
@@ -83,10 +86,18 @@ docker run -d --rm --name ui-app -u $(id -u) --network host -e APP_SECRET=x -v $
 cd .. && npm install && node smoke.mjs http://127.0.0.1:8081/
 ```
 
+Without Node on the machine, the image of Puppeteer runs the smoke test; the path of its Chrome is the second
+argument. Not with `-u`: Chrome does not start.
+
+```bash
+cd tests/apps
+docker run --rm --network host -v $PWD:/work -w /work ghcr.io/puppeteer/puppeteer:24.10.0 node smoke.mjs http://127.0.0.1:8081/ /home/pptruser/.cache/puppeteer/chrome/linux-137.0.7151.55/chrome-linux64/chrome
+```
+
 Pitfalls:
 
 - **A change in `assets/` is not seen by an application that already copied the bundle**: copy `assets/dist/` again into `vendor/2lenet/crudit-ui-bundle/assets/dist/` (or reinstall the bundle).
-- Composer copies the whole bundle, `vendor/` and `node_modules/` included, and the applications already installed with it: use a clean checkout (as the CI does) when installing a second application.
+- Composer copies the whole bundle, `vendor/` and `node_modules/` included, and the applications already installed with it: use a clean checkout (as the CI does) when installing a second application. Locally, the copy can take minutes (more than 1 GB): copy the application elsewhere, make a light copy of the bundle (`composer.json`, `src`, `templates`, `config`, `translations`, `assets/package.json`, `assets/dist`), and point the `path` repository at it in `composer.json` **and** `composer.lock` (its `dist.url`). The installation then takes a second.
 - The bundle requires the `intl` extension of PHP, which the `php:*-cli` and `composer:2` images do not have (hence
   the `php-intl` image above, also needed by PHPUnit).
 - The spaces and separators of the dates depend on the version of ICU: the tests check their digits and their order,

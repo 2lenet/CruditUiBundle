@@ -1,0 +1,74 @@
+@use '../tools/a11y' as *;
+
+// Disclosure: a full-width button and its panel. The pattern of the crudit-v2 mockup (`.show-section__toggle`,
+// `.timeline__toggle`, the sub-menus of `NavEntry.vue`), one component for all of them. Unlike the mockup, the chevron
+// points down when closed and turns by 180° (up) when open: the same in both directions of reading.
+.crudit-ui-disclosure {
+    // The level of the heading is for the outline of the page; the look is the one of the button.
+    &__heading {
+        margin: 0;
+        font-size: inherit;
+        font-weight: inherit;
+    }
+
+    &__toggle {
+        display: flex;
+        inline-size: 100%;
+        min-block-size: var(--control-h);
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border: 0;
+        border-radius: var(--radius-md);
+        background-color: transparent;
+        color: var(--c-text);
+        font: inherit;
+        font-weight: var(--font-weight-semibold);
+        text-align: start;
+        cursor: pointer;
+        @include transition(background-color);
+
+        &:hover {
+            background-color: var(--c-surface-hover);
+        }
+    }
+
+    &__title {
+        min-inline-size: 0;
+        flex: 1;
+        overflow-wrap: anywhere;
+    }
+
+    &__chevron {
+        flex: none;
+        color: var(--c-text-muted);
+        @include transition(transform);
+    }
+
+    &__toggle[aria-expanded='true'] &__chevron {
+        transform: rotate(180deg);
+    }
+
+    &__panel {
+        padding: var(--space-2) var(--space-3);
+
+        // A class, not the hidden attribute: `[hidden]` of the reset is !important in crudit-ui-base, and an !important
+        // of a weaker layer wins over this layer, so the print could not open it.
+        &--closed {
+            display: none;
+        }
+    }
+}
+
+// Printed open: the reader of a sheet of paper cannot click.
+@media print {
+    .crudit-ui-disclosure__panel--closed {
+        display: block;
+    }
+
+    // Through its button: `.crudit-ui-icon` (display: inline-block) is loaded after this file and would win at equal
+    // specificity.
+    .crudit-ui-disclosure__toggle .crudit-ui-disclosure__chevron {
+        display: none;
+    }
+}

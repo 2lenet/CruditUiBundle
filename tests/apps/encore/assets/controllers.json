@@ -13,7 +13,15 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "disclosure": {
+                "enabled": true,
+                "fetch": "eager"
+            },
             "dropdown": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "tabs": {
                 "enabled": true,
                 "fetch": "eager"
             },

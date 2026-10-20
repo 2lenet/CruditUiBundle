@@ -28,6 +28,7 @@
     @include meta.load-css('components/badge');
     @include meta.load-css('components/button');
     @include meta.load-css('components/dialog');
+    @include meta.load-css('components/disclosure');
     @include meta.load-css('components/dropdown');
     @include meta.load-css('components/empty-state');
     @include meta.load-css('components/icon');
@@ -36,6 +37,7 @@
     @include meta.load-css('components/menu');
     @include meta.load-css('components/progress');
     @include meta.load-css('components/status');
+    @include meta.load-css('components/tabs');
     @include meta.load-css('components/tag');
     @include meta.load-css('components/tone');
     @include meta.load-css('components/tooltip');
