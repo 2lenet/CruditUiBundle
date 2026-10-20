@@ -424,6 +424,11 @@ try {
     assert.equal((await menu('kit-menu-more')).hidden, true, 'the focus leaving the dropdown does not close it');
 
     // Floating, in a container that scrolls: in position fixed, whole on the screen, not cut by its container.
+    // Its button is brought on the screen first, as a user scrolls before clicking: page.click() scrolls and clicks
+    // in the same frame, and the event "scroll", which closes a floating dropdown, would come after the opening (with
+    // Turbo, Reset does not keep the anchor: the page is back at the top).
+    await page.$eval('#kit-menu-floating-1 > button', (button) => button.scrollIntoView({block: 'center'}));
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.click('#kit-menu-floating-1 > button');
     const floating = await page.evaluate(() => {
         const panel = document.getElementById('kit-menu-floating-1-panel');
