@@ -49,15 +49,18 @@
 </div>
 
 <h3 class="crudit-ui-kit__subtitle">An item that sends a form</h3>
-{#- method dialog: the browser sends nothing (no reload during a demo); the button stays in loading. -#}
+{#- method dialog: the browser sends nothing (no reload during a demo); the button stays in loading. Reset reloads
+ # the page to play it again: a form, as a link to the same address would only scroll to its anchor. -#}
 <form id="kit-menu-form" method="dialog" class="crudit-ui-kit__row">
     <twig:LleCruditUi:Dropdown id="kit-menu-submit" label="Send">
         <twig:LleCruditUi:Menu>
             <twig:LleCruditUi:MenuItem icon="email" type="submit" name="channel" value="email">By email</twig:LleCruditUi:MenuItem>
         </twig:LleCruditUi:Menu>
     </twig:LleCruditUi:Dropdown>
-    <span class="crudit-ui-kit__text">The button of the menu is in loading while the form is sent (here, it is not sent: it stays in loading).</span>
+    <twig:LleCruditUi:Button type="submit" size="small" icon="undo" form="kit-menu-reset">Reset</twig:LleCruditUi:Button>
+    <span class="crudit-ui-kit__text">The button of the menu is in loading while the form is sent; here nothing is sent, and it stays in loading until Reset.</span>
 </form>
+<form id="kit-menu-reset" method="get" action="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')) }}#kit-menus"></form>
 
 <h3 class="crudit-ui-kit__subtitle">In a container that scrolls (floating)</h3>
 <div class="crudit-ui-kit__table-wrap crudit-ui-kit__scroller">

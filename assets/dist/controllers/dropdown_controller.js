@@ -175,9 +175,10 @@ export default class extends Controller {
         });
     }
 
-    // An element of this dropdown, not of a dropdown in its panel.
+    // An element of this dropdown, not of a dropdown in its panel. Found by the controller, not by the class
+    // crudit-ui-dropdown (styles only), which the markup of a project may not have.
     owns(element) {
-        return this.panelTarget.contains(element) && element.closest('.crudit-ui-dropdown') === this.element;
+        return this.panelTarget.contains(element) && element.closest(`[data-controller~="${this.identifier}"]`) === this.element;
     }
 
     // The controller "button" of the button of the dropdown (its loading state).

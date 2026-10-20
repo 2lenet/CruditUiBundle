@@ -282,6 +282,18 @@ try {
     assert.deepEqual(nested, {inner: true, outer: false, focus: true}, 'the choice in a dropdown inside another one closes the outer one');
     await page.reload({waitUntil: 'networkidle0'});
 
+    // The markup of a project, without the class crudit-ui-dropdown: the choice of an item closes it all the same.
+    const bare = await page.evaluate(() => {
+        const root = document.getElementById('kit-menu-more');
+        root.classList.remove('crudit-ui-dropdown');
+        root.querySelector(':scope > button').click();
+        root.querySelector('.crudit-ui-menu__item').click();
+
+        return {closed: document.getElementById('kit-menu-more-panel').hidden, focus: document.activeElement === root.querySelector(':scope > button')};
+    });
+    assert.deepEqual(bare, {closed: true, focus: true}, 'the choice of an item does not close a dropdown without its class');
+    await page.reload({waitUntil: 'networkidle0'});
+
     // An item that sends a form puts the button of the dropdown in loading, and back if the sending is cancelled.
     const submitted = await page.evaluate(async () => {
         const form = document.getElementById('kit-menu-form');
@@ -295,6 +307,14 @@ try {
         return {busy, after: button.getAttribute('aria-busy'), closed: document.getElementById('kit-menu-submit-panel').hidden};
     });
     assert.deepEqual(submitted, {busy: 'true', after: null, closed: true}, 'the button of the dropdown is not in loading while its item sends the form');
+
+    // The demo of the kit: nothing is sent (method dialog), the button stays in loading; Reset reloads the page.
+    const sendBusy = () => page.evaluate(() => document.querySelector('#kit-menu-submit > button').getAttribute('aria-busy'));
+    await page.click('#kit-menu-submit > button');
+    await page.click('#kit-menu-submit-panel button[type="submit"]');
+    assert.equal(await sendBusy(), 'true', 'the demo of the kit is not in loading');
+    await Promise.all([page.waitForNavigation({waitUntil: 'networkidle0'}), page.click('button[form="kit-menu-reset"]')]);
+    assert.equal(await sendBusy(), null, 'Reset does not play the demo of the kit again');
 
     await page.click('#kit-menu > button');
     await page.mouse.click(5, 5);
