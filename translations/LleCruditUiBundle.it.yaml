@@ -26,7 +26,6 @@ crudit_ui:
         min_length: "Inserisci almeno %count% carattere.|Inserisci almeno %count% caratteri."
         empty: "Nessun risultato per «%query%»."
         error: "La ricerca non è riuscita. Riprova."
-        loading: "Ricerca in corso…"
         results: "Risultati"
         count:
             one: "%count% risultato disponibile. Frecce su e giù per scorrere."
