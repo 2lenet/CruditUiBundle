@@ -19,6 +19,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "command-palette": {
+                "main": "dist/controllers/command_palette_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "dialog": {
                 "main": "dist/controllers/dialog_controller.js",
                 "webpackMode": "eager",

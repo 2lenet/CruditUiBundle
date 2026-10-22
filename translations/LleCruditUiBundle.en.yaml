@@ -22,6 +22,21 @@ crudit_ui:
         light: Light
         dark: Dark
         system: System
+    palette:
+        min_length: "Enter at least %count% character.|Enter at least %count% characters."
+        empty: "No result for “%query%”."
+        error: "The search failed. Try again."
+        loading: "Searching…"
+        results: "Results"
+        count:
+            one: "%count% result available. Up and down arrows to browse."
+            other: "%count% results available. Up and down arrows to browse."
+        navigate: "browse"
+        open: "open"
+        close: "close"
+        key:
+            enter: "Enter"
+            escape: "Esc"
     state:
         loading: Loading…
     toast:

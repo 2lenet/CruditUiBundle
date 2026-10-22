@@ -1,0 +1,74 @@
+{#
+ # Command palette: a search field in a modal <dialog>, which asks a server for results by groups and opens the one
+ # that is chosen (controller command-palette). Opened by a button of the page (commandfor="<id>"
+ # command="show-modal") and by Ctrl K or Cmd K on any page. The results come from the project: the component knows
+ # nothing of what is searched.
+ #
+ # Props: url (required: GET <url>?q=<text> answers {"groups": [{"id", "label", "results": [{"id", "title",
+ # "subtitle", "url"}]}]}), title (names the dialog, read not shown), label (names the field), placeholder, help (read
+ # with the field, what is searched), minLength (characters before the first request, 2), shortcut (Ctrl K and Cmd K
+ # open it, true).
+ # Attributes: on the <dialog>; its id, given or generated, is the target of commandfor. The texts of the state (no
+ # result, error) are those of the bundle, in the language of the request. Contract: docs/components.md.
+ #}
+{% props url, title, label = null, placeholder = null, help = null, minLength = 2, shortcut = true %}
+{%- set id = attributes.render('id') ?? ('crudit-ui-palette-' ~ random()) -%}
+{%- set controller = '2lenet--crudit-ui-bundle--command-palette' -%}
+{%- set dialog = '2lenet--crudit-ui-bundle--dialog' -%}
+{%- set label = label ?? title -%}
+{%- set domain = 'LleCruditUiBundle' -%}
+<dialog id="{{ id }}" {{ attributes.defaults({
+    class: 'crudit-ui-palette',
+    'data-controller': dialog ~ ' ' ~ controller,
+    'aria-labelledby': id ~ '-title',
+    ('data-' ~ controller ~ '-url-value'): url,
+    ('data-' ~ controller ~ '-min-length-value'): minLength,
+    ('data-' ~ controller ~ '-shortcut-value'): shortcut ? 'true' : 'false',
+    ('data-' ~ controller ~ '-empty-text-value'): 'crudit_ui.palette.empty'|trans(domain: domain),
+    ('data-' ~ controller ~ '-error-text-value'): 'crudit_ui.palette.error'|trans(domain: domain),
+    ('data-' ~ controller ~ '-count-one-text-value'): 'crudit_ui.palette.count.one'|trans(domain: domain),
+    ('data-' ~ controller ~ '-count-other-text-value'): 'crudit_ui.palette.count.other'|trans(domain: domain),
+    ('data-' ~ controller ~ '-loading-text-value'): 'crudit_ui.palette.loading'|trans(domain: domain),
+}) }}>
+    <div class="crudit-ui-palette__inner">
+        <h2 id="{{ id }}-title" class="crudit-ui-visually-hidden">{{ title }}</h2>
+
+        <div class="crudit-ui-palette__field">
+            {{- ui_icon('search', 'crudit-ui-palette__icon') -}}
+            <label for="{{ id }}-input" class="crudit-ui-visually-hidden">{{ label }}</label>
+            <input
+                id="{{ id }}-input"
+                class="crudit-ui-palette__input"
+                type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                aria-controls="{{ id }}-results"
+                aria-describedby="{{ id }}-help"
+                {%- if placeholder is not null %} placeholder="{{ placeholder }}"{% endif %}
+                autocomplete="off"
+                spellcheck="false"
+                data-{{ controller }}-target="input"
+                data-action="input->{{ controller }}#search keydown->{{ controller }}#keydown"
+            >
+            <twig:LleCruditUi:IconButton icon="close" label="{{ 'crudit_ui.action.close'|trans(domain: domain) }}" size="small" data-action="{{ dialog }}#dismiss"/>
+        </div>
+
+        <div class="crudit-ui-palette__body">
+            <div id="{{ id }}-results" class="crudit-ui-palette__results" role="listbox" aria-label="{{ 'crudit_ui.palette.results'|trans(domain: domain) }}" hidden data-{{ controller }}-target="results"></div>
+            <p class="crudit-ui-palette__message" hidden data-{{ controller }}-target="message"></p>
+            <p id="{{ id }}-help" class="crudit-ui-palette__help" data-{{ controller }}-target="help">
+                {{- 'crudit_ui.palette.min_length'|trans({'%count%': minLength}, domain) }}
+                {% if help is not null %}{{ help }}{% endif -%}
+            </p>
+        </div>
+
+        <div class="crudit-ui-palette__footer" aria-hidden="true">
+            <span><kbd>↑</kbd><kbd>↓</kbd> {{ 'crudit_ui.palette.navigate'|trans(domain: domain) }}</span>
+            <span><kbd>{{ 'crudit_ui.palette.key.enter'|trans(domain: domain) }}</kbd> {{ 'crudit_ui.palette.open'|trans(domain: domain) }}</span>
+            <span><kbd>{{ 'crudit_ui.palette.key.escape'|trans(domain: domain) }}</kbd> {{ 'crudit_ui.palette.close'|trans(domain: domain) }}</span>
+        </div>
+
+        <p class="crudit-ui-visually-hidden" role="status" aria-live="polite" data-{{ controller }}-target="status"></p>
+    </div>
+</dialog>

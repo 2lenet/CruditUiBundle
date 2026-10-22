@@ -22,6 +22,21 @@ crudit_ui:
         light: Chiaro
         dark: Scuro
         system: Sistema
+    palette:
+        min_length: "Inserisci almeno %count% carattere.|Inserisci almeno %count% caratteri."
+        empty: "Nessun risultato per «%query%»."
+        error: "La ricerca non è riuscita. Riprova."
+        loading: "Ricerca in corso…"
+        results: "Risultati"
+        count:
+            one: "%count% risultato disponibile. Frecce su e giù per scorrere."
+            other: "%count% risultati disponibili. Frecce su e giù per scorrere."
+        navigate: "navigare"
+        open: "aprire"
+        close: "chiudere"
+        key:
+            enter: "Invio"
+            escape: "Esc"
     state:
         loading: Caricamento…
     toast:

@@ -1,0 +1,24 @@
+{#- Answer of crudit_ui_kit_search: what the command palette of the kit shows. "none" has no result. -#}
+{%- set query = app.request.query.get('q')|default('')|lower -%}
+{%- set groups = [
+    {id: 'clients', label: 'Clients', results: [
+        {id: 'c-1', title: 'Boulangerie Martin', subtitle: 'Colmar · Client since 2019', url: '/crudit-ui/kit?opened=c-1'},
+        {id: 'c-2', title: 'Garage des Vosges', subtitle: 'Épinal · 14 visits', url: '/crudit-ui/kit?opened=c-2'},
+        {id: 'c-3', title: 'Mairie de Kaysersberg', subtitle: 'Kaysersberg · Public body', url: '/crudit-ui/kit?opened=c-3'},
+        {id: 'c-4', title: 'Hôtel du Parc', subtitle: 'Mulhouse · Maintenance contract', url: '/crudit-ui/kit?opened=c-4'},
+    ]},
+    {id: 'visits', label: 'Visits', results: [
+        {id: 'v-1', title: 'V-0412', subtitle: 'Hôtel du Parc · Boiler out of order', url: '/crudit-ui/kit?opened=v-1'},
+        {id: 'v-2', title: 'V-0408', subtitle: 'Mairie de Kaysersberg · Yearly check', url: '/crudit-ui/kit?opened=v-2'},
+    ]},
+    {id: 'screens', label: 'Screens', results: [
+        {id: 's-1', title: 'Clients', subtitle: 'Screen', url: '/crudit-ui/kit?opened=s-1'},
+        {id: 's-2', title: 'Visits', subtitle: 'Screen', url: '/crudit-ui/kit?opened=s-2'},
+    ]},
+] -%}
+{%- set found = [] -%}
+{%- for group in groups -%}
+    {%- set results = group.results|filter(r => query != 'none' and (query in (r.title ~ ' ' ~ r.subtitle)|lower))|merge([]) -%}
+    {%- if results|length %}{% set found = found|merge([{id: group.id, label: group.label, results: results}]) %}{% endif -%}
+{%- endfor -%}
+{{- {groups: found}|json_encode|raw -}}
