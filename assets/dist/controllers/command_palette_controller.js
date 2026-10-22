@@ -7,8 +7,11 @@ const ANNOUNCE = 600;
 // An address the palette may open: http or https, never `javascript:` or `data:` (a project could build it from data
 // typed by a user).
 function safe(address) {
+    if (typeof address !== 'string' || address === '') {
+        return false;
+    }
     try {
-        return ['http:', 'https:'].includes(new URL(String(address), window.location.href).protocol);
+        return ['http:', 'https:'].includes(new URL(address, window.location.href).protocol);
     } catch {
         return false;
     }
@@ -264,6 +267,8 @@ export default class extends Controller {
     }
 
     showMessage(text, role) {
+        // The count of an earlier answer must not be announced after this message.
+        window.clearTimeout(this.announce);
         this.resultsTarget.replaceChildren();
         this.resultsTarget.hidden = true;
         this.options = [];
@@ -292,6 +297,8 @@ export default class extends Controller {
         this.helpTarget.hidden = false;
         this.statusTarget.textContent = '';
         this.inputTarget.setAttribute('aria-expanded', 'false');
+        // Not left to activate(-1): it does nothing when the index is already -1 (a DOM restored with the attribute).
+        this.inputTarget.removeAttribute('aria-activedescendant');
         this.activate(-1);
     }
 

@@ -948,17 +948,23 @@ try {
     };
     page.on('request', slowMart);
     await typed('mar');
+    // The list must be the answer to "mar" (not the previous one) before "t" is typed: only then is it the last text.
+    await page.waitForFunction(() => {
+        const dialog = document.getElementById('kit-search-dialog');
+        return !dialog.hasAttribute('aria-busy') && dialog.querySelector('[role="option"] mark')?.textContent === 'Mar';
+    }, {timeout: 3000});
     await page.keyboard.type('t');
     await new Promise((resolve) => setTimeout(resolve, 400));
     await page.keyboard.press('Backspace');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     assert.equal((await palette()).value, 'mar');
-    assert.deepEqual((await palette()).groups, ['Clients'], 'the answer of "mart" replaces the list of "mar"');
+    // "mar" and "mart" find the same client: the marked text tells the two lists apart.
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-search-dialog [role="option"] mark')?.textContent), 'Mar', 'the answer of "mart" replaces the list of "mar"');
     // Enter before the debounce is over: nothing opens.
-    const urlBeforeEnter = page.url();
     await page.keyboard.type('x');
     await page.keyboard.press('Enter');
-    assert.equal(page.url(), urlBeforeEnter, 'Enter opens the result of an older text');
+    // choose() closes the dialog at once; the navigation itself would come later.
+    assert.equal((await palette()).open, true, 'Enter opens the result of an older text');
     page.off('request', slowMart);
     await page.setRequestInterception(false);
 
@@ -975,7 +981,7 @@ try {
     // Not read as HTML: a title with tags is shown as it is.
     await page.setRequestInterception(true);
     const tagged = (request) => request.url().includes('/crudit-ui/kit-search')
-        ? request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({groups: [{id: 'x', label: '<i>Group</i>', results: [{id: 'x-1', title: '<b>Bold</b> zz', subtitle: '<u>Under</u>', url: '/crudit-ui/kit?opened=x-1'}]}]})})
+        ? request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({groups: [{id: 'x', label: '<i>Group</i>', results: [{id: 'x-1', title: '<b>Bold</b> zz', subtitle: '<u>Under</u>', url: '/crudit-ui/kit?opened=x-1'}, {id: 'x-2', title: 'zz script', url: 'javascript:alert(1)'}, {id: 'x-3', title: 'zz no address'}]}]})})
         : request.continue();
     page.on('request', tagged);
     await page.click('[commandfor="kit-search-dialog"]');
@@ -985,6 +991,7 @@ try {
         [0, '<b>Bold</b> zzUnder'.replace('Under', '<u>Under</u>')],
         'the text of a result is read as HTML',
     );
+    assert.equal(await page.evaluate(() => document.querySelectorAll('#kit-search-dialog [role="option"]').length), 1, 'a result without address, or with a javascript: one, is shown');
     page.off('request', tagged);
     await page.setRequestInterception(false);
     await page.keyboard.press('Escape');
