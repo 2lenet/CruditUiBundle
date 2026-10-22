@@ -522,6 +522,9 @@ has `tabindex="-1"`, so that the application can give it the focus when the page
 a screen reader then starts at the title. **The component does not do it**: it is the job of the application
 (CruditBundle does it for its pages). The title has no focus ring, it is not a control.
 
+One `PageHeader` per page: its `<h1>` has the id `page-title`. Two in the same page (a page under Turbo with a drawer
+that holds another one): give the second its own `titleId`.
+
 #### LleCruditUi:Breadcrumb
 
 Where the page is, from the home page: a `nav` named "Breadcrumb", an ordered list, a chevron between the levels.
@@ -537,11 +540,12 @@ Where the page is, from the home page: a `nav` named "Breadcrumb", an ordered li
 | Prop | Type | Default | |
 |---|---|---|---|
 | `items` | list of `{label, url?}` | required | from the home page to the current page; `label` already translated. The last one is the current page: never a link, `aria-current="page"`. Another one without `url` is a text (a group of the menu) |
-| `label` | string | `crudit_ui.breadcrumb.label` | name of the `nav` ("Fil d'Ariane", "Breadcrumb") |
+| `label` | string | `crudit_ui.breadcrumb.label` | name of the `nav` ("Fil d'Ariane", "Breadcrumb"); an empty one gives the default too |
 
 **Nothing is rendered with fewer than two items** (the home page: a breadcrumb of one level says nothing).
 **Below 768 px**, only the last level with an url before the current page is shown, as a link "← parent" (arrow
-`back`); without such a level, the whole `nav` is hidden (no empty landmark). The chevrons and the arrow are hidden
+`back`); without such a level, the whole `nav` is hidden (no empty landmark). The link may skip levels without an
+url: Home › Operations (no url) › Settings gives "← Home". The chevrons and the arrow are hidden
 from screen readers and follow the direction of reading. The levels wrap, they are never cut.
 
 ### LleCruditUi:Kit:Section

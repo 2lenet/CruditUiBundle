@@ -41,7 +41,13 @@
         font-size: var(--font-size-xl);
         font-weight: var(--font-weight-bold);
         line-height: var(--line-height-tight);
-        letter-spacing: -0.015em;
+        letter-spacing: var(--letter-spacing-tight);
+
+        // Focused by the application when the page changes: not a control, no ring, even after a key (as main and nav,
+        // elements/_base.scss)
+        &:focus {
+            outline: none;
+        }
     }
 
     &__subtitle {

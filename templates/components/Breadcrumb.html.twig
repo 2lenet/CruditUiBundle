@@ -5,7 +5,7 @@
  # (the home page).
  #
  # Props: items (list of {label, url?}: label already translated; without url, a text), label (name of the nav,
- # "Breadcrumb" by default). Contract: docs/components.md.
+ # "Breadcrumb" by default, also when empty). Contract: docs/components.md.
  #}
 {% props items, label = null %}
 {%- if items|length > 1 -%}
@@ -16,7 +16,7 @@
         {%- if item.url ?? null %}{% set back = loop.index0 %}{% endif -%}
     {%- endfor -%}
     {#- Without a level to go back to, the nav is hidden below 768 px: no empty landmark. -#}
-    <nav {{ attributes.defaults({class: 'crudit-ui-breadcrumb' ~ (back == -1 ? ' crudit-ui-breadcrumb--no-back' : ''), 'aria-label': label ?? 'crudit_ui.breadcrumb.label'|trans(domain: 'LleCruditUiBundle')}) }}>
+    <nav {{ attributes.defaults({class: 'crudit-ui-breadcrumb' ~ (back == -1 ? ' crudit-ui-breadcrumb--no-back' : ''), 'aria-label': label ?: 'crudit_ui.breadcrumb.label'|trans(domain: 'LleCruditUiBundle')}) }}>
         <ol class="crudit-ui-breadcrumb__list">
             {%- for item in items -%}
                 <li class="crudit-ui-breadcrumb__item{{ loop.index0 == back ? ' crudit-ui-breadcrumb__item--back' : '' }}">

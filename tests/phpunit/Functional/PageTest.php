@@ -114,6 +114,11 @@ class PageTest extends TestCase
         self::assertSame('crudit-ui-breadcrumb mb-2', $nav->getAttribute('class'));
     }
 
+    public function testEmptyLabelGivesTheDefaultName(): void
+    {
+        self::assertSame('Breadcrumb', $this->element('<twig:LleCruditUi:Breadcrumb :items="' . self::ITEMS . '" label=""/>', 'nav')->getAttribute('aria-label'));
+    }
+
     public function testLabelsEscapedOnce(): void
     {
         $html = $this->render(new TestKernel(), '<twig:LleCruditUi:Breadcrumb :items="items"/>', [
