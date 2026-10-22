@@ -10,7 +10,7 @@
     {label: 'VIS-2026-0412'},
 ] %}
 <h3 class="crudit-ui-kit__subtitle">Record: breadcrumb, status, metadata and actions</h3>
-<twig:LleCruditUi:PageHeader id="kit-page-header-record" title="Visit VIS-2026-0412" subtitle="Boiler maintenance, Martin residence" :breadcrumb="breadcrumb">
+<twig:LleCruditUi:PageHeader titleId="kit-page-header-record" title="Visit VIS-2026-0412" subtitle="Boiler maintenance, Martin residence" :breadcrumb="breadcrumb">
     <twig:block name="badge"><twig:LleCruditUi:Status tone="warning">To plan</twig:LleCruditUi:Status></twig:block>
     <twig:block name="meta">Created on 12 October 2026, updated on 21 October 2026</twig:block>
     <twig:block name="actions">
@@ -20,7 +20,7 @@
 </twig:LleCruditUi:PageHeader>
 
 <h3 class="crudit-ui-kit__subtitle">Home page: a title only (no breadcrumb with one level)</h3>
-<twig:LleCruditUi:PageHeader id="kit-page-header-home" title="Dashboard" :breadcrumb="[{label: 'Home'}]"/>
+<twig:LleCruditUi:PageHeader titleId="kit-page-header-home" title="Dashboard" :breadcrumb="[{label: 'Home'}]"/>
 
 <h3 class="crudit-ui-kit__subtitle">Breadcrumb alone</h3>
 <twig:LleCruditUi:Breadcrumb :items="breadcrumb|slice(0, 3)" label="Breadcrumb of the list"/>

@@ -135,16 +135,17 @@ class PageTest extends TestCase
         self::assertSame('-1', $title->getAttribute('tabindex'));
         self::assertSame('Visits', $title->textContent);
         self::assertNull($header->querySelector('.crudit-ui-page-header__subtitle'));
-        // Empty, so hidden by :empty
-        foreach (['top', 'meta', 'actions'] as $zone) {
+        // No element: top and actions hidden by :not(:has(> *)); no metadata: no zone at all
+        foreach (['top', 'actions'] as $zone) {
             self::assertSame('', $header->querySelector('.crudit-ui-page-header__' . $zone)?->innerHTML, $zone);
         }
+        self::assertNull($header->querySelector('.crudit-ui-page-header__meta'));
     }
 
     public function testPageHeaderWithEverything(): void
     {
         $header = $this->element(
-            '<twig:LleCruditUi:PageHeader title="Visit VIS-12" subtitle="Boiler" id="visit-title" class="mb-3" :breadcrumb="' . self::ITEMS . '">'
+            '<twig:LleCruditUi:PageHeader title="Visit VIS-12" subtitle="Boiler" titleId="visit-title" id="visit-header" class="mb-3" :breadcrumb="' . self::ITEMS . '">'
             . '<twig:block name="top"><a href="/next">Next</a></twig:block>'
             . '<twig:block name="badge"><twig:LleCruditUi:Status tone="warning">To plan</twig:LleCruditUi:Status></twig:block>'
             . '<twig:block name="meta">Created on 12 October</twig:block>'
@@ -154,6 +155,7 @@ class PageTest extends TestCase
         );
 
         self::assertSame('crudit-ui-page-header mb-3', $header->getAttribute('class'));
+        self::assertSame('visit-header', $header->getAttribute('id'), 'the id of the project on the root');
         self::assertSame('Visit VIS-12', $header->querySelector('h1#visit-title')?->textContent);
         self::assertNotNull($header->querySelector('.crudit-ui-page-header__top > nav.crudit-ui-breadcrumb + a[href="/next"]'));
         self::assertNotNull($header->querySelector('.crudit-ui-page-header__title-row > h1 + .crudit-ui-status'));
@@ -186,6 +188,19 @@ class PageTest extends TestCase
         );
 
         self::assertSame(0, $header->querySelector('.crudit-ui-page-header__top')?->childElementCount);
+    }
+
+    /**
+     * A block meta that renders nothing but spaces (an {% if %} on several lines): no zone, no margin left.
+     */
+    public function testMetaBlockWithSpacesOnly(): void
+    {
+        $header = $this->element(
+            "<twig:LleCruditUi:PageHeader title=\"Visit\">\n<twig:block name=\"meta\">\n    {% if false %}Created{% endif %}\n</twig:block>\n</twig:LleCruditUi:PageHeader>",
+            'div',
+        );
+
+        self::assertNull($header->querySelector('.crudit-ui-page-header__meta'));
     }
 
     public function testEmptySubtitleIsNotRendered(): void

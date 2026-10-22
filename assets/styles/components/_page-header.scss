@@ -66,10 +66,17 @@
     }
 
     // Nothing passed: no breadcrumb, no action. Without any element, not :empty: a block written on several lines
-    // that renders nothing (no breadcrumb on the home page) leaves spaces. The metadata are text: :empty.
+    // that renders nothing (no breadcrumb on the home page) leaves spaces. The metadata are left out by the template.
     &__top:not(:has(> *)),
-    &__actions:not(:has(> *)),
-    &__meta:empty {
+    &__actions:not(:has(> *)) {
         display: none;
+    }
+
+    // Below 768 px, a breadcrumb without a level to go back to is hidden: so is the zone, unless the block top has
+    // something
+    @include media('<md') {
+        &__top:not(:has(> :not(.crudit-ui-breadcrumb--no-back))) {
+            display: none;
+        }
     }
 }

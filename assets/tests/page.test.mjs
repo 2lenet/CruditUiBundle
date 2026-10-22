@@ -19,8 +19,12 @@ test('without a level to go back to, the whole breadcrumb is hidden below 768 px
     assert.ok(css.includes('@media(max-width: 767.98px){.crudit-ui-breadcrumb--no-back{display:none}'));
 });
 
-test('the zones of the page header left empty are hidden, even with spaces in a block', () => {
-    assert.ok(css.includes('.crudit-ui-page-header__top:not(:has(>*)),.crudit-ui-page-header__actions:not(:has(>*)),.crudit-ui-page-header__meta:empty{display:none}'));
+test('the zones of the page header without an element are hidden, even with spaces in a block', () => {
+    assert.ok(css.includes('.crudit-ui-page-header__top:not(:has(>*)),.crudit-ui-page-header__actions:not(:has(>*)){display:none}'));
+});
+
+test('below 768 px, the zone of a breadcrumb hidden for lack of a level to go back to is hidden too', () => {
+    assert.ok(css.includes('@media(max-width: 767.98px){.crudit-ui-page-header__top:not(:has(>:not(.crudit-ui-breadcrumb--no-back))){display:none}}'));
 });
 
 test('below 576 px, the actions go under the title', () => {

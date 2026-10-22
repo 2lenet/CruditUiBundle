@@ -509,16 +509,18 @@ actions. Nothing about Crudit: the application gives the title and the levels of
 | `title` | string | required | text of the `<h1>` |
 | `subtitle` | string | `null` | under the title, muted; not rendered when null or empty |
 | `breadcrumb` | list of `{label, url?}` | `[]` | items of the `Breadcrumb` (see below): none with fewer than two |
-| `id` | string | `page-title` | id of the `<h1>` |
+| `titleId` | string | `page-title` | id of the `<h1>` (an `id` passed by the project goes on the root, as for the other components) |
 
 Blocks: `breadcrumb` (the `Breadcrumb` of the prop `breadcrumb`: give the block to replace it), `top` (at the end of
 the line of the breadcrumb: a navigation between records…), `badge` (next to the title: a `Status`), `meta` (under the
 subtitle, small and muted: dates, author), `actions` (at the end of the line of the title; under it below 576 px). The
-zones left empty are not shown.
+zones left empty are not shown: `top` and `actions` without an element (and `top` below 768 px when the breadcrumb is
+hidden), `meta` when it renders nothing but spaces.
 
-Accessibility: **one `<h1>` per page**, this one (the design kit is the only exception: its examples add theirs). It has `tabindex="-1"`: the application gives it the focus when the
-page changes without a full load (Turbo), so a screen reader starts at the title; it has no focus ring, it is not a
-control.
+Accessibility: **one `<h1>` per page**, this one (the design kit is the only exception: its examples add theirs). It
+has `tabindex="-1"`, so that the application can give it the focus when the page changes without a full load (Turbo):
+a screen reader then starts at the title. **The component does not do it**: it is the job of the application
+(CruditBundle does it for its pages). The title has no focus ring, it is not a control.
 
 #### LleCruditUi:Breadcrumb
 
@@ -539,8 +541,8 @@ Where the page is, from the home page: a `nav` named "Breadcrumb", an ordered li
 
 **Nothing is rendered with fewer than two items** (the home page: a breadcrumb of one level says nothing).
 **Below 768 px**, only the last level with an url before the current page is shown, as a link "← parent" (arrow
-`back`); without such a level, the whole `nav` is hidden (no empty landmark). The chevrons and the arrow are hidden from screen readers and follow
-the direction of reading. The levels wrap, they are never cut.
+`back`); without such a level, the whole `nav` is hidden (no empty landmark). The chevrons and the arrow are hidden
+from screen readers and follow the direction of reading. The levels wrap, they are never cut.
 
 ### LleCruditUi:Kit:Section
 
