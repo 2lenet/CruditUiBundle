@@ -842,7 +842,8 @@ try {
     );
     // Under the minimum, nothing is asked.
     let asked = 0;
-    page.on('request', (request) => request.url().includes('/crudit-ui/kit-search') && asked++);
+    const count = (request) => request.url().includes('/crudit-ui/kit-search') && asked++;
+    page.on('request', count);
     await page.keyboard.type('m');
     await new Promise((resolve) => setTimeout(resolve, 500));
     assert.equal(asked, 0, 'a request is sent under the minimum of characters');
@@ -853,6 +854,7 @@ try {
         'the results are not shown by groups, with the first one active and the words marked',
     );
     assert.equal(asked, 1, 'one request for the whole word');
+    page.off('request', count);
     await page.waitForFunction(() => document.querySelector('#kit-search-dialog [role="status"]').textContent !== '', {timeout: 2000});
     assert.equal((await palette()).status, '1 result available. Up and down arrows to browse.', 'the count is not announced');
 
@@ -873,7 +875,6 @@ try {
     assert.equal((await palette()).options[0].endsWith('*'), true, 'the down arrow does not go from the last option to the first');
     await page.keyboard.press('ArrowDown');
     assert.equal(page.url().endsWith('crudit-ui/kit'), true, 'a result is opened before it is chosen');
-    // Accents and case: "ep" finds "Épinal" in the subtitle, and marks nothing in the title ("Garage des Vosges").
     // Enter opens the active option, and the dialog is closed.
     const second = (await palette()).options[1].replace('*', '');
     await Promise.all([page.waitForNavigation({waitUntil: 'networkidle0'}), page.keyboard.press('Enter')]);
@@ -933,6 +934,32 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     assert.deepEqual((await palette()).groups, ['Visits'], 'the answer of an old text replaces the one of the new text');
     page.off('request', slow);
+
+    // "mar", then "mart" (slow), then back to "mar" before the answer: the answer of "mart" never replaces the list, and
+    // Enter does nothing while the results are not those of the field.
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    const slowMart = async (request) => {
+        if (request.url().includes('/crudit-ui/kit-search') && request.url().includes('q=mart')) {
+            await new Promise((resolve) => setTimeout(resolve, 1200));
+        }
+        request.continue();
+    };
+    page.on('request', slowMart);
+    await typed('mar');
+    await page.keyboard.type('t');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await page.keyboard.press('Backspace');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    assert.equal((await palette()).value, 'mar');
+    assert.deepEqual((await palette()).groups, ['Clients'], 'the answer of "mart" replaces the list of "mar"');
+    // Enter before the debounce is over: nothing opens.
+    const urlBeforeEnter = page.url();
+    await page.keyboard.type('x');
+    await page.keyboard.press('Enter');
+    assert.equal(page.url(), urlBeforeEnter, 'Enter opens the result of an older text');
+    page.off('request', slowMart);
     await page.setRequestInterception(false);
 
     // Escape closes it, the focus goes back to the button. Ctrl K does nothing over another dialog.

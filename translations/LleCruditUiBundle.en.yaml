@@ -26,7 +26,6 @@ crudit_ui:
         min_length: "Enter at least %count% character.|Enter at least %count% characters."
         empty: "No result for “%query%”."
         error: "The search failed. Try again."
-        loading: "Searching…"
         results: "Results"
         count:
             one: "%count% result available. Up and down arrows to browse."

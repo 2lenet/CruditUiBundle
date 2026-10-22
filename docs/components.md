@@ -434,7 +434,7 @@ The whole screen on a phone, a window from `md`.
 
 | Prop | Type | Default | |
 |---|---|---|---|
-| `url` | string | required | `GET <url>?q=<text>`, answers `{"groups": [{"id", "label", "results": [{"id", "title", "subtitle", "url"}]}]}`; `subtitle` is optional, a group without result is not shown |
+| `url` | string | required | `GET <url>?q=<text>`, answers `{"groups": [{"id", "label", "results": [{"id", "title", "subtitle", "url"}]}]}`; `subtitle` is optional, a group without result is not shown, a result whose `url` is not http or https (`javascript:`…) is ignored |
 | `title` | string | required | names the dialog (read, not shown) |
 | `label` | string | `title` | names the field |
 | `placeholder` | string | none | |
@@ -445,7 +445,7 @@ The whole screen on a phone, a window from `md`.
 Its `id` is the target of `commandfor`; the attributes go on the `<dialog>`.
 
 Behaviour: a request starts 200 ms after the last key; a newer one cancels the one still running, whose answer is never
-shown. The text of the results is **set as text, never as HTML**; the words typed are marked (`<mark>`, without regard
+shown. The text of the results is **set as text, never as HTML**; the text typed is marked, as one piece and at its first place only (`<mark>`, without regard
 to the accents and the case). The up and down arrows (and <kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd>) change
 the active option, from the last to the first and back; **nothing opens before it is chosen** (<kbd>Enter</kbd> or a
 click), by Turbo Drive when the page has it, else by the browser. The event `2lenet--crudit-ui-bundle--command-palette:select`
