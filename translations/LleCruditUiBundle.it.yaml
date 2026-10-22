@@ -11,6 +11,8 @@ crudit_ui:
     boolean:
         yes: "Sì"
         no: "No"
+    breadcrumb:
+        label: "Percorso di navigazione"
     chip:
         remove: "Rimuovi il filtro %label%"
     language:

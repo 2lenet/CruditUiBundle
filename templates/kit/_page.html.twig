@@ -1,0 +1,26 @@
+{#
+ # Header of a page and breadcrumb (2.2.b). The PageHeader always renders a <h1>: the kit, which has its own, is the
+ # only page with several (an exception written in docs/components.md); each example gets an id of the kit. Below
+ # 768 px, the breadcrumb is only the link "← parent".
+ #}
+{% set breadcrumb = [
+    {label: 'Home', url: '#kit-page'},
+    {label: 'Operations'},
+    {label: 'Visits', url: '#kit-page'},
+    {label: 'VIS-2026-0412'},
+] %}
+<h3 class="crudit-ui-kit__subtitle">Record: breadcrumb, status, metadata and actions</h3>
+<twig:LleCruditUi:PageHeader id="kit-page-header-record" title="Visit VIS-2026-0412" subtitle="Boiler maintenance, Martin residence" :breadcrumb="breadcrumb">
+    <twig:block name="badge"><twig:LleCruditUi:Status tone="warning">To plan</twig:LleCruditUi:Status></twig:block>
+    <twig:block name="meta">Created on 12 October 2026, updated on 21 October 2026</twig:block>
+    <twig:block name="actions">
+        <twig:LleCruditUi:Button icon="edit">Edit</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button variant="primary" icon="add">Plan</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:PageHeader>
+
+<h3 class="crudit-ui-kit__subtitle">Home page: a title only (no breadcrumb with one level)</h3>
+<twig:LleCruditUi:PageHeader id="kit-page-header-home" title="Dashboard" :breadcrumb="[{label: 'Home'}]"/>
+
+<h3 class="crudit-ui-kit__subtitle">Breadcrumb alone</h3>
+<twig:LleCruditUi:Breadcrumb :items="breadcrumb|slice(0, 3)" label="Breadcrumb of the list"/>

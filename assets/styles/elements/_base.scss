@@ -36,11 +36,12 @@ a {
 }
 
 // <main>, focused by a script when the element that had the focus is gone (a closed alert, a dialog whose button was
-// deleted), and <nav>, target of the skip link "Go to the menu": not interactive, no ring around the whole page or
-// the whole menu, even after a key. Not every [tabindex='-1']: the items of a roving tabindex (tabs, menus) are
-// interactive and keep their ring.
+// deleted), <nav>, target of the skip link "Go to the menu", and <h1>, the title of the PageHeader focused when the
+// page changes: not interactive, no ring around the whole page, the whole menu or the title, even after a key. Not
+// every [tabindex='-1']: the items of a roving tabindex (tabs, menus) are interactive and keep their ring.
 main[tabindex='-1']:focus,
-nav[tabindex='-1']:focus {
+nav[tabindex='-1']:focus,
+h1[tabindex='-1']:focus {
     outline: none;
 }
 
