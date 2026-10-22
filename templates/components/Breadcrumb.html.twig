@@ -1,0 +1,36 @@
+{#
+ # Breadcrumb: where the page is, from the home page. A nav named "Breadcrumb", an ordered list; the last item is the
+ # current page (aria-current, never a link). Below 768 px, only the last item with an url before the current page is
+ # shown, as a link "← parent" (without one, the whole nav is hidden). Nothing is rendered with fewer than two items
+ # (the home page).
+ #
+ # Props: items (list of {label, url?}: label already translated; without url, a text), label (name of the nav,
+ # "Breadcrumb" by default, also when empty). Contract: docs/components.md.
+ #}
+{% props items, label = null %}
+{%- if items|length > 1 -%}
+    {%- set last = items|length - 1 -%}
+    {#- -1, not null: 0 == null is true in Twig. -#}
+    {%- set back = -1 -%}
+    {%- for item in items|slice(0, last) -%}
+        {%- if item.url ?? null %}{% set back = loop.index0 %}{% endif -%}
+    {%- endfor -%}
+    {#- Without a level to go back to, the nav is hidden below 768 px: no empty landmark. -#}
+    <nav {{ attributes.defaults({class: 'crudit-ui-breadcrumb' ~ (back == -1 ? ' crudit-ui-breadcrumb--no-back' : ''), 'aria-label': label ?: 'crudit_ui.breadcrumb.label'|trans(domain: 'LleCruditUiBundle')}) }}>
+        <ol class="crudit-ui-breadcrumb__list">
+            {%- for item in items -%}
+                <li class="crudit-ui-breadcrumb__item{{ loop.index0 == back ? ' crudit-ui-breadcrumb__item--back' : '' }}">
+                    {%- if not loop.first %}<span class="crudit-ui-breadcrumb__separator" aria-hidden="true">{{ ui_icon('forward') }}</span>{% endif -%}
+                    {%- if loop.index0 == back %}<span class="crudit-ui-breadcrumb__back" aria-hidden="true">{{ ui_icon('back') }}</span>{% endif -%}
+                    {%- if loop.last -%}
+                        <span class="crudit-ui-breadcrumb__current" aria-current="page">{{ item.label }}</span>
+                    {%- elseif item.url ?? null -%}
+                        <a class="crudit-ui-breadcrumb__link" href="{{ item.url }}">{{ item.label }}</a>
+                    {%- else -%}
+                        <span class="crudit-ui-breadcrumb__text">{{ item.label }}</span>
+                    {%- endif -%}
+                </li>
+            {%- endfor -%}
+        </ol>
+    </nav>
+{%- endif -%}

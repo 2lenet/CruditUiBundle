@@ -11,6 +11,8 @@ crudit_ui:
     boolean:
         yes: "Oui"
         no: "Non"
+    breadcrumb:
+        label: "Fil d'Ariane"
     chip:
         remove: "Retirer le filtre %label%"
     language:

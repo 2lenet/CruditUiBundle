@@ -26,6 +26,7 @@
     @include meta.load-css('components/alert');
     @include meta.load-css('components/avatar');
     @include meta.load-css('components/badge');
+    @include meta.load-css('components/breadcrumb');
     @include meta.load-css('components/button');
     @include meta.load-css('components/command-palette');
     @include meta.load-css('components/dialog');
@@ -36,6 +37,7 @@
     @include meta.load-css('components/kit');
     @include meta.load-css('components/loading');
     @include meta.load-css('components/menu');
+    @include meta.load-css('components/page-header');
     @include meta.load-css('components/progress');
     @include meta.load-css('components/status');
     @include meta.load-css('components/tabs');
