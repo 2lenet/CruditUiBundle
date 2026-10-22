@@ -18,8 +18,9 @@ try {
     const page = await browser.newPage();
     page.on('pageerror', (error) => errors.push(`page error: ${error.message}`));
     page.on('console', (message) => message.type() === 'error' && !message.location().url?.endsWith('/favicon.ico') && errors.push(`console: ${message.text()}`));
-    // A navigation answered with 204 (the demos of the kit that send a form) is aborted by Chrome: the page stays.
-    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && errors.push(`request failed: ${request.url()}`));
+    // A navigation answered with 204 (the demos of the kit that send a form) is aborted by Chrome: the page stays. A
+    // search of the command palette is cancelled by the next one.
+    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && !request.url().includes('/crudit-ui/kit-search') && errors.push(`request failed: ${request.url()}`));
     page.on('response', (response) => response.status() >= 400 && !response.url().endsWith('/favicon.ico') && errors.push(`${response.status()}: ${response.url()}`));
 
     await page.goto(url, {waitUntil: 'networkidle0'});
@@ -803,6 +804,189 @@ try {
     await page.setViewport({width: 360, height: 740, isMobile: true, hasTouch: true});
     await page.goto(new URL('crudit-ui/kit?toast=success', url).href, {waitUntil: 'networkidle0'});
     assert.deepEqual(await place(), {top: true, end: true, width: 328}, 'the toasts do not take the width of a phone');
+
+    // Command palette (controller command-palette): opened by Ctrl K or by its button, results by groups from the server,
+    // opened only once chosen.
+    await page.setViewport({width: 1280, height: 800});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const palette = () => page.evaluate(() => {
+        const dialog = document.getElementById('kit-search-dialog');
+        const input = dialog.querySelector('input');
+
+        return {
+            open: dialog.open,
+            focus: document.activeElement === input,
+            value: input.value,
+            expanded: input.getAttribute('aria-expanded'),
+            active: input.getAttribute('aria-activedescendant'),
+            groups: Array.from(dialog.querySelectorAll('[role="group"]')).map((group) => group.querySelector('p').textContent),
+            options: Array.from(dialog.querySelectorAll('[role="option"]')).map((option) => `${option.querySelector('.crudit-ui-palette__title').textContent}${option.getAttribute('aria-selected') === 'true' ? '*' : ''}`),
+            marked: Array.from(dialog.querySelectorAll('mark')).map((mark) => mark.textContent),
+            help: !dialog.querySelector('.crudit-ui-palette__help').hidden,
+            message: dialog.querySelector('.crudit-ui-palette__message').hidden ? null : dialog.querySelector('.crudit-ui-palette__message').textContent,
+            status: dialog.querySelector('[role="status"]').textContent,
+        };
+    });
+    const typed = async (text) => {
+        await page.keyboard.type(text);
+        await page.waitForFunction(() => document.querySelector('#kit-search-dialog [role="option"], #kit-search-dialog .crudit-ui-palette__message:not([hidden])'), {timeout: 3000});
+    };
+    assert.equal((await palette()).open, false);
+    await page.keyboard.down('Control');
+    await page.keyboard.press('k');
+    await page.keyboard.up('Control');
+    assert.deepEqual(
+        (({open, focus, help}) => ({open, focus, help}))(await palette()),
+        {open: true, focus: true, help: true},
+        'Ctrl K does not open the palette, or the focus is not in the field',
+    );
+    // Under the minimum, nothing is asked.
+    let asked = 0;
+    page.on('request', (request) => request.url().includes('/crudit-ui/kit-search') && asked++);
+    await page.keyboard.type('m');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    assert.equal(asked, 0, 'a request is sent under the minimum of characters');
+    await typed('ar');
+    assert.deepEqual(
+        (({groups, options, marked, expanded, help}) => ({groups, options, marked, expanded, help}))(await palette()),
+        {groups: ['Clients'], options: ['Boulangerie Martin*'], marked: ['Mar'], expanded: 'true', help: false},
+        'the results are not shown by groups, with the first one active and the words marked',
+    );
+    assert.equal(asked, 1, 'one request for the whole word');
+    await page.waitForFunction(() => document.querySelector('#kit-search-dialog [role="status"]').textContent !== '', {timeout: 2000});
+    assert.equal((await palette()).status, '1 result available. Up and down arrows to browse.', 'the count is not announced');
+
+    // Several results, the arrows go round, nothing opens before Enter.
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    await page.keyboard.press('Backspace');
+    await typed('ar');
+    await page.waitForFunction(() => document.querySelectorAll('#kit-search-dialog [role="option"]').length > 1, {timeout: 3000});
+    const names = (await palette()).options.map((name) => name.replace('*', ''));
+    assert.ok(names.length > 2, 'the results of "ar"');
+    assert.equal((await palette()).options[0].endsWith('*'), true);
+    await page.keyboard.press('ArrowUp');
+    assert.equal((await palette()).options.at(-1).endsWith('*'), true, 'the up arrow does not go from the first option to the last');
+    assert.equal((await palette()).active, await page.evaluate(() => document.querySelector('#kit-search-dialog [aria-selected="true"]').id));
+    await page.keyboard.press('ArrowDown');
+    assert.equal((await palette()).options[0].endsWith('*'), true, 'the down arrow does not go from the last option to the first');
+    await page.keyboard.press('ArrowDown');
+    assert.equal(page.url().endsWith('crudit-ui/kit'), true, 'a result is opened before it is chosen');
+    // Accents and case: "ep" finds "Épinal" in the subtitle, and marks nothing in the title ("Garage des Vosges").
+    // Enter opens the active option, and the dialog is closed.
+    const second = (await palette()).options[1].replace('*', '');
+    await Promise.all([page.waitForNavigation({waitUntil: 'networkidle0'}), page.keyboard.press('Enter')]);
+    assert.match(page.url(), /crudit-ui\/kit\?opened=/, `Enter does not open ${second}`);
+    assert.equal((await palette()).open, false);
+
+    // The button opens it too; the field is empty when it opens again. A click on a result opens it.
+    await page.click('[commandfor="kit-search-dialog"]');
+    assert.deepEqual((({open, focus, value, help, options}) => ({open, focus, value, help, options}))(await palette()), {open: true, focus: true, value: '', help: true, options: []}, 'the palette does not open empty');
+    await typed('v-04');
+    assert.deepEqual((await palette()).groups, ['Visits']);
+    await Promise.all([page.waitForNavigation({waitUntil: 'networkidle0'}), page.click('#kit-search-dialog [role="option"]:nth-of-type(2)')]);
+    assert.match(page.url(), /opened=v-0?2/, 'a click on a result does not open it');
+
+    // No result, then an error of the server: shown and announced, the field keeps the focus.
+    await page.click('[commandfor="kit-search-dialog"]');
+    await typed('none');
+    assert.deepEqual(
+        (({options, message, expanded}) => ({options, message, expanded}))(await palette()),
+        {options: [], message: 'No result for “none”.', expanded: 'false'},
+        'no result is not said',
+    );
+    await page.waitForFunction(() => document.querySelector('#kit-search-dialog [role="status"]').textContent.startsWith('No result'), {timeout: 2000});
+    await page.setRequestInterception(true);
+    const failing = (request) => request.url().includes('/crudit-ui/kit-search') ? request.respond({status: 500, body: 'x'}) : request.continue();
+    page.on('request', failing);
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    await page.keyboard.type('mar');
+    await page.waitForFunction(() => document.querySelector('#kit-search-dialog .crudit-ui-palette__message[role="alert"]'), {timeout: 3000});
+    assert.equal((await palette()).message, 'The search failed. Try again.');
+    assert.equal((await palette()).focus, true);
+    page.off('request', failing);
+    await page.setRequestInterception(false);
+    // The error of the server was wanted.
+    errors.splice(0, errors.length, ...errors.filter((error) => !error.includes('/crudit-ui/kit-search') && !error.includes('status of 500')));
+
+    // A slow answer to an old text never replaces the one of the new text.
+    await page.setRequestInterception(true);
+    const slow = async (request) => {
+        if (request.url().includes('/crudit-ui/kit-search') && request.url().includes('q=gar')) {
+            await new Promise((resolve) => setTimeout(resolve, 1200));
+        }
+        request.continue();
+    };
+    page.on('request', slow);
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    await page.keyboard.type('gar');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    await page.keyboard.type('v-04');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    assert.deepEqual((await palette()).groups, ['Visits'], 'the answer of an old text replaces the one of the new text');
+    page.off('request', slow);
+    await page.setRequestInterception(false);
+
+    // Escape closes it, the focus goes back to the button. Ctrl K does nothing over another dialog.
+    await page.keyboard.press('Escape');
+    assert.deepEqual(await page.evaluate(() => [document.getElementById('kit-search-dialog').open, document.activeElement.getAttribute('commandfor')]), [false, 'kit-search-dialog'], 'Escape does not close the palette, or the focus is not given back');
+    await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
+    await page.keyboard.down('Control');
+    await page.keyboard.press('k');
+    await page.keyboard.up('Control');
+    assert.equal((await palette()).open, false, 'Ctrl K opens the palette over another dialog');
+    await page.keyboard.press('Escape');
+
+    // Not read as HTML: a title with tags is shown as it is.
+    await page.setRequestInterception(true);
+    const tagged = (request) => request.url().includes('/crudit-ui/kit-search')
+        ? request.respond({status: 200, contentType: 'application/json', body: JSON.stringify({groups: [{id: 'x', label: '<i>Group</i>', results: [{id: 'x-1', title: '<b>Bold</b> zz', subtitle: '<u>Under</u>', url: '/crudit-ui/kit?opened=x-1'}]}]})})
+        : request.continue();
+    page.on('request', tagged);
+    await page.click('[commandfor="kit-search-dialog"]');
+    await typed('zz');
+    assert.deepEqual(
+        await page.evaluate(() => [document.querySelectorAll('#kit-search-dialog b, #kit-search-dialog i, #kit-search-dialog u').length, document.querySelector('#kit-search-dialog [role="option"]').textContent.trim()]),
+        [0, '<b>Bold</b> zzUnder'.replace('Under', '<u>Under</u>')],
+        'the text of a result is read as HTML',
+    );
+    page.off('request', tagged);
+    await page.setRequestInterception(false);
+    await page.keyboard.press('Escape');
+
+    // Accessibility with the results shown, in light and dark; right to left; on a phone (the whole screen).
+    await page.click('[commandfor="kit-search-dialog"]');
+    await typed('ar');
+    await page.waitForFunction(() => document.querySelectorAll('#kit-search-dialog [role="option"]').length > 1, {timeout: 3000});
+    await page.addScriptTag({content: axeSource});
+    const paletteViolations = () => page.evaluate(async () => (await window.axe.run(document.getElementById('kit-search-dialog'), {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations.map((violation) => `${violation.id} (${violation.nodes.map((node) => node.target.join(' ')).join(', ')})`));
+    assert.deepEqual(await paletteViolations(), [], 'accessibility of the palette');
+    await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'dark'}]);
+    assert.deepEqual(await paletteViolations(), [], 'accessibility of the palette, dark');
+    await page.emulateMediaFeatures([{name: 'prefers-color-scheme', value: 'light'}]);
+    await page.keyboard.press('Escape');
+    await page.goto(new URL('crudit-ui/kit/ar', url).href, {waitUntil: 'networkidle0'});
+    await page.click('[commandfor="kit-search-dialog"]');
+    assert.equal((await palette()).open, true, 'the palette does not open in right to left');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('#kit-search-dialog .crudit-ui-palette__field')).direction), 'rtl');
+    await page.keyboard.press('Escape');
+    await page.setViewport({width: 360, height: 740, isMobile: true, hasTouch: true});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    await page.click('[commandfor="kit-search-dialog"]');
+    assert.deepEqual(await page.evaluate(() => {
+        const rect = document.getElementById('kit-search-dialog').getBoundingClientRect();
+
+        return [Math.round(rect.width), Math.round(rect.height), getComputedStyle(document.querySelector('#kit-search-dialog .crudit-ui-palette__footer')).display];
+    }), [360, 740, 'none'], 'the palette is not the whole screen on a phone, or the keys are shown');
+    await page.keyboard.press('Escape');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

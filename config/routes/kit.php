@@ -27,4 +27,13 @@ return static function (RoutingConfigurator $routes): void {
             'statusCode' => 204,
         ])
         ->methods(['GET']);
+
+    // Results of the command palette of the kit: the groups that contain the text of ?q=, in JSON.
+    $routes->add('crudit_ui_kit_search', '/crudit-ui/kit-search')
+        ->controller(TemplateController::class)
+        ->defaults([
+            'template' => '@LleCruditUi/kit/_search.json.twig',
+            'headers' => ['Content-Type' => 'application/json'],
+        ])
+        ->methods(['GET']);
 };

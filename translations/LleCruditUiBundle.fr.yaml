@@ -20,6 +20,21 @@ crudit_ui:
         light: Clair
         dark: Sombre
         system: Système
+    palette:
+        min_length: "Saisissez au moins %count% caractère.|Saisissez au moins %count% caractères."
+        empty: "Aucun résultat pour « %query% »."
+        error: "La recherche a échoué. Réessayez."
+        loading: "Recherche en cours…"
+        results: "Résultats"
+        count:
+            one: "%count% résultat disponible. Flèches haut et bas pour parcourir."
+            other: "%count% résultats disponibles. Flèches haut et bas pour parcourir."
+        navigate: "naviguer"
+        open: "ouvrir"
+        close: "fermer"
+        key:
+            enter: "Entrée"
+            escape: "Échap"
     state:
         loading: Chargement…
     toast:

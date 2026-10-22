@@ -417,6 +417,45 @@ hidden. An error stays until it is closed. The close button ("Close the message"
 pressed, the focus goes to the next toast, else to the close button of the dialog (or the dialog), to the closest focusable
 container or to `<main>`. The toasts appear with a slide, not when motion is reduced; they are not printed.
 
+### Command palette
+
+#### LleCruditUi:CommandPalette
+
+A search field in a window, which asks the server for results **by groups** as you type and opens the one that is
+chosen: the global search of an application ("a client, an invoice, a screen"). The component knows nothing of what is
+searched: the project (or CruditBundle) answers the address `url`. A native `<dialog>` (controller `dialog`: focus
+trapped, <kbd>Esc</kbd>, click on the backdrop, focus given back) and an ARIA combobox (controller `command-palette`).
+The whole screen on a phone, a window from `md`.
+
+```twig
+<twig:LleCruditUi:Button icon="search" commandfor="global-search" command="show-modal" aria-keyshortcuts="Control+K Meta+K">{{ 'Search'|trans }}</twig:LleCruditUi:Button>
+<twig:LleCruditUi:CommandPalette id="global-search" url="{{ path('app_search') }}" title="{{ 'Global search'|trans }}" placeholder="{{ 'Client, invoice, screen…'|trans }}"/>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `url` | string | required | `GET <url>?q=<text>`, answers `{"groups": [{"id", "label", "results": [{"id", "title", "subtitle", "url"}]}]}`; `subtitle` is optional, a group without result is not shown |
+| `title` | string | required | names the dialog (read, not shown) |
+| `label` | string | `title` | names the field |
+| `placeholder` | string | none | |
+| `help` | string | none | what is searched, read with the field (`aria-describedby`) after "Enter at least 2 characters." |
+| `minLength` | int | `2` | characters before the first request |
+| `shortcut` | bool | `true` | <kbd>Ctrl</kbd> <kbd>K</kbd> and <kbd>Cmd</kbd> <kbd>K</kbd> open the palette, on every page, unless another dialog is open. The browser's own shortcut (the address bar of Firefox) is replaced. **A page has one palette with the shortcut** |
+
+Its `id` is the target of `commandfor`; the attributes go on the `<dialog>`.
+
+Behaviour: a request starts 200 ms after the last key; a newer one cancels the one still running, whose answer is never
+shown. The text of the results is **set as text, never as HTML**; the words typed are marked (`<mark>`, without regard
+to the accents and the case). The up and down arrows (and <kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd>) change
+the active option, from the last to the first and back; **nothing opens before it is chosen** (<kbd>Enter</kbd> or a
+click), by Turbo Drive when the page has it, else by the browser. The event `2lenet--crudit-ui-bundle--command-palette:select`
+(`detail.result`, cancelable) lets the project open the result itself. The field is emptied when the dialog closes.
+
+Accessibility: the combobox pattern (the focus stays in the field, `aria-activedescendant` names the active option,
+`aria-expanded`, groups named by their title); the count of results is announced in a hidden live region 600 ms after
+the last answer, as are "no result" and the error of the search (shown in the window, in `role="alert"`); the keys are
+repeated in the footer, hidden from assistive technologies and from a phone.
+
 ### Collapsibles and tabs
 
 #### LleCruditUi:Disclosure

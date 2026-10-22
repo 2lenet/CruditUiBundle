@@ -1,0 +1,6 @@
+{# Command palette (2.2.c): the button of the page and Ctrl K or Cmd K open it; the results come from crudit_ui_kit_search (a few clients, visits and screens). #}
+<p class="crudit-ui-kit__text">A search field in a window, which asks the server for results by groups as you type. Open it with the button or with <kbd>Ctrl</kbd> <kbd>K</kbd> (<kbd>Cmd</kbd> <kbd>K</kbd> on a Mac), from any page. The arrows change the active option, <kbd>Enter</kbd> opens it; nothing opens before. Try “mar”, “v-04”, “none” (no result).</p>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Button icon="search" commandfor="kit-search-dialog" command="show-modal" aria-keyshortcuts="Control+K Meta+K">Search…</twig:LleCruditUi:Button>
+</div>
+<twig:LleCruditUi:CommandPalette id="kit-search-dialog" url="{{ path('crudit_ui_kit_search') }}" title="Global search" label="Search a client, a visit or a screen" placeholder="Client, visit, screen…" help="The search covers the clients, the visits and the screens."/>

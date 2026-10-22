@@ -20,6 +20,21 @@ crudit_ui:
         light: Hell
         dark: Dunkel
         system: System
+    palette:
+        min_length: "Geben Sie mindestens %count% Zeichen ein.|Geben Sie mindestens %count% Zeichen ein."
+        empty: "Kein Ergebnis für „%query%“."
+        error: "Die Suche ist fehlgeschlagen. Versuchen Sie es erneut."
+        loading: "Suche läuft…"
+        results: "Ergebnisse"
+        count:
+            one: "%count% Ergebnis verfügbar. Mit den Pfeiltasten nach oben und unten durchblättern."
+            other: "%count% Ergebnisse verfügbar. Mit den Pfeiltasten nach oben und unten durchblättern."
+        navigate: "navigieren"
+        open: "öffnen"
+        close: "schließen"
+        key:
+            enter: "Eingabe"
+            escape: "Esc"
     state:
         loading: Wird geladen…
     toast:
