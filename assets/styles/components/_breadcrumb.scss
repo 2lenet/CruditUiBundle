@@ -1,0 +1,65 @@
+@use '../tools/responsive' as *;
+
+// Breadcrumb: the levels above the page, in small text; the current page in the colour of the text. Below 768 px,
+// only the link "← parent" (the item --back). From the crudit-v2 mockup (src/styles/components/_page.scss).
+.crudit-ui-breadcrumb {
+    &__list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1);
+        padding: 0;
+        margin: 0;
+        font-size: var(--font-size-sm);
+        list-style: none;
+    }
+
+    &__item {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: var(--c-text-muted);
+    }
+
+    &__separator {
+        display: inline-flex;
+        font-size: var(--font-size-2xs);
+    }
+
+    &__back {
+        display: none;
+    }
+
+    &__link {
+        color: var(--c-link);
+    }
+
+    &__current {
+        color: var(--c-text);
+        font-weight: var(--font-weight-medium);
+    }
+
+    @include media('<md') {
+        // No level with a link before the current page: no empty landmark.
+        &--no-back {
+            display: none;
+        }
+
+        &__item {
+            display: none;
+        }
+
+        &__item--back {
+            display: inline-flex;
+        }
+
+        &__item--back &__separator {
+            display: none;
+        }
+
+        &__item--back &__back {
+            display: inline-flex;
+            color: var(--c-link);
+        }
+    }
+}

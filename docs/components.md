@@ -485,6 +485,69 @@ prints a page made for it.
 
 Not in this component: a panel loaded when it is opened, the title of the window per tab (dashboard, lot 4.2).
 
+### Page header and breadcrumb
+
+#### LleCruditUi:PageHeader
+
+The header of a page: the breadcrumb, the only `<h1>` of the page with its status, a subtitle, metadata and the
+actions. Nothing about Crudit: the application gives the title and the levels of the breadcrumb.
+
+```twig
+<twig:LleCruditUi:PageHeader title="{{ visit.reference }}" subtitle="{{ visit.client }}" :breadcrumb="[
+    {label: 'Home'|trans, url: path('home')},
+    {label: 'Visits'|trans, url: path('visit_index')},
+    {label: visit.reference},
+]">
+    <twig:block name="badge"><twig:LleCruditUi:Status tone="warning">{{ 'To plan'|trans }}</twig:LleCruditUi:Status></twig:block>
+    <twig:block name="meta">{{ 'Created on %date%'|trans({'%date%': visit.createdAt|ui_date}) }}</twig:block>
+    <twig:block name="actions"><twig:LleCruditUi:Button icon="edit" href="…">{{ 'Edit'|trans }}</twig:LleCruditUi:Button></twig:block>
+</twig:LleCruditUi:PageHeader>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `title` | string | required | text of the `<h1>` |
+| `subtitle` | string | `null` | under the title, muted; not rendered when null or empty |
+| `breadcrumb` | list of `{label, url?}` | `[]` | items of the `Breadcrumb` (see below): none with fewer than two |
+| `titleId` | string | `page-title` | id of the `<h1>` (an `id` passed by the project goes on the root, as for the other components) |
+
+Blocks: `breadcrumb` (the `Breadcrumb` of the prop `breadcrumb`: give the block to replace it), `top` (at the end of
+the line of the breadcrumb: a navigation between records…), `badge` (next to the title: a `Status`), `meta` (under the
+subtitle, small and muted: dates, author), `actions` (at the end of the line of the title; under it below 576 px). The
+zones left empty are not shown: `top` and `actions` without an element (and `top` below 768 px when the breadcrumb is
+hidden), `meta` when it renders nothing but spaces.
+
+Accessibility: **one `<h1>` per page**, this one (the design kit is the only exception: its examples add theirs). It
+has `tabindex="-1"`, so that the application can give it the focus when the page changes without a full load (Turbo):
+a screen reader then starts at the title. **The component does not do it**: it is the job of the application
+(CruditBundle does it for its pages). The title has no focus ring, it is not a control.
+
+One `PageHeader` per page: its `<h1>` has the id `page-title`. Two in the same page (a page under Turbo with a drawer
+that holds another one): give the second its own `titleId`.
+
+#### LleCruditUi:Breadcrumb
+
+Where the page is, from the home page: a `nav` named "Breadcrumb", an ordered list, a chevron between the levels.
+
+```twig
+<twig:LleCruditUi:Breadcrumb :items="[
+    {label: 'Home'|trans, url: path('home')},
+    {label: 'Operations'|trans},
+    {label: 'Visits'|trans},
+]"/>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `items` | list of `{label, url?}` | required | from the home page to the current page; `label` already translated. The last one is the current page: never a link, `aria-current="page"`. Another one without `url` is a text (a group of the menu) |
+| `label` | string | `crudit_ui.breadcrumb.label` | name of the `nav` ("Fil d'Ariane", "Breadcrumb"); an empty one gives the default too |
+
+**Nothing is rendered with fewer than two items** (the home page: a breadcrumb of one level says nothing).
+**Below 768 px**, only the last level with an url before the current page is shown, as a link "← parent" (arrow
+`back`); without such a level, the whole `nav` is hidden (no empty landmark). The link may skip levels without an
+url: Home › Operations (no url) › Settings gives "← Home". The chevrons and the arrow are hidden
+from screen readers and follow the direction of reading. The levels wrap, they are never cut.
+
 ### LleCruditUi:Kit:Section
 
 A section of the design kit page, with its title; used by the kit only.

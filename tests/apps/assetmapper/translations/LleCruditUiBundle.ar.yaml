@@ -2,6 +2,8 @@
 crudit_ui:
     action:
         close: إغلاق
+    breadcrumb:
+        label: مسار التنقل
     language:
         label: اللغة
     theme:

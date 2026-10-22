@@ -1,0 +1,88 @@
+@use '../tools/responsive' as *;
+
+// Header of a page: the breadcrumb (with the zone top at the end of its line), then the title with its status, the
+// subtitle and the metadata, the actions at the end (under the title below 576 px). From the crudit-v2 mockup
+// (src/styles/components/_page.scss and _show.scss).
+.crudit-ui-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+
+    &__top {
+        display: flex;
+        min-height: var(--control-h-small);
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+    }
+
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+    }
+
+    &__heading {
+        min-width: 0;
+    }
+
+    &__title-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2) var(--space-3);
+    }
+
+    &__title {
+        margin: 0;
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-bold);
+        line-height: var(--line-height-tight);
+        letter-spacing: var(--letter-spacing-tight);
+
+        // Focused by the application when the page changes: not a control, no ring, even after a key (as main and nav,
+        // elements/_base.scss)
+        &:focus {
+            outline: none;
+        }
+    }
+
+    &__subtitle {
+        margin: var(--space-1) 0 0;
+        color: var(--c-text-muted);
+    }
+
+    &__meta {
+        margin-top: var(--space-1);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+
+        @include media('<sm') {
+            width: 100%;
+        }
+    }
+
+    // Nothing passed: no breadcrumb, no action. Without any element, not :empty: a block written on several lines
+    // that renders nothing (no breadcrumb on the home page) leaves spaces. The metadata are left out by the template.
+    &__top:not(:has(> *)),
+    &__actions:not(:has(> *)) {
+        display: none;
+    }
+
+    // Below 768 px, a breadcrumb without a level to go back to is hidden: so is the zone, unless the block top has
+    // something
+    @include media('<md') {
+        &__top:not(:has(> :not(.crudit-ui-breadcrumb--no-back))) {
+            display: none;
+        }
+    }
+}

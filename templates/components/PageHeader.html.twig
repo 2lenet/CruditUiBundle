@@ -1,0 +1,31 @@
+{#
+ # Header of a page: the breadcrumb, the only <h1> of the page with its status, a subtitle, metadata and the actions.
+ # The title can take the focus (tabindex -1): the application gives it the focus when the page changes (not this
+ # component), so a screen reader starts there.
+ #
+ # Props: title (the <h1>), subtitle, breadcrumb (items of the Breadcrumb: list of {label, url?}), titleId (id of the
+ # <h1>, page-title; an id passed by the project goes on the root). Blocks: breadcrumb (the Breadcrumb of the prop
+ # breadcrumb; to replace it), top (at the end of the line of the breadcrumb), badge (next to the title: a Status), meta
+ # (under the subtitle: dates…), actions. Contract: docs/components.md.
+ #}
+{% props title, subtitle = null, breadcrumb = [], titleId = 'page-title' %}
+<div {{ attributes.defaults({class: 'crudit-ui-page-header'}) }}>
+    {#- top and actions: hidden in CSS without an element (the breadcrumb may be hidden on a phone). -#}
+    <div class="crudit-ui-page-header__top">
+        {%- block breadcrumb %}<twig:LleCruditUi:Breadcrumb :items="breadcrumb"/>{% endblock -%}
+        {%- block top %}{% endblock -%}
+    </div>
+    <div class="crudit-ui-page-header__row">
+        <div class="crudit-ui-page-header__heading">
+            <div class="crudit-ui-page-header__title-row">
+                <h1 id="{{ titleId }}" class="crudit-ui-page-header__title" tabindex="-1">{{ title }}</h1>
+                {%- block badge %}{% endblock -%}
+            </div>
+            {%- if subtitle is not null and subtitle != '' %}<p class="crudit-ui-page-header__subtitle">{{ subtitle }}</p>{% endif -%}
+            {#- Text, not elements: rendered only when the block gives more than spaces (an {% if %} on several lines) -#}
+            {%- set meta -%}{%- block meta %}{% endblock -%}{%- endset -%}
+            {%- if meta|trim is not empty %}<div class="crudit-ui-page-header__meta">{{ meta }}</div>{% endif -%}
+        </div>
+        <div class="crudit-ui-page-header__actions">{%- block actions %}{% endblock -%}</div>
+    </div>
+</div>
