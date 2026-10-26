@@ -17,6 +17,29 @@ crudit_ui:
         remove: "Remove the filter %label%"
     language:
         label: Language
+    table:
+        loading: "Loading the list…"
+        error: "The list could not be loaded"
+        error_text: "The server did not answer."
+        retry: "Try again"
+        empty: "No result"
+        order: "Order"
+        select_page: "Select all the rows of the page"
+        select_all_cards: "Select all on the page"
+        select: "Select %label%"
+        info: "Help on the column %label%"
+        actions: "Actions"
+        subtotal: "Subtotal %group%"
+        subtotal_cards: "Subtotal %group%:"
+        total: "Total"
+        more_actions: "More actions for %label%"
+        position: "Position %position% of %total%"
+        moved: "Moved to position %position% of %total%"
+        failed: "The order could not be saved. The rows are back in their place."
+        sort_help: "Move the row with the up and down arrows."
+        move: "Move %label%, position %position% of %total%"
+        up: "Move up"
+        down: "Move down"
     theme:
         label: Appearance
         light: Light

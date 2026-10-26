@@ -43,6 +43,18 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "table": {
+                "main": "dist/controllers/table_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "table-sort": {
+                "main": "dist/controllers/table_sort_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
+                "enabled": true
+            },
             "tabs": {
                 "main": "dist/controllers/tabs_controller.js",
                 "webpackMode": "eager",

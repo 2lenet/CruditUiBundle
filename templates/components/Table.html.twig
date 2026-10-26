@@ -1,0 +1,217 @@
+{#
+ # Table: the rows of a list, a table from `md` up and cards below (the same data, one of the two is shown by the
+ # CSS). It knows nothing of Crudit: columns and rows are arrays, the cells are HTML already rendered and escaped by
+ # the caller. Used by the list and the sublist of CruditBundle and by the List widget of DashboardBundle.
+ #
+ # Props: id, caption (read, not shown), columns, rows (of the page), groups (replace rows: one or two levels, each
+ # with its subtotals), totals, totalLabel ("Total"), sort ({column, dir}: aria-sort), selectable, sortable (true, or
+ # {url, token, tokenHeader, disabledReason}: manual order; the token is sent in the header X-CSRF-Token, or the one named), state (ready, loading, empty, error; empty is also chosen when there is no
+ # row), retryUrl (the "Try again" link of the error state).
+ # The page has each id once: the table carries the ids of the rows, cells and totals (`domId`, `id`), the cards
+ # repeat them as data-row-id and data-cell-id.
+ # Blocks: before (above the table), empty (the empty state), footer (under the table: the pager).
+ # Controllers: table, and table-sort when sortable. Contract and shape of the data: docs/components.md.
+ #}
+{% props id, caption, columns, rows = [], groups = [], totals = [], totalLabel = null, sort = null, selectable = false, sortable = false, state = 'ready', retryUrl = null %}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set controller = '2lenet--crudit-ui-bundle--table' -%}
+{%- set sorter = '2lenet--crudit-ui-bundle--table-sort' -%}
+{%- set visible = columns|filter(col => not (col.hidden ?? false)) -%}
+{%- set sortUrl = sortable is iterable ? (sortable.url ?? null) : null -%}
+{%- set sortReason = sortable is iterable ? (sortable.disabledReason ?? null) : null -%}
+{%- set manual = sortable is iterable ? sortUrl is not null : sortable -%}
+{#- The rows of all the groups, to know whether there is any row and any action. -#}
+{%- set flat = rows -%}
+{%- if groups -%}
+    {%- set flat = [] -%}
+    {%- for grp in groups -%}
+        {%- for child in ((grp.children ?? null) ?: [grp]) %}{% set flat = flat|merge(child.rows) %}{% endfor -%}
+    {%- endfor -%}
+{%- endif -%}
+{%- if state == 'ready' and not flat %}{% set state = 'empty' %}{% endif -%}
+{%- set withActions = flat|filter(item => item.actions ?? null)|length > 0 -%}
+{%- set leading = (manual ? 1 : 0) + (selectable ? 1 : 0) -%}
+{%- set span = leading + visible|length + (withActions ? 1 : 0) -%}
+{%- set standalone = totals|filter(tot => tot.standalone ?? false) -%}
+{%- set aligned = totals|filter(tot => not (tot.standalone ?? false)) -%}
+{%- set root = {id: id, class: 'crudit-ui-table', 'data-controller': controller ~ (manual ? ' ' ~ sorter : '')} -%}
+{%- if manual -%}
+    {%- set root = root|merge({
+        ('data-' ~ sorter ~ '-url-value'): sortUrl,
+        ('data-' ~ sorter ~ '-token-value'): sortable is iterable ? (sortable.token ?? '') : '',
+        ('data-' ~ sorter ~ '-token-header-value'): sortable is iterable ? (sortable.tokenHeader ?? 'X-CSRF-Token') : 'X-CSRF-Token',
+        ('data-' ~ sorter ~ '-disabled-value'): sortReason is not null ? 'true' : 'false',
+        ('data-' ~ sorter ~ '-moved-value'): 'crudit_ui.table.moved'|trans(domain: domain),
+        ('data-' ~ sorter ~ '-failed-value'): 'crudit_ui.table.failed'|trans(domain: domain),
+        ('data-' ~ sorter ~ '-refused-value'): sortReason ?? ('crudit_ui.table.sort_help'|trans(domain: domain)),
+        ('data-' ~ sorter ~ '-position-value'): 'crudit_ui.table.position'|trans(domain: domain),
+    }) -%}
+{%- endif -%}
+<div {{ attributes.defaults(root) }}>
+    {%- block before %}{% endblock -%}
+
+    {%- if state == 'loading' -%}
+        <div class="crudit-ui-table__state" aria-busy="true">
+            <span class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.loading'|trans(domain: domain) }}</span>
+            {%- for line in 1..5 %}<twig:LleCruditUi:Skeleton variant="cell"/>{% endfor -%}
+        </div>
+    {%- elseif state == 'error' -%}
+        <twig:LleCruditUi:Alert tone="danger" role="alert" title="{{ 'crudit_ui.table.error'|trans(domain: domain) }}">
+            {{ 'crudit_ui.table.error_text'|trans(domain: domain) }}
+            <twig:block name="actions">{% if retryUrl is not null %}<twig:LleCruditUi:Button size="small" href="{{ retryUrl }}">{{ 'crudit_ui.table.retry'|trans(domain: domain) }}</twig:LleCruditUi:Button>{% endif %}</twig:block>
+        </twig:LleCruditUi:Alert>
+    {%- elseif state == 'empty' -%}
+        <div class="crudit-ui-table__state">
+            {%- block empty -%}
+                <twig:LleCruditUi:EmptyState title="{{ 'crudit_ui.table.empty'|trans(domain: domain) }}" :level="2"/>
+            {%- endblock -%}
+        </div>
+    {%- else -%}
+        {#- Second scrollbar, above the table, shown when it overflows. A copy of the one below: hidden from assistive technologies, out of the tab order. -#}
+        <div class="crudit-ui-table__scroll-top" hidden aria-hidden="true" tabindex="-1" data-{{ controller }}-target="topBar" data-action="scroll->{{ controller }}#syncFromTop">
+            <div class="crudit-ui-table__scroll-spacer" data-{{ controller }}-target="spacer"></div>
+        </div>
+        {%- if manual -%}
+            <p class="crudit-ui-visually-hidden" id="{{ id }}-sort-help">{{ 'crudit_ui.table.sort_help'|trans(domain: domain) }}{% if sortReason is not null %} {{ sortReason }}{% endif %}</p>
+            <p class="crudit-ui-visually-hidden" role="status" data-{{ sorter }}-target="status"></p>
+        {%- endif -%}
+        <div class="crudit-ui-table__wrap{{ leading ? ' crudit-ui-table__wrap--lead' : '' }}" data-{{ controller }}-target="wrap" data-action="scroll->{{ controller }}#syncFromWrap">
+            <table class="crudit-ui-table__table" data-{{ controller }}-target="table">
+                <caption class="crudit-ui-visually-hidden">{{ caption }}</caption>
+                <thead>
+                    <tr>
+                        {%- if manual %}<th scope="col" class="crudit-ui-table__lead"><span class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.order'|trans(domain: domain) }}</span></th>{% endif -%}
+                        {%- if selectable -%}
+                            <th scope="col" class="crudit-ui-table__lead">
+                                <input type="checkbox" class="crudit-ui-table__check" id="{{ id }}-select-page" data-{{ controller }}-target="selectAll" data-action="{{ controller }}#togglePage">
+                                <label for="{{ id }}-select-page" class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.select_page'|trans(domain: domain) }}</label>
+                            </th>
+                        {%- endif -%}
+                        {%- for col in visible -%}
+                            {%- set sorted = sort is not null and sort.column == col.id -%}
+                            <th scope="col" class="crudit-ui-table__heading{{ (col.align ?? 'start') == 'end' ? ' crudit-ui-table__heading--end' : '' }}{{ (col.primary ?? false) ? ' crudit-ui-table__cell--primary' : '' }}{{ (col.priority ?? null) ? ' crudit-ui-table__cell--' ~ col.priority : '' }}"
+                                {%- if col.sortUrl ?? null %} aria-sort="{{ sorted ? (sort.dir == 'asc' ? 'ascending' : 'descending') : 'none' }}"{% endif %}>
+                                <div class="crudit-ui-table__heading-inner">
+                                    {%- if col.sortUrl ?? null -%}
+                                        <a class="crudit-ui-table__sort" href="{{ col.sortUrl }}">{{ col.label }}{{ ui_icon(sorted ? (sort.dir == 'asc' ? 'sort-asc' : 'sort-desc') : 'sort', 'crudit-ui-table__sort-icon') }}</a>
+                                    {%- else -%}
+                                        {{ col.label }}
+                                    {%- endif -%}
+                                    {%- if col.info ?? null -%}
+                                        <twig:LleCruditUi:Dropdown id="{{ id }}-info-{{ col.id }}" floating iconOnly icon="info" size="small" align="start" label="{{ 'crudit_ui.table.info'|trans({'%label%': col.label}, domain) }}" panel:class="crudit-ui-table__info">
+                                            <p class="crudit-ui-table__info-text">{{ col.info }}</p>
+                                        </twig:LleCruditUi:Dropdown>
+                                    {%- endif -%}
+                                </div>
+                            </th>
+                        {%- endfor -%}
+                        {%- if withActions %}<th scope="col" class="crudit-ui-table__actions"><span class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.actions'|trans(domain: domain) }}</span></th>{% endif -%}
+                    </tr>
+                </thead>
+
+                {%- if groups -%}
+                    {%- for grp in groups -%}
+                        {%- set children = (grp.children ?? null) ?: [grp] -%}
+                        <tbody class="crudit-ui-table__group" data-group="{{ grp.key }}">
+                            <tr class="crudit-ui-table__group-row">
+                                <th colspan="{{ span }}" scope="rowgroup" class="crudit-ui-table__group-cell">
+                                    <button type="button" class="crudit-ui-table__group-toggle" aria-expanded="true" data-action="{{ controller }}#toggleGroup">
+                                        {{- ui_icon('dropdown', 'crudit-ui-table__group-chevron') }}{{ grp.label }}
+                                        {%- if grp.count is defined and grp.count is not null %} <span class="crudit-ui-table__group-count">{{ grp.count }}</span>{% endif -%}
+                                    </button>
+                                </th>
+                            </tr>
+                            {%- for child in children -%}
+                                {%- if grp.children ?? null %}
+                                    <tr class="crudit-ui-table__group-row crudit-ui-table__group-row--level2" data-group-body>
+                                        <th colspan="{{ span }}" scope="rowgroup" class="crudit-ui-table__group-cell">{{ child.label }}
+                                            {%- if child.count is defined and child.count is not null %} <span class="crudit-ui-table__group-count">{{ child.count }}</span>{% endif -%}
+                                        </th>
+                                    </tr>
+                                {%- endif -%}
+                                {%- for item in child.rows -%}
+                                    <twig:LleCruditUi:Table:Row :tableId="id" :columns="visible" :row="item" :selectable="selectable" :sortable="manual" :sortDisabled="sortReason" :position="loop.index" :count="child.rows|length" :withActions="withActions" data-group-body/>
+                                {%- endfor -%}
+                            {%- endfor -%}
+                            {%- if grp.subtotals ?? null %}
+                                <tr class="crudit-ui-table__total crudit-ui-table__total--sub" data-group-body>
+                                    {%- if leading %}<td colspan="{{ leading }}"></td>{% endif -%}
+                                    {%- for col in visible -%}
+                                        {%- if loop.first -%}
+                                            <th scope="row" class="crudit-ui-table__total-label">{{ 'crudit_ui.table.subtotal'|trans({'%group%': grp.label}, domain) }}</th>
+                                        {%- else -%}
+                                            <td class="crudit-ui-table__cell{{ (col.align ?? 'start') == 'end' ? ' crudit-ui-table__cell--end' : '' }}">{% set subtotal = grp.subtotals[col.id] ?? '' %}{{ subtotal is iterable ? (subtotal.html ?? '')|raw : subtotal }}</td>
+                                        {%- endif -%}
+                                    {%- endfor -%}
+                                    {%- if withActions %}<td></td>{% endif -%}
+                                </tr>
+                            {%- endif -%}
+                        </tbody>
+                    {%- endfor -%}
+                {%- else -%}
+                    <tbody>
+                        {%- for item in rows -%}
+                            <twig:LleCruditUi:Table:Row :tableId="id" :columns="visible" :row="item" :selectable="selectable" :sortable="manual" :sortDisabled="sortReason" :position="loop.index" :count="rows|length" :withActions="withActions"/>
+                        {%- endfor -%}
+                    </tbody>
+                {%- endif -%}
+
+                {%- if aligned -%}
+                    <tfoot>
+                        <tr class="crudit-ui-table__total">
+                            {%- if leading %}<td colspan="{{ leading }}"></td>{% endif -%}
+                            {%- for col in visible -%}
+                                {%- if loop.first -%}
+                                    <th scope="row" class="crudit-ui-table__total-label">{{ totalLabel ?? ('crudit_ui.table.total'|trans(domain: domain)) }}</th>
+                                {%- else -%}
+                                    {%- set total = aligned|filter(tot => tot.column == col.id)|first -%}
+                                    <td{% if total and (total.id ?? null) %} id="{{ total.id }}"{% endif %} class="crudit-ui-table__cell{{ (col.align ?? 'start') == 'end' ? ' crudit-ui-table__cell--end' : '' }}">{{ (total ? total.html : '')|raw }}</td>
+                                {%- endif -%}
+                            {%- endfor -%}
+                            {%- if withActions %}<td></td>{% endif -%}
+                        </tr>
+                    </tfoot>
+                {%- endif -%}
+            </table>
+        </div>
+
+        {#- Cards, below md: the same rows, the columns marked `card`. -#}
+        <div class="crudit-ui-table__cards">
+            {%- if selectable -%}
+                <label class="crudit-ui-table__card-all"><input type="checkbox" class="crudit-ui-table__check" data-{{ controller }}-target="selectAllCards" data-action="{{ controller }}#togglePage"> {{ 'crudit_ui.table.select_all_cards'|trans(domain: domain) }}</label>
+            {%- endif -%}
+            {%- for grp in (groups ?: [{label: null, rows: rows}]) -%}
+                {%- if grp.label %}<h3 class="crudit-ui-table__card-group">{{ grp.label }}{% if grp.count is defined and grp.count is not null %} <span class="crudit-ui-table__group-count">{{ grp.count }}</span>{% endif %}</h3>{% endif -%}
+                {#- One list per run of rows (the group, or each subgroup), like the table: a row moves inside its run. -#}
+                {%- for child in ((grp.children ?? null) ?: [grp]) -%}
+                    {%- if grp.children ?? null %}<h4 class="crudit-ui-table__card-group crudit-ui-table__card-group--level2">{{ child.label }}{% if child.count is defined and child.count is not null %} <span class="crudit-ui-table__group-count">{{ child.count }}</span>{% endif %}</h4>{% endif -%}
+                    <ul class="crudit-ui-table__card-list">
+                        {%- for item in child.rows -%}
+                            <li{% if item.domId ?? null %} data-row-id="{{ item.domId }}"{% endif %} data-id="{{ item.id }}" class="crudit-ui-table__card{{ (item.tone ?? null) ? ' crudit-ui-table__card--' ~ item.tone : '' }}{{ (item.selected ?? false) ? ' crudit-ui-table__card--selected' : '' }}">
+                                <twig:LleCruditUi:Table:Row variant="card" :tableId="id" :columns="visible" :row="item" :selectable="selectable" :sortable="manual" :sortDisabled="sortReason" :position="loop.index" :count="child.rows|length"/>
+                            </li>
+                        {%- endfor -%}
+                    </ul>
+                {%- endfor -%}
+                {%- if grp.subtotals ?? null %}
+                    <p class="crudit-ui-table__card-subtotal">{{ 'crudit_ui.table.subtotal_cards'|trans({'%group%': grp.label}, domain) }}
+                        {%- for col in visible|filter(c => grp.subtotals[c.id] ?? null) %}{% set subtotal = grp.subtotals[col.id] %} {{ col.label }} {{ subtotal is iterable ? (subtotal.html ?? '')|raw : subtotal }}{{ loop.last ? '' : ' ·' }}{% endfor -%}
+                    </p>
+                {%- endif -%}
+            {%- endfor -%}
+            {%- if aligned %}
+                <dl class="crudit-ui-table__totals">
+                    {%- for tot in aligned %}<div class="crudit-ui-table__totals-item"><dt>{{ tot.label ?? totalLabel ?? ('crudit_ui.table.total'|trans(domain: domain)) }}</dt><dd{% if tot.id ?? null %} data-cell-id="{{ tot.id }}"{% endif %}>{{ tot.html|raw }}</dd></div>{% endfor -%}
+                </dl>
+            {%- endif -%}
+        </div>
+
+        {%- if standalone -%}
+            <dl class="crudit-ui-table__totals crudit-ui-table__totals--standalone">
+                {%- for tot in standalone %}<div class="crudit-ui-table__totals-item"><dt>{{ tot.label }}</dt><dd{% if tot.id ?? null %} id="{{ tot.id }}"{% endif %}>{{ tot.html|raw }}</dd></div>{% endfor -%}
+            </dl>
+        {%- endif -%}
+    {%- endif -%}
+
+    {%- block footer %}{% endblock -%}
+</div>

@@ -1,0 +1,95 @@
+{#
+ # A row of a Table (`row`: a <tr>), or the content of one of its cards (`card`: a header with the main cell, the
+ # selection and the actions, then the columns marked `card` as a list of labels and values). Used by Table; a project
+ # that overrides it keeps the props.
+ #
+ # Props: tableId, columns (the visible ones), row ({id, label, url, tone, selected, actions, cells: {column id: html,
+ # or {html, secondary, url}}}), selectable, sortable (the handle), sortDisabled (why the order cannot change now),
+ # position and count (in its group, read by the handle), withActions, variant (row, card).
+ # The id of the row (`domId`) and of a cell (`{id}`) go on the row and the cell of the table, and as data-row-id and
+ # data-cell-id on the card: the page has each id once, and a script refreshes the table and the card by one id.
+ # The html of a cell is rendered and escaped by the caller; a plain string is text, escaped here. `secondary`: a second
+ # line (a text, or {text, tone}). Contract: docs/components.md.
+ #}
+{% props tableId, columns, row, selectable = false, sortable = false, sortDisabled = null, position = 1, count = 1, withActions = true, variant = 'row' %}
+{%- import _self as cells -%}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set controller = '2lenet--crudit-ui-bundle--table' -%}
+{%- set uid = tableId ~ '-' ~ row.id ~ (variant == 'card' ? '-card' : '') -%}
+{%- set label = row.label ?? row.id -%}
+{%- set selected = row.selected ?? false -%}
+{#- The id of a cell is the one of the table (the server refreshes a cell by its id, `fieldsToUpdate` of CruditBundle): the card, which repeats the cell, carries it as data-cell-id, so that one id is in the page once. -#}
+{%- macro cell(cell, url) -%}
+    {%- set html = cell is iterable ? (cell.html ?? '') : cell -%}
+    {%- set secondary = cell is iterable ? (cell.secondary ?? null) : null -%}
+    {%- set url = cell is iterable ? (cell.url ?? url) : url -%}
+    <span class="crudit-ui-table__value">
+        {%- if url is not null %}<a class="crudit-ui-table__link" href="{{ url }}">{% endif -%}
+        {%- if cell is iterable %}{{ html|raw }}{% else %}{{ html }}{% endif -%}
+        {%- if url is not null %}</a>{% endif -%}
+        {%- if secondary is not null -%}
+            {%- set text = secondary is iterable ? secondary.text : secondary -%}
+            {%- set tone = secondary is iterable ? (secondary.tone ?? null) : null -%}
+            <span class="crudit-ui-table__secondary{{ tone ? ' crudit-ui-table__secondary--' ~ tone : '' }}">{{ text }}</span>
+        {%- endif -%}
+    </span>
+{%- endmacro -%}
+{%- if variant == 'card' -%}
+    <div {{ attributes.defaults({class: 'crudit-ui-table__card-header'}) }}>
+        {%- if selectable %}
+            <input type="checkbox" class="crudit-ui-table__check" id="{{ uid }}-select" data-{{ controller }}-target="rowCheck" data-action="{{ controller }}#toggleRow" data-id="{{ row.id }}"{{ selected ? ' checked' : '' }}>
+            <label for="{{ uid }}-select" class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.select'|trans({'%label%': label}, domain) }}</label>
+        {% endif -%}
+        {%- for col in columns|filter(col => col.primary ?? false)|slice(0, 1) -%}
+            {%- set cellId = (row.cells[col.id] ?? null) is iterable ? (row.cells[col.id].id ?? null) : null -%}
+            <span class="crudit-ui-table__card-title"{% if cellId is not null %} data-cell-id="{{ cellId }}"{% endif %}>{{ cells.cell(row.cells[col.id] ?? '', row.url ?? null) }}</span>
+        {%- endfor -%}
+        {%- if withActions %}<twig:LleCruditUi:Table:Actions id="{{ uid }}" label="{{ label }}" :actions="row.actions ?? []"/>{% endif -%}
+    </div>
+    <dl class="crudit-ui-table__card-fields">
+        {%- for col in columns|filter(col => (col.card ?? false) and not (col.primary ?? false)) -%}
+            {%- set cellId = (row.cells[col.id] ?? null) is iterable ? (row.cells[col.id].id ?? null) : null -%}
+            <div class="crudit-ui-table__card-field"><dt>{{ col.label }}</dt><dd{% if cellId is not null %} data-cell-id="{{ cellId }}"{% endif %}>{{ cells.cell(row.cells[col.id] ?? '', null) }}</dd></div>
+        {%- endfor -%}
+    </dl>
+    {%- if sortable -%}
+        <div class="crudit-ui-table__card-order">
+            <span class="crudit-ui-table__card-position">{{ 'crudit_ui.table.position'|trans({'%position%': position, '%total%': count}, domain) }}</span>
+            <twig:LleCruditUi:Button size="small" icon="arrow-up" :disabled="position == 1 or sortDisabled is not null" data-action="2lenet--crudit-ui-bundle--table-sort#up" data-id="{{ row.id }}">{{ 'crudit_ui.table.up'|trans(domain: domain) }}<span class="crudit-ui-visually-hidden"> {{ label }}</span></twig:LleCruditUi:Button>
+            <twig:LleCruditUi:Button size="small" icon="arrow-down" :disabled="position == count or sortDisabled is not null" data-action="2lenet--crudit-ui-bundle--table-sort#down" data-id="{{ row.id }}">{{ 'crudit_ui.table.down'|trans(domain: domain) }}<span class="crudit-ui-visually-hidden"> {{ label }}</span></twig:LleCruditUi:Button>
+        </div>
+    {%- endif -%}
+{%- else -%}
+    {%- set defaults = {
+        class: 'crudit-ui-table__row' ~ ((row.tone ?? null) ? ' crudit-ui-table__row--' ~ row.tone : '') ~ (selected ? ' crudit-ui-table__row--selected' : ''),
+        'data-id': row.id,
+    } -%}
+    {%- if row.domId ?? null %}{% set defaults = defaults|merge({id: row.domId}) %}{% endif -%}
+    {%- if row.url ?? null %}{% set defaults = defaults|merge({'data-url': row.url, 'data-action': 'click->' ~ controller ~ '#rowClick'}) %}{% endif -%}
+    <tr {{ attributes.defaults(defaults) }}>
+        {%- if sortable -%}
+            <td class="crudit-ui-table__lead">
+                <button type="button" class="crudit-ui-table__handle"{% if sortDisabled is not null %} aria-disabled="true"{% endif %} data-action="mousedown->2lenet--crudit-ui-bundle--table-sort#arm keydown->2lenet--crudit-ui-bundle--table-sort#key" aria-describedby="{{ tableId }}-sort-help">
+                    {{- ui_icon('drag') -}}
+                    <span class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.move'|trans({'%label%': label, '%position%': position, '%total%': count}, domain) }}</span>
+                </button>
+            </td>
+        {%- endif -%}
+        {%- if selectable -%}
+            <td class="crudit-ui-table__lead">
+                <input type="checkbox" class="crudit-ui-table__check" id="{{ uid }}-select" data-{{ controller }}-target="rowCheck" data-action="{{ controller }}#toggleRow" data-id="{{ row.id }}"{{ selected ? ' checked' : '' }}>
+                <label for="{{ uid }}-select" class="crudit-ui-visually-hidden">{{ 'crudit_ui.table.select'|trans({'%label%': label}, domain) }}</label>
+            </td>
+        {%- endif -%}
+        {%- for col in columns -%}
+            {%- set classes = 'crudit-ui-table__cell' ~ ((col.align ?? 'start') == 'end' ? ' crudit-ui-table__cell--end' : '') ~ (col.priority is defined and col.priority ? ' crudit-ui-table__cell--' ~ col.priority : '') -%}
+            {%- set cellId = (row.cells[col.id] ?? null) is iterable ? (row.cells[col.id].id ?? null) : null -%}
+            {%- if col.primary ?? false -%}
+                <th scope="row"{% if cellId is not null %} id="{{ cellId }}"{% endif %} class="{{ classes }} crudit-ui-table__cell--primary">{{ cells.cell(row.cells[col.id] ?? '', row.url ?? null) }}</th>
+            {%- else -%}
+                <td{% if cellId is not null %} id="{{ cellId }}"{% endif %} class="{{ classes }}">{{ cells.cell(row.cells[col.id] ?? '', null) }}</td>
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if withActions %}<td class="crudit-ui-table__actions"><twig:LleCruditUi:Table:Actions id="{{ uid }}" label="{{ label }}" :actions="row.actions ?? []"/></td>{% endif -%}
+    </tr>
+{%- endif -%}

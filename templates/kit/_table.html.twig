@@ -1,0 +1,67 @@
+{# Table (3.1.b): the rows of a list, as a table from md up and as cards below. #}
+{% set columns = [
+    {id: 'ref', label: 'Visit', primary: true, card: true, sortUrl: '#kit-table'},
+    {id: 'customer', label: 'Customer', card: true, sortUrl: '#kit-table', info: 'The customer who ordered the visit. A visit has one customer.'},
+    {id: 'status', label: 'Status', card: true},
+    {id: 'date', label: 'Planned', card: true, sortUrl: '#kit-table'},
+    {id: 'duration', label: 'Duration', align: 'end', priority: 'medium'},
+    {id: 'amount', label: 'Amount', align: 'end', card: true, sortUrl: '#kit-table'},
+    {id: 'zone', label: 'Zone', priority: 'low', hidden: false},
+] %}
+{% set late = {text: '12 days late', tone: 'danger'} %}
+{% set actions = [
+    {label: 'Edit', icon: 'edit', url: '#kit-table', visible: true},
+    {label: 'Duplicate', icon: 'copy', url: '#kit-table'},
+    {label: 'Archive', icon: 'locked', disabledReason: 'Only a finished visit can be archived'},
+    {label: 'Delete', icon: 'delete', tone: 'danger'},
+] %}
+{% set rows = [
+    {id: '412', label: 'V-0412', url: '#kit-table', actions: actions, cells: {
+        ref: 'V-0412', customer: {html: 'Acme Industries', secondary: 'Lyon'}, status: {html: '<span class="crudit-ui-status crudit-ui-tone--info crudit-ui-status--small"><span class="crudit-ui-status__dot" aria-hidden="true"></span>To plan</span>'},
+        date: {html: '03/09/2026', secondary: late}, duration: '2 h 30', amount: '1 240,00 €', zone: 'Rhône',
+    }},
+    {id: '413', label: 'V-0413', url: '#kit-table', tone: 'danger', actions: actions, cells: {
+        ref: 'V-0413', customer: {html: 'Delta Logistics', secondary: 'Marseille'}, status: 'Late',
+        date: {html: '29/08/2026', secondary: late}, duration: '1 h', amount: '380,00 €', zone: 'Bouches-du-Rhône',
+    }},
+    {id: '414', label: 'V-0414', url: '#kit-table', selected: true, actions: actions, cells: {
+        ref: 'V-0414', customer: 'Omega Retail', status: 'Planned', date: '14/09/2026', duration: '4 h', amount: '2 910,00 €', zone: 'Nord',
+    }},
+    {id: '415', label: 'V-0415', tone: 'warning', actions: [], cells: {
+        ref: 'V-0415', customer: 'Sigma Foods', status: 'On hold', date: '—', duration: '—', amount: '0,00 €', zone: 'Gironde',
+    }},
+] %}
+
+<h3 class="crudit-ui-kit__subtitle">Default: sort, help on a column, row actions, a tone, a selected row</h3>
+<twig:LleCruditUi:Table id="kit-table-default" caption="Visits, sorted by planned date" :columns="columns" :rows="rows" :sort="{column: 'date', dir: 'asc'}" selectable>
+    <twig:block name="before"><p class="crudit-ui-kit__text">Rows with an address are clickable with the mouse; by keyboard, the link of the first column does the job.</p></twig:block>
+    <twig:block name="footer"><p class="crudit-ui-kit__text">The pager of the list goes in the footer block.</p></twig:block>
+</twig:LleCruditUi:Table>
+
+<h3 class="crudit-ui-kit__subtitle">Groups, subtotals, totals, and the manual order inside a group</h3>
+<twig:LleCruditUi:Table id="kit-table-groups" caption="Invoices by month" :columns="columns"
+    :groups="[
+        {key: 'aug', label: 'August 2026', count: '2 invoices', rows: [rows[0], rows[1]], subtotals: {amount: '1 620,00 €'}},
+        {key: 'sep', label: 'September 2026', count: '2 invoices', children: [
+            {label: 'Planned', count: '1 invoice', rows: [rows[2]]},
+            {label: 'On hold', count: '1 invoice', rows: [rows[3]]},
+        ], subtotals: {amount: '2 910,00 €'}},
+    ]"
+    :sortable="{url: path('crudit_ui_kit_table_sort')}"
+    :totals="[{column: 'amount', label: 'Amount', html: '4 530,00 €', id: 'kit-total-amount'}, {label: 'Average amount', html: '1 132,50 €', standalone: true}]"/>
+
+<h3 class="crudit-ui-kit__subtitle">Manual order (drag the handle, or ↑ ↓ on it)</h3>
+<twig:LleCruditUi:Table id="kit-table-sort" caption="Technicians, in the order of the planning" :columns="[columns[0], columns[1], columns[5]]" :rows="rows" :sortable="{url: path('crudit_ui_kit_table_sort'), token: 'kit-token'}"/>
+<h3 class="crudit-ui-kit__subtitle">Manual order, disabled by a filter</h3>
+<twig:LleCruditUi:Table id="kit-table-sort-off" caption="Technicians, filtered" :columns="[columns[0], columns[1]]" :rows="[rows[0], rows[1]]" :sortable="{url: path('crudit_ui_kit_table_sort'), disabledReason: 'The order cannot change while a filter is active.'}"/>
+
+<h3 class="crudit-ui-kit__subtitle">Loading, empty, error</h3>
+<twig:LleCruditUi:Table id="kit-table-loading" caption="Visits" :columns="columns" state="loading"/>
+<twig:LleCruditUi:Table id="kit-table-empty" caption="Visits" :columns="columns">
+    <twig:block name="empty">
+        <twig:LleCruditUi:EmptyState title="No visit matches the filters" :level="4">
+            <twig:block name="actions"><twig:LleCruditUi:Button size="small">Reset the filters</twig:LleCruditUi:Button></twig:block>
+        </twig:LleCruditUi:EmptyState>
+    </twig:block>
+</twig:LleCruditUi:Table>
+<twig:LleCruditUi:Table id="kit-table-error" caption="Visits" :columns="columns" state="error" retryUrl="#kit-table"/>

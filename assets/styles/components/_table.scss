@@ -1,0 +1,584 @@
+@use '../tools/a11y' as *;
+@use '../tools/responsive' as *;
+@use '../tools/scroll' as *;
+
+// Table (component Table, controllers table and table-sort). From `.data-table`, `.card-view` and the pieces around
+// them in the crudit-v2 mockup (src/styles/components/_table.scss and _cards.scss), with the prefix of the bundle.
+// A table from `md` up, cards below: both are in the page, the CSS shows one. The colour of a row goes through
+// --crudit-ui-table-row-bg so that the sticky cells (main column, actions) follow the hover and the selection.
+.crudit-ui-table {
+    --crudit-ui-table-cell-py: 0.3125rem;
+    --crudit-ui-table-cell-px: var(--space-2);
+    --crudit-ui-table-lead-w: 2.25rem;
+
+    // The second scrollbar, above the table, when it overflows. Transparent borders as wide as the ones of the
+    // wrapper: both zones scroll over the same distance.
+    &__scroll-top {
+        @include scroll-x;
+        margin-block-end: var(--space-1);
+        border-inline: 1px solid transparent;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__scroll-spacer {
+        height: 1px;
+    }
+
+    &__wrap {
+        @include scroll-x;
+        // Timeline of the sticky header (see the end of the file).
+        view-timeline: --crudit-ui-table-wrap block;
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-lg);
+        background-color: var(--c-surface);
+
+        // Cards below md.
+        @include media('<md') {
+            display: none;
+        }
+    }
+
+    &__table {
+        --crudit-ui-table-sticky-start: 0;
+
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        // Dense table: 13 px, second lines and headings at 12 px (the density of a business application).
+        font-size: var(--font-size-xs);
+        line-height: 1.35;
+
+        .crudit-ui-table__wrap--lead & {
+            --crudit-ui-table-sticky-start: var(--crudit-ui-table-lead-w);
+        }
+
+        th,
+        td {
+            padding: var(--crudit-ui-table-cell-py) var(--crudit-ui-table-cell-px);
+            border-block-end: 1px solid var(--c-border);
+            background-color: var(--crudit-ui-table-row-bg, var(--c-surface));
+            text-align: start;
+            vertical-align: middle;
+        }
+
+        tr[hidden] {
+            display: none;
+        }
+
+        // Quiet headings: small capitals by CSS, the text stays in normal case.
+        thead th {
+            position: sticky;
+            z-index: 2;
+            padding-block: var(--space-2);
+            color: var(--c-text-muted);
+            font-size: var(--font-size-2xs);
+            font-weight: var(--font-weight-semibold);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            white-space: nowrap;
+
+            &.crudit-ui-table__cell--primary,
+            &.crudit-ui-table__lead,
+            &.crudit-ui-table__actions {
+                z-index: 3;
+            }
+        }
+
+        // A sticky cell that holds an open menu or a shown tooltip goes over the sticky cells of the other rows and
+        // over the heading (the tooltip of the first row overflows on it).
+        td:has(.crudit-ui-dropdown__panel:not([hidden])),
+        th:has(.crudit-ui-dropdown__panel:not([hidden])),
+        td:has(.crudit-ui-tooltip-host:hover),
+        td:has(.crudit-ui-tooltip-host:focus-within) {
+            z-index: 5;
+        }
+
+        > tbody:last-child > tr:last-child > * {
+            border-block-end: 0;
+        }
+    }
+
+    &__row {
+        cursor: default;
+
+        &[data-url] {
+            cursor: pointer;
+        }
+
+        &:hover,
+        &.crudit-ui-is-hover {
+            --crudit-ui-table-row-bg: var(--c-surface-hover);
+        }
+
+        &--warning {
+            --crudit-ui-table-row-bg: var(--c-warning-bg);
+        }
+
+        &--danger {
+            --crudit-ui-table-row-bg: var(--c-danger-bg);
+        }
+
+        &--success {
+            --crudit-ui-table-row-bg: var(--c-success-bg);
+        }
+
+        &--info {
+            --crudit-ui-table-row-bg: var(--c-info-bg);
+        }
+
+        &--selected,
+        &--selected:hover {
+            --crudit-ui-table-row-bg: var(--c-primary-subtle);
+        }
+
+        &--dragging {
+            opacity: 0.5;
+        }
+    }
+
+    // One value per line: no wrapping, the table scrolls horizontally (the main column and the actions stay visible).
+    &__cell {
+        white-space: nowrap;
+
+        &--end {
+            font-variant-numeric: tabular-nums;
+            text-align: end;
+        }
+
+        // Hidden below their breakpoint, in the table (the cards show the columns marked `card`).
+        &--low {
+            @include media('<xl') {
+                display: none;
+            }
+        }
+
+        &--medium {
+            @include media('<lg') {
+                display: none;
+            }
+        }
+
+        // Main column, sticky on a horizontal scroll.
+        &--primary {
+            position: sticky;
+            z-index: 1;
+            inset-inline-start: var(--crudit-ui-table-sticky-start);
+            box-shadow: inset calc(-1px * var(--dir)) 0 0 var(--c-border);
+            font-weight: var(--font-weight-regular);
+        }
+    }
+
+    &__heading--end {
+        text-align: end;
+
+        .crudit-ui-table__heading-inner {
+            justify-content: flex-end;
+        }
+    }
+
+    &__heading-inner {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    &__value {
+        display: inline-flex;
+        flex-direction: column;
+    }
+
+    // The link to the record: underlined, like everything that can be clicked.
+    &__link {
+        color: var(--c-link);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__secondary {
+        color: var(--c-text-muted);
+        font-size: var(--font-size-2xs);
+        font-weight: var(--font-weight-regular);
+        line-height: 1.25;
+        white-space: nowrap;
+
+        &--warning {
+            color: var(--c-warning-text);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        &--danger {
+            color: var(--c-danger-text);
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    // Selection and manual order: the first columns, sticky.
+    &__lead {
+        position: sticky;
+        z-index: 1;
+        inset-inline-start: 0;
+        width: var(--crudit-ui-table-lead-w);
+        min-width: var(--crudit-ui-table-lead-w);
+        padding-inline: var(--space-2);
+        text-align: center;
+    }
+
+    &__check {
+        width: 1rem;
+        height: 1rem;
+        margin: 0;
+        accent-color: var(--c-primary);
+        vertical-align: middle;
+    }
+
+    &__actions {
+        position: sticky;
+        z-index: 1;
+        inset-inline-end: 0;
+        width: 1%;
+        box-shadow: inset calc(1px * var(--dir)) 0 0 var(--c-border);
+        white-space: nowrap;
+    }
+
+    &__action-list {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    &__sort {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: inherit;
+        text-decoration: none;
+
+        &:hover,
+        &.crudit-ui-is-hover {
+            color: var(--c-text);
+        }
+
+        [aria-sort='ascending'] &,
+        [aria-sort='descending'] & {
+            color: var(--c-text);
+        }
+    }
+
+    &__sort-icon {
+        font-size: var(--font-size-2xs);
+        opacity: 0.6;
+
+        [aria-sort='ascending'] &,
+        [aria-sort='descending'] & {
+            color: var(--c-primary-text);
+            opacity: 1;
+        }
+    }
+
+    // Help on a column: a dropdown panel, in the heading of the table (it does not take the capitals).
+    &__info {
+        width: 16rem;
+    }
+
+    &__info-text {
+        margin: 0;
+        color: var(--c-text);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-regular);
+        letter-spacing: normal;
+        text-transform: none;
+        white-space: normal;
+    }
+
+    // Groups (breaks).
+    &__group-cell.crudit-ui-table__group-cell {
+        padding-block: var(--space-2);
+        background-color: var(--c-surface-sunken);
+        color: var(--c-text);
+    }
+
+    &__group-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: 0;
+        border: 0;
+        background-color: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+
+        &[aria-expanded='false'] .crudit-ui-table__group-chevron {
+            rotate: calc(-0.25turn * var(--dir));
+        }
+    }
+
+    &__group-chevron {
+        font-size: var(--font-size-2xs);
+        @include transition(rotate);
+    }
+
+    &__group-count {
+        margin-inline-start: var(--space-2);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-regular);
+    }
+
+    &__group-row--level2 &__group-cell.crudit-ui-table__group-cell {
+        padding-inline-start: calc(var(--space-3) + 1.5rem);
+        background-color: var(--c-surface);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    // Totals, aligned on the columns; subtotals dashed.
+    &__total > * {
+        border-block-start: 2px solid var(--c-border-strong);
+        font-weight: var(--font-weight-bold);
+    }
+
+    &__total--sub > * {
+        border-block-start: 1px dashed var(--c-border-strong);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__total-label {
+        white-space: nowrap;
+    }
+
+    // Totals without a column, under the table.
+    &__totals {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--space-5);
+        margin: var(--space-2) 0 0;
+        font-size: var(--font-size-sm);
+
+        dt {
+            color: var(--c-text-muted);
+        }
+
+        dd {
+            margin: 0;
+            font-weight: var(--font-weight-semibold);
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    &__totals-item {
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    // Manual order.
+    &__handle {
+        display: inline-grid;
+        width: 2rem;
+        height: 2rem;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background-color: transparent;
+        color: var(--c-text-muted);
+        cursor: grab;
+
+        &:hover,
+        &.crudit-ui-is-hover {
+            background-color: var(--c-surface-active);
+            color: var(--c-text);
+        }
+
+        &[aria-disabled='true'] {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+    }
+
+    // Loading, empty, error.
+    &__state {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-5);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-lg);
+        background-color: var(--c-surface);
+    }
+
+    // Cards (below md).
+    &__cards {
+        display: none;
+
+        @include media('<md') {
+            display: block;
+        }
+    }
+
+    &__card-all {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding-block: var(--space-2);
+        font-size: var(--font-size-sm);
+    }
+
+    &__card-group {
+        margin: var(--space-4) 0 var(--space-2);
+        font-size: var(--font-size-sm);
+
+        &--level2 {
+            margin-block-start: var(--space-3);
+            color: var(--c-text-muted);
+        }
+    }
+
+    &__card-subtotal {
+        margin: var(--space-2) 0 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__card-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    &__card {
+        padding: var(--space-3);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-lg);
+        background-color: var(--c-surface);
+
+        &--warning {
+            background-color: var(--c-warning-bg);
+        }
+
+        &--danger {
+            background-color: var(--c-danger-bg);
+        }
+
+        &--success {
+            background-color: var(--c-success-bg);
+        }
+
+        &--info {
+            background-color: var(--c-info-bg);
+        }
+
+        &--selected {
+            border-color: var(--c-primary);
+            background-color: var(--c-primary-subtle);
+        }
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    &__card-title {
+        flex: 1;
+        min-width: 0;
+        font-weight: var(--font-weight-semibold);
+        overflow-wrap: anywhere;
+    }
+
+    &__card-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+        gap: var(--space-2) var(--space-4);
+        margin: var(--space-2) 0 0;
+        font-size: var(--font-size-sm);
+    }
+
+    &__card-field {
+        min-width: 0;
+
+        dt {
+            color: var(--c-text-muted);
+            font-size: var(--font-size-2xs);
+        }
+
+        dd {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &__card-order {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-block-start: var(--space-3);
+        padding-block-start: var(--space-2);
+        border-block-start: 1px solid var(--c-border);
+    }
+
+    &__card-position {
+        flex: 1;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+}
+
+// Header that follows the page on a vertical scroll, under the header of the application. Animation linked to the
+// scroll of the page (timeline --crudit-ui-table-wrap): the browser computes it in the same frame as the scroll,
+// without the delay of a script. A shift of 1 px per scrolled pixel from --crudit-ui-table-start, up to
+// --crudit-ui-table-max (the last row). The whole heading row is shifted (not each cell: separate layers leave
+// joints); the shadow is a gradient under each cell, continuous from one cell to the next, which appears at the first
+// pixel (a box-shadow per cell overflows on its neighbours). The measures are written by the controller table.
+@supports (animation-timeline: view()) {
+    .crudit-ui-table__table thead {
+        // Over the sticky cells of the body (z-index 1) despite the stacking context of the transformation.
+        position: relative;
+        z-index: 4;
+        animation: crudit-ui-table-head-follow linear both;
+        animation-range: cover var(--crudit-ui-table-start, 0px) cover calc(var(--crudit-ui-table-start, 0px) + var(--crudit-ui-table-max, 0px));
+        animation-timeline: --crudit-ui-table-wrap;
+    }
+
+    .crudit-ui-table__table thead th::after {
+        position: absolute;
+        top: 100%;
+        height: var(--shadow-edge-size);
+        background-image: var(--shadow-edge);
+        content: '';
+        inset-inline: 0;
+        pointer-events: none;
+        animation: crudit-ui-table-head-shadow linear both;
+        animation-range: cover var(--crudit-ui-table-start, 0px) cover calc(var(--crudit-ui-table-start, 0px) + 1px);
+        animation-timeline: --crudit-ui-table-wrap;
+    }
+}
+
+@keyframes crudit-ui-table-head-follow {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(var(--crudit-ui-table-max, 0px));
+    }
+}
+
+@keyframes crudit-ui-table-head-shadow {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

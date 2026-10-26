@@ -17,6 +17,29 @@ crudit_ui:
         remove: "Rimuovi il filtro %label%"
     language:
         label: Lingua
+    table:
+        loading: "Caricamento dell'elenco…"
+        error: "Impossibile caricare l'elenco"
+        error_text: "Il server non ha risposto."
+        retry: "Riprova"
+        empty: "Nessun risultato"
+        order: "Ordine"
+        select_page: "Seleziona tutte le righe della pagina"
+        select_all_cards: "Seleziona tutto nella pagina"
+        select: "Seleziona %label%"
+        info: "Aiuto sulla colonna %label%"
+        actions: "Azioni"
+        subtotal: "Subtotale %group%"
+        subtotal_cards: "Subtotale %group%:"
+        total: "Totale"
+        more_actions: "Altre azioni per %label%"
+        position: "Posizione %position% di %total%"
+        moved: "Spostato in posizione %position% di %total%"
+        failed: "Impossibile salvare l'ordine. Le righe sono tornate al loro posto."
+        sort_help: "Sposta la riga con le frecce su e giù."
+        move: "Sposta %label%, posizione %position% di %total%"
+        up: "Sposta su"
+        down: "Sposta giù"
     theme:
         label: Aspetto
         light: Chiaro

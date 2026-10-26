@@ -25,6 +25,14 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "table": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "table-sort": {
+                "enabled": true,
+                "fetch": "lazy"
+            },
             "tabs": {
                 "enabled": true,
                 "fetch": "eager"

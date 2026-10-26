@@ -45,7 +45,7 @@ class ComponentsTest extends TestCase
         self::assertSame('ltr', $html->documentElement?->getAttribute('dir'));
         self::assertSame('Design kit', $html->querySelector('div.crudit-ui-kit h1')?->textContent);
         $links = array_map(static fn (\Dom\Element $link): ?string => $link->getAttribute('href'), iterator_to_array($html->querySelectorAll('nav.crudit-ui-kit__toc a')));
-        self::assertSame(['#kit-colors', '#kit-typography', '#kit-buttons', '#kit-status', '#kit-states', '#kit-menus', '#kit-dialogs', '#kit-toasts', '#kit-palette', '#kit-navigation', '#kit-page'], $links);
+        self::assertSame(['#kit-colors', '#kit-typography', '#kit-buttons', '#kit-status', '#kit-states', '#kit-menus', '#kit-dialogs', '#kit-toasts', '#kit-palette', '#kit-table', '#kit-navigation', '#kit-page'], $links);
         // Each section is written apart (a sub-lot each): their ids must not collide.
         $ids = array_map(static fn (\Dom\Element $element): string => (string) $element->getAttribute('id'), iterator_to_array($html->querySelectorAll('[id]')));
         self::assertSame([], array_keys(array_filter(array_count_values($ids), static fn (int $count): bool => $count > 1)), 'ids of the kit used twice');
@@ -61,6 +61,11 @@ class ComponentsTest extends TestCase
         self::assertNull($html->querySelector('#kit-toasts-region > .crudit-ui-toast'));
         self::assertCount(4, $html->querySelectorAll('#kit-toasts .crudit-ui-kit__toasts > .crudit-ui-toast'));
         self::assertCount(2, $html->querySelectorAll('#kit-page nav.crudit-ui-breadcrumb'));
+        // Default, groups and the two manual orders are tables; loading and empty are states; the error is an alert.
+        self::assertCount(4, $html->querySelectorAll("#kit-table table.crudit-ui-table__table"));
+        self::assertCount(1, $html->querySelectorAll('#kit-table .crudit-ui-table__state:not([aria-busy])'));
+        self::assertCount(1, $html->querySelectorAll('#kit-table .crudit-ui-alert[role="alert"]'));
+        self::assertCount(1, $html->querySelectorAll('#kit-table .crudit-ui-table__state[aria-busy]'));
     }
 
     public function testDesignKitPageInARightToLeftLanguage(): void

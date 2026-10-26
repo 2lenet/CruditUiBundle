@@ -589,6 +589,87 @@ Where the page is, from the home page: a `nav` named "Breadcrumb", an ordered li
 url: Home › Operations (no url) › Settings gives "← Home". The chevrons and the arrow are hidden
 from screen readers and follow the direction of reading. The levels wrap, they are never cut.
 
+### Table
+
+`LleCruditUi:Table`, with `LleCruditUi:Table:Row` and `LleCruditUi:Table:Actions`: the rows of a list, as a table from `md`
+up and as cards below (the same data, the CSS shows one of the two). It is the table of the list and the sublist of
+CruditBundle and of the List widget of DashboardBundle. It knows nothing of `CrudConfig`: the caller gives **columns and
+rows as arrays**, with the cells already rendered.
+
+```twig
+<twig:LleCruditUi:Table id="visits" caption="Visits, sorted by date" :columns="columns" :rows="rows" :sort="{column: 'date', dir: 'asc'}" selectable>
+    <twig:block name="footer">{# the pager #}</twig:block>
+</twig:LleCruditUi:Table>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `id` | string | required | base of the ids (box of the page, help of the order, column help) |
+| `caption` | string | required | read, not shown: title, sort, page |
+| `columns` | list of columns | required | see below |
+| `rows` | list of rows | `[]` | the rows of the page |
+| `groups` | list of groups | `[]` | replace `rows`: one or two levels, each with its subtotals |
+| `totals` | list of totals | `[]` | aligned on the columns; `standalone` ones are listed under the table |
+| `totalLabel` | string | translated "Total" | label of the totals row |
+| `sort` | `{column, dir}` | `null` | the current sort: `aria-sort` of its column (`asc`, `desc`) |
+| `selectable` | bool | `false` | a column of boxes named after the row, and a box for the page |
+| `sortable` | bool, or `{url, token, tokenHeader, disabledReason}` | `false` | manual order of the rows (inside each group); `disabledReason`: why it cannot change now (a filter is active) |
+| `state` | `ready`, `loading`, `empty`, `error` | `ready` | `empty` is also chosen when there is no row |
+| `retryUrl` | string | `null` | the "Try again" link of the `error` state |
+
+**Column**: `id` (key of `row.cells`), `label` (already translated), `sortUrl` (a link: the sort works without
+JavaScript; none: not sortable, no `aria-sort`), `align` (`start`, `end` for numbers and amounts), `primary` (main
+column: `<th scope="row">`, link to the record, title of the card, sticky), `priority` (`medium` hidden below `lg`, `low`
+below `xl`, in the table only), `card` (shown in the card), `hidden` (not rendered), `info` (help in a dropdown, a button
+named "Help on the column …").
+
+**Row**: `id`, `domId` (the `id` attribute of the row), `label` (names the box, the actions and the handle), `url` (the row is clickable with the mouse, the link of
+the main cell does the job by keyboard), `tone` (`warning`, `danger`, `success`, `info`: a tinted background, the state is
+also written in a cell), `selected`, `actions`, `cells` (column id → a string, which is text and is escaped, or
+`{html, secondary, url, id}`). **`html` is rendered as it is: the caller escapes it.** `secondary` is a second line under the
+value (a text, or `{text, tone}`), `url` makes the value a link.
+
+**Action** (`row.actions`): `label`, `icon`, `url`, `visible` (an icon button named "Edit V-0412"; the others go in the
+"More actions for V-0412" dropdown), `tone` (`danger`), `disabledReason` (the action stays focusable, the reason is read and
+written under the label in the menu), `attr` (map of attributes: the `data-` attributes that open a confirmation or a
+dialog), `items` (a group of actions in the menu).
+
+**Group**: `key`, `label`, `count` (text), `rows` or `children` (groups of the second level), `subtotals` (column id → a text, escaped, or `{html}`, like a cell).
+**Total**: `column` (id; none for a `standalone` one), `label`, `html`, `standalone`, `id`. The component adds nothing up: the
+caller gives the values. The first visible column of the totals row holds the label (`totalLabel`, a row header for
+screen readers): a total aimed at that column is ignored, so aim it at another one.
+
+Blocks: `before` (above the table), `empty` (the empty state: put the action that creates the first record), `footer`
+(under the table: the pager). The cells are not a block: the caller renders them.
+Controllers: `table` (second scrollbar above the table, sticky header, click on a row, folding of groups, selection;
+dispatches `select` with `{ids}`) and `table-sort` (when `sortable`, loaded on demand).
+Events: `2lenet--crudit-ui-bundle--table:select` (`event.detail.ids`); `2lenet--crudit-ui-bundle--table-sort:sorted` and `…:failed` (`event.detail.ids`).
+Accessibility: `<caption>`, `scope`, `aria-sort`, a `<tbody>` per group with a `aria-expanded` button, boxes named after
+the row, a handle that is a button (↑ ↓ move the row and announce the new position; "Move up" and "Move down" buttons in
+the cards, for touch), `aria-busy` while loading, `role="alert"` on the error. The second scrollbar is `aria-hidden` and
+out of the tab order.
+
+The order is sent as CruditBundle saves it: a `POST` of the JSON list of the ids, in the new order, to `sortable.url`.
+The orders are sent one at a time: moves made while a request is on its way are sent together afterwards. When the
+server refuses, the rows go back to the last order it accepted and the error is announced. A drag that is cancelled
+(Esc, dropped outside the table) changes nothing. With groups, a row moves inside its group (and its subgroup), never
+into another one; the cards have one list per group or subgroup, so the position of a row (announced, and on its card) is
+counted in it. **The list sent holds the rows of the page shown**: with a pager, the server has to place them among the
+rows of the other pages. The CSRF token is given by the caller (`sortable.token`, for instance `csrf_token('…')`): the component sends it in the
+header `X-CSRF-Token`, or the one named by `sortable.tokenHeader`, and sends no header without a token.
+Folding a group hides its rows but "select all" still ticks them.
+
+The heading of the table follows the page under the header of the application (the first `header` element, or the
+selector of the value `header-selector` of the controller) with an animation linked to the scroll, without JavaScript
+in the loop. Without that CSS function (Firefox) it scrolls with the table. The table scrolls horizontally when it is too
+wide: the main column and the actions stay visible.
+
+The cards repeat the cells of the table in the page, hidden by the CSS: the HTML of a cell is rendered twice, so **the
+`id` of a row, a cell or a total (`domId`, `id`) goes on the table only**, and on the card as `data-row-id` and
+`data-cell-id`. A script that refreshes a cell by its id (CruditBundle, `fieldsToUpdate`) updates `#<id>` and
+`[data-cell-id="<id>"]`: the page has each id once, and the table and the card stay in step. The content of the
+cell, in the HTML you give, must not carry an `id`.
+
 ### LleCruditUi:Kit:Section
 
 A section of the design kit page, with its title; used by the kit only.
