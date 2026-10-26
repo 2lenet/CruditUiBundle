@@ -95,7 +95,9 @@ the button and Enter in a field of its form; only a `form.submit()` in JavaScrip
 does not change on hover.
 
 A value of `variant` or `size` outside the list is not checked: the button has no style. The design kit shows each
-value.
+value. A bundle that checks a variant before giving it (the actions of CruditBundle: `setVariant()`) reads the list
+from the enum `Lle\CruditUiBundle\Component\ButtonVariant` (`ButtonVariant::values()`, `ButtonVariant::tryFrom()`),
+not a copy of it.
 
 ### LleCruditUi:IconButton
 
