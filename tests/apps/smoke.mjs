@@ -17,11 +17,11 @@ const errors = [];
 try {
     const page = await browser.newPage();
     page.on('pageerror', (error) => errors.push(`page error: ${error.message}`));
-    page.on('console', (message) => message.type() === 'error' && !message.location().url?.endsWith('/favicon.ico') && errors.push(`console: ${message.text()}`));
+    page.on('console', (message) => message.type() === 'error' && !message.location().url?.endsWith('/favicon.ico') && !message.location().url?.includes('/crudit-ui/kit-table-sort') && errors.push(`console: ${message.text()}`));
     // A navigation answered with 204 (the demos of the kit that send a form) is aborted by Chrome: the page stays. A
     // search of the command palette is cancelled by the next one.
-    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && !request.url().includes('/crudit-ui/kit-search') && errors.push(`request failed: ${request.url()}`));
-    page.on('response', (response) => response.status() >= 400 && !response.url().endsWith('/favicon.ico') && errors.push(`${response.status()}: ${response.url()}`));
+    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && !request.url().includes('/crudit-ui/kit-search') && !request.url().includes('/crudit-ui/kit-table-sort') && errors.push(`request failed: ${request.url()}`));
+    page.on('response', (response) => response.status() >= 400 && !response.url().endsWith('/favicon.ico') && !response.url().includes('/crudit-ui/kit-table-sort') && errors.push(`${response.status()}: ${response.url()}`));
 
     await page.goto(url, {waitUntil: 'networkidle0'});
 
@@ -1021,6 +1021,106 @@ try {
         return [Math.round(rect.width), Math.round(rect.height), getComputedStyle(document.querySelector('#kit-search-dialog .crudit-ui-palette__footer')).display];
     }), [360, 740, 'none'], 'the palette is not the whole screen on a phone, or the keys are shown');
     await page.keyboard.press('Escape');
+
+    // Table: selection, groups, manual order (saved, refused by the server, disabled), sticky header, cards on a phone.
+    await page.setViewport({width: 1280, height: 800});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await page.evaluate(() => {
+        document.querySelector('#kit-table-default tbody tr[data-id="412"] input').click();
+        const all = document.querySelector('#kit-table-default thead input');
+        const card = document.querySelector('#kit-table-default .crudit-ui-table__cards input[data-id="412"]');
+
+        return [all.indeterminate, all.checked, card.checked, document.querySelector('#kit-table-default tr[data-id="412"]').classList.contains('crudit-ui-table__row--selected')];
+    }), [true, false, true, true], 'table: selecting a row does not update the box of the page and the card');
+    assert.deepEqual(await page.evaluate(() => {
+        document.querySelector('#kit-table-default thead input').click();
+        const boxes = [...document.querySelectorAll('#kit-table-default tbody input')];
+        const all = document.querySelector('#kit-table-default thead input');
+
+        return [boxes.every((box) => box.checked), all.indeterminate];
+    }), [true, false], 'table: the box of the page does not select every row');
+
+    const toggle = await page.$('#kit-table-groups tbody[data-group="aug"] button');
+    await toggle.click();
+    assert.deepEqual(await page.$eval('#kit-table-groups tbody[data-group="aug"]', (body) => [body.querySelector('button').getAttribute('aria-expanded'), [...body.querySelectorAll('[data-group-body]')].every((row) => row.hidden)]), ['false', true], 'table: a group does not fold');
+    await toggle.click();
+
+    const order = (id) => page.$$eval(`#${id} tbody tr[data-id]`, (rows) => rows.map((row) => row.dataset.id));
+    await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowDown');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent !== '', {timeout: 3000});
+    assert.deepEqual(await order('kit-table-sort'), ['413', '412', '414', '415'], 'table: ↓ on the handle does not move the row');
+    assert.equal(await page.evaluate(() => document.activeElement === document.querySelector('#kit-table-sort tr[data-id="412"] .crudit-ui-table__handle')), true, 'table: the handle loses the focus when its row moves');
+    assert.equal(await page.$eval('#kit-table-sort [role="status"]', (status) => status.textContent), 'Moved to position 2 of 4');
+    await page.keyboard.press('ArrowUp');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('position 1'), {timeout: 3000});
+    assert.deepEqual(await order('kit-table-sort'), ['412', '413', '414', '415']);
+
+    // Inside a group: the row moves in its group only (the heading and the subtotals stay), the order sent is the whole one.
+    await page.focus('#kit-table-groups tbody[data-group="aug"] tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowDown');
+    await page.waitForFunction(() => document.querySelector('#kit-table-groups [role="status"]').textContent !== '', {timeout: 3000});
+    assert.deepEqual(await page.$$eval('#kit-table-groups tbody[data-group="aug"] > tr', (rows) => rows.map((row) => row.dataset.id ?? row.className.replace('crudit-ui-table__', ''))), ['group-row', '413', '412', 'total crudit-ui-table__total--sub'], 'table: a row of a group does not move inside its group');
+    await page.keyboard.press('ArrowDown');
+    assert.deepEqual(await page.$$eval('#kit-table-groups tbody[data-group="aug"] tr[data-id]', (rows) => rows.map((row) => row.dataset.id)), ['413', '412'], 'table: a row leaves its group');
+
+    // The server refuses: the rows go back to their place, and the error is announced.
+    await page.setRequestInterception(true);
+    const refuse = (request) => request.url().includes('/crudit-ui/kit-table-sort') ? request.respond({status: 500, body: ''}) : request.continue();
+    page.on('request', refuse);
+    await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowDown');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('could not be saved'), {timeout: 3000});
+    assert.deepEqual(await order('kit-table-sort'), ['412', '413', '414', '415'], 'table: a refused order is not undone');
+    page.off('request', refuse);
+
+    // A refusal that comes after the user left the table does not take the focus back.
+    let late;
+    const held = (request) => request.url().includes('/crudit-ui/kit-table-sort') ? (late = request) : request.continue();
+    page.on('request', held);
+    await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowDown');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('position 2'), {timeout: 3000});
+    await page.focus('#kit-table-groups tbody tr[data-id] .crudit-ui-table__handle');
+    late.respond({status: 500, body: ''});
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('could not be saved'), {timeout: 3000});
+    assert.equal(await page.evaluate(() => document.activeElement.closest('#kit-table-groups') !== null), true, 'table: a late refusal takes the focus back');
+    page.off('request', held);
+    await page.setRequestInterception(false);
+
+    // Disabled by a filter: nothing moves, the reason is announced.
+    await page.focus('#kit-table-sort-off tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowDown');
+    assert.deepEqual(await order('kit-table-sort-off'), ['412', '413'], 'table: the order changes while a filter is active');
+    assert.equal(await page.$eval('#kit-table-sort-off [role="status"]', (status) => status.textContent), 'The order cannot change while a filter is active.');
+
+    // A click on a row goes to its address, not a click on its link, its box or its menu.
+    await page.click('#kit-table-default tbody tr[data-id="413"] td:nth-child(5)');
+    await page.waitForFunction(() => location.hash === '#kit-table', {timeout: 2000});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    await page.click('#kit-table-default tbody tr[data-id="412"] .crudit-ui-dropdown > button');
+    assert.equal(await page.evaluate(() => location.hash), '', 'table: a click on the menu of a row opens the row');
+
+    // Sticky header: the heading row follows the page under the header of the application (none in the kit: at the top).
+    await page.evaluate(() => window.scrollTo(0, document.querySelector('#kit-table-groups .crudit-ui-table__wrap').getBoundingClientRect().top + window.scrollY + 80));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.ok(await page.evaluate(() => Math.abs(document.querySelector('#kit-table-groups thead').getBoundingClientRect().top) <= 2), 'table: the heading does not follow the page');
+
+    // On a phone: the cards, not the table, and no horizontal scroll of the page.
+    await page.setViewport({width: 360, height: 740, isMobile: true, hasTouch: true});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    assert.deepEqual(await page.evaluate(() => [
+        getComputedStyle(document.querySelector('#kit-table-default .crudit-ui-table__wrap')).display,
+        getComputedStyle(document.querySelector('#kit-table-default .crudit-ui-table__cards')).display,
+        document.documentElement.scrollWidth <= window.innerWidth,
+    ]), ['none', 'block', true], 'table: cards on a phone');
+    // The buttons of a card move its row, the cards follow, and the focus stays on a button of the card (moving a node blurs it).
+    await page.click('#kit-table-sort .crudit-ui-table__card-order button[data-action$="#down"]');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent !== '', {timeout: 3000});
+    assert.deepEqual(await page.evaluate(() => [
+        [...document.querySelectorAll('#kit-table-sort .crudit-ui-table__card-list > li')].map((card) => card.querySelector('[data-id]').dataset.id),
+        document.activeElement?.closest('.crudit-ui-table__card-order') !== null,
+    ]), [['413', '412', '414', '415'], true], 'table: a card does not move, or loses the focus');
 
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);

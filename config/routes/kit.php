@@ -28,6 +28,15 @@ return static function (RoutingConfigurator $routes): void {
         ])
         ->methods(['GET']);
 
+    // Target of the manual order of the tables of the kit: 204, the order is "saved".
+    $routes->add('crudit_ui_kit_table_sort', '/crudit-ui/kit-table-sort')
+        ->controller(TemplateController::class)
+        ->defaults([
+            'template' => '@LleCruditUi/kit/_sent.html.twig',
+            'statusCode' => 204,
+        ])
+        ->methods(['POST']);
+
     // Results of the command palette of the kit: the groups that contain the text of ?q=, in JSON.
     $routes->add('crudit_ui_kit_search', '/crudit-ui/kit-search')
         ->controller(TemplateController::class)

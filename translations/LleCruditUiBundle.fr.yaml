@@ -17,6 +17,28 @@ crudit_ui:
         remove: "Retirer le filtre %label%"
     language:
         label: Langue
+    table:
+        loading: "Chargement de la liste…"
+        error: "La liste n'a pas pu être chargée"
+        error_text: "Le serveur n'a pas répondu. Vos filtres sont conservés."
+        retry: "Réessayer"
+        empty: "Aucun résultat"
+        order: "Ordre"
+        select_page: "Sélectionner toutes les lignes de la page"
+        select_all_cards: "Tout sélectionner sur la page"
+        select: "Sélectionner %label%"
+        info: "Aide sur la colonne %label%"
+        actions: "Actions"
+        subtotal: "Sous-total %group%"
+        total: "Total"
+        more_actions: "Plus d'actions pour %label%"
+        position: "Position %position% sur %total%"
+        moved: "Déplacé en position %position% sur %total%"
+        failed: "L'ordre n'a pas pu être enregistré. Les lignes sont revenues à leur place."
+        sort_help: "Déplacez la ligne avec les flèches haut et bas."
+        move: "Déplacer %label%, position %position% sur %total%"
+        up: "Monter"
+        down: "Descendre"
     theme:
         label: Apparence
         light: Clair

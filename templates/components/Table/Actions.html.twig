@@ -1,0 +1,51 @@
+{#
+ # Actions of a row of a Table: the actions marked `visible` as icon buttons named after the row ("Edit INT-2026-0412"),
+ # the others in a "More actions for INT-2026-0412" dropdown. An action is a link (url) or a button (attr carries the
+ # data- attributes of its controller: confirmation, dialog). A disabled action stays focusable, its reason is read
+ # (aria-describedby) and written under its label in the menu. Without an action, nothing is rendered.
+ #
+ # Props: id (base of the ids), label (name of the row, in every name), actions (list of {label, icon, url, tone
+ # (danger), visible, disabledReason, attr (map of attributes), items (a group: the actions of a MenuGroup)}).
+ # Contract: docs/components.md.
+ #}
+{% props id, label, actions = [] %}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set shown = actions|filter(a => (a.visible ?? false) and not (a.items ?? null)) -%}
+{%- set more = actions|filter(a => not ((a.visible ?? false) and not (a.items ?? null))) -%}
+{%- if actions -%}
+    <div {{ attributes.defaults({class: 'crudit-ui-table__action-list'}) }}>
+        {%- for a in shown -%}
+            {%- set reason = a.disabledReason ?? null -%}
+            {%- set reasonId = id ~ '-reason-' ~ loop.index -%}
+            <twig:LleCruditUi:Tooltip text="{{ reason ?? a.label }}" floating>
+                <twig:LleCruditUi:IconButton
+                    icon="{{ a.icon ?? 'more' }}"
+                    label="{{ a.label ~ ' ' ~ label }}"
+                    size="small"
+                    :href="reason is null ? (a.url ?? null) : null"
+                    :aria-disabled="reason is not null ? 'true' : null"
+                    :aria-describedby="reason is not null ? reasonId : null"
+                    {{ ...(a.attr ?? {}) }}
+                />
+                {%- if reason is not null %}<span class="crudit-ui-visually-hidden" id="{{ reasonId }}">{{ reason }}</span>{% endif -%}
+            </twig:LleCruditUi:Tooltip>
+        {%- endfor -%}
+        {%- if more -%}
+            <twig:LleCruditUi:Dropdown id="{{ id }}-more" floating iconOnly size="small" label="{{ 'crudit_ui.table.more_actions'|trans({'%label%': label}, domain) }}">
+                <twig:LleCruditUi:Menu>
+                    {%- for a in more -%}
+                        {%- if a.items ?? null -%}
+                            <twig:LleCruditUi:MenuGroup label="{{ a.label }}">
+                                {%- for sub in a.items -%}
+                                    <twig:LleCruditUi:MenuItem icon="{{ sub.icon ?? null }}" :href="sub.url ?? null" :tone="sub.tone ?? null" :reason="sub.disabledReason ?? null" {{ ...(sub.attr ?? {}) }}>{{ sub.label }}</twig:LleCruditUi:MenuItem>
+                                {%- endfor -%}
+                            </twig:LleCruditUi:MenuGroup>
+                        {%- else -%}
+                            <twig:LleCruditUi:MenuItem icon="{{ a.icon ?? null }}" :href="a.url ?? null" :tone="a.tone ?? null" :reason="a.disabledReason ?? null" {{ ...(a.attr ?? {}) }}>{{ a.label }}</twig:LleCruditUi:MenuItem>
+                        {%- endif -%}
+                    {%- endfor -%}
+                </twig:LleCruditUi:Menu>
+            </twig:LleCruditUi:Dropdown>
+        {%- endif -%}
+    </div>
+{%- endif -%}

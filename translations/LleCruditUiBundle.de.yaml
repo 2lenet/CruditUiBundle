@@ -17,6 +17,28 @@ crudit_ui:
         remove: "Filter %label% entfernen"
     language:
         label: Sprache
+    table:
+        loading: "Liste wird geladen…"
+        error: "Die Liste konnte nicht geladen werden"
+        error_text: "Der Server hat nicht geantwortet. Ihre Filter bleiben erhalten."
+        retry: "Erneut versuchen"
+        empty: "Kein Ergebnis"
+        order: "Reihenfolge"
+        select_page: "Alle Zeilen der Seite auswählen"
+        select_all_cards: "Alle auf der Seite auswählen"
+        select: "%label% auswählen"
+        info: "Hilfe zur Spalte %label%"
+        actions: "Aktionen"
+        subtotal: "Zwischensumme %group%"
+        total: "Gesamt"
+        more_actions: "Weitere Aktionen für %label%"
+        position: "Position %position% von %total%"
+        moved: "Auf Position %position% von %total% verschoben"
+        failed: "Die Reihenfolge konnte nicht gespeichert werden. Die Zeilen sind wieder an ihrem Platz."
+        sort_help: "Verschieben Sie die Zeile mit den Pfeiltasten nach oben und unten."
+        move: "%label% verschieben, Position %position% von %total%"
+        up: "Nach oben"
+        down: "Nach unten"
     theme:
         label: Darstellung
         light: Hell
