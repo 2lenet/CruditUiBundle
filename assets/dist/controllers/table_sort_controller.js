@@ -67,11 +67,16 @@ export default class extends Controller {
     }
 
     dragOver(event) {
-        const target = event.target.closest?.('tr[data-id]');
-        if (!this.dragged || !target || target === this.dragged || !this.sameRun(this.dragged, target)) {
+        if (!this.dragged) {
             return;
         }
+        // The whole table takes the drop: the row moves as it goes, so it is often under the pointer when released
+        // (or on a heading). Only Esc or a release outside the table cancels (dropEffect "none" in dragend).
         event.preventDefault();
+        const target = event.target.closest?.('tr[data-id]');
+        if (!target || target === this.dragged || !this.sameRun(this.dragged, target)) {
+            return;
+        }
         const after = target.compareDocumentPosition(this.dragged) & Node.DOCUMENT_POSITION_PRECEDING;
         target.parentNode.insertBefore(this.dragged, after ? target.nextSibling : target);
     }

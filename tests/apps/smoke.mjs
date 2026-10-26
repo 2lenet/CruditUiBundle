@@ -1064,6 +1064,38 @@ try {
     await page.keyboard.press('ArrowDown');
     assert.deepEqual(await page.$$eval('#kit-table-groups tbody[data-group="aug"] tr[data-id]', (rows) => rows.map((row) => row.dataset.id)), ['413', '412'], 'table: a row leaves its group');
 
+    // A drag (events sent by the test: Puppeteer starts no native drag). The whole table takes the drop, so a row that
+    // ends under the pointer, or a heading, does not cancel it; only a dragend with the effect "none" does (Esc, a
+    // release outside the table).
+    const drag = (effect) => page.evaluate((dropEffect) => {
+        const table = document.getElementById('kit-table-sort');
+        const row = (id) => table.querySelector(`tbody tr[data-id="${id}"]`);
+        const dataTransfer = new DataTransfer();
+        const fire = (target, type) => {
+            const event = new DragEvent(type, {bubbles: true, cancelable: true, dataTransfer});
+            target.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+        fire(row('412'), 'dragstart');
+        fire(row('414'), 'dragover');
+        const accepted = [fire(row('412'), 'dragover'), fire(table.querySelector('thead th'), 'dragover')];
+        Object.defineProperty(dataTransfer, 'dropEffect', {value: dropEffect}); // a DataTransfer made by a script ignores the setter
+        fire(row('412'), 'dragend');
+        return accepted;
+    }, effect);
+    assert.deepEqual(await drag('none'), [true, true], 'table: the table does not take the drop on the row itself or a heading');
+    assert.deepEqual(await order('kit-table-sort'), ['412', '413', '414', '415'], 'table: a cancelled drag changes the order');
+    assert.deepEqual(await drag('move'), [true, true]);
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('position 3'), {timeout: 3000});
+    assert.deepEqual(await order('kit-table-sort'), ['413', '414', '412', '415'], 'table: a dropped row goes back to its place');
+    await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowUp');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('position 2'), {timeout: 3000});
+    await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowUp');
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('position 1'), {timeout: 3000});
+    assert.deepEqual(await order('kit-table-sort'), ['412', '413', '414', '415'], 'table: the order is not back to the start');
+
     // The server refuses: the rows go back to their place, and the error is announced.
     await page.setRequestInterception(true);
     const refuse = (request) => request.url().includes('/crudit-ui/kit-table-sort') ? request.respond({status: 500, body: ''}) : request.continue();
