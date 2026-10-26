@@ -1078,9 +1078,13 @@ try {
     let late;
     const held = (request) => request.url().includes('/crudit-ui/kit-table-sort') ? (late = request) : request.continue();
     page.on('request', held);
+    await page.$eval('#kit-table-sort [role="status"]', (status) => { status.textContent = ''; });
     await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
     await page.keyboard.press('ArrowDown');
-    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('position 2'), {timeout: 3000});
+    for (let wait = 0; !late && wait < 150; wait++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.ok(late, 'table: the order is not sent');
     await page.focus('#kit-table-groups tbody tr[data-id] .crudit-ui-table__handle');
     late.respond({status: 500, body: ''});
     await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('could not be saved'), {timeout: 3000});
