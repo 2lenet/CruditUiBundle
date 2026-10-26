@@ -20,7 +20,7 @@ crudit_ui:
     table:
         loading: "Loading the list…"
         error: "The list could not be loaded"
-        error_text: "The server did not answer. Your filters are kept."
+        error_text: "The server did not answer."
         retry: "Try again"
         empty: "No result"
         order: "Order"
@@ -30,6 +30,7 @@ crudit_ui:
         info: "Help on the column %label%"
         actions: "Actions"
         subtotal: "Subtotal %group%"
+        subtotal_cards: "Subtotal %group%:"
         total: "Total"
         more_actions: "More actions for %label%"
         position: "Position %position% of %total%"

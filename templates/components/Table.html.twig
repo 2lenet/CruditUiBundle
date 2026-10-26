@@ -5,7 +5,7 @@
  #
  # Props: id, caption (read, not shown), columns, rows (of the page), groups (replace rows: one or two levels, each
  # with its subtotals), totals, totalLabel ("Total"), sort ({column, dir}: aria-sort), selectable, sortable (true, or
- # {url, disabledReason}: manual order), state (ready, loading, empty, error; empty is also chosen when there is no
+ # {url, token, tokenHeader, disabledReason}: manual order; the token is sent in the header X-CSRF-Token, or the one named), state (ready, loading, empty, error; empty is also chosen when there is no
  # row), retryUrl (the "Try again" link of the error state).
  # The page has each id once: the table carries the ids of the rows, cells and totals (`domId`, `id`), the cards
  # repeat them as data-row-id and data-cell-id.
@@ -38,6 +38,8 @@
 {%- if manual -%}
     {%- set root = root|merge({
         ('data-' ~ sorter ~ '-url-value'): sortUrl,
+        ('data-' ~ sorter ~ '-token-value'): sortable is iterable ? (sortable.token ?? '') : '',
+        ('data-' ~ sorter ~ '-token-header-value'): sortable is iterable ? (sortable.tokenHeader ?? 'X-CSRF-Token') : 'X-CSRF-Token',
         ('data-' ~ sorter ~ '-disabled-value'): sortReason is not null ? 'true' : 'false',
         ('data-' ~ sorter ~ '-moved-value'): 'crudit_ui.table.moved'|trans(domain: domain),
         ('data-' ~ sorter ~ '-failed-value'): 'crudit_ui.table.failed'|trans(domain: domain),
@@ -138,7 +140,7 @@
                                         {%- if loop.first -%}
                                             <th scope="row" class="crudit-ui-table__total-label">{{ 'crudit_ui.table.subtotal'|trans({'%group%': grp.label}, domain) }}</th>
                                         {%- else -%}
-                                            <td class="crudit-ui-table__cell{{ (col.align ?? 'start') == 'end' ? ' crudit-ui-table__cell--end' : '' }}">{{ (grp.subtotals[col.id] ?? '')|raw }}</td>
+                                            <td class="crudit-ui-table__cell{{ (col.align ?? 'start') == 'end' ? ' crudit-ui-table__cell--end' : '' }}">{% set subtotal = grp.subtotals[col.id] ?? '' %}{{ subtotal is iterable ? (subtotal.html ?? '')|raw : subtotal }}</td>
                                         {%- endif -%}
                                     {%- endfor -%}
                                     {%- if withActions %}<td></td>{% endif -%}
@@ -179,24 +181,27 @@
                 <label class="crudit-ui-table__card-all"><input type="checkbox" class="crudit-ui-table__check" data-{{ controller }}-target="selectAllCards" data-action="{{ controller }}#togglePage"> {{ 'crudit_ui.table.select_all_cards'|trans(domain: domain) }}</label>
             {%- endif -%}
             {%- for grp in (groups ?: [{label: null, rows: rows}]) -%}
-                {%- set cardRows = (grp.children ?? null) ? grp.children|reduce((all, child) => all|merge(child.rows), []) : grp.rows -%}
                 {%- if grp.label %}<h3 class="crudit-ui-table__card-group">{{ grp.label }}{% if grp.count is defined and grp.count is not null %} <span class="crudit-ui-table__group-count">{{ grp.count }}</span>{% endif %}</h3>{% endif -%}
-                <ul class="crudit-ui-table__card-list">
-                    {%- for item in cardRows -%}
-                        <li{% if item.domId ?? null %} data-row-id="{{ item.domId }}"{% endif %} class="crudit-ui-table__card{{ (item.tone ?? null) ? ' crudit-ui-table__card--' ~ item.tone : '' }}{{ (item.selected ?? false) ? ' crudit-ui-table__card--selected' : '' }}">
-                            <twig:LleCruditUi:Table:Row variant="card" :tableId="id" :columns="visible" :row="item" :selectable="selectable" :sortable="manual" :sortDisabled="sortReason" :position="loop.index" :count="cardRows|length"/>
-                        </li>
-                    {%- endfor -%}
-                </ul>
+                {#- One list per run of rows (the group, or each subgroup), like the table: a row moves inside its run. -#}
+                {%- for child in ((grp.children ?? null) ?: [grp]) -%}
+                    {%- if grp.children ?? null %}<h4 class="crudit-ui-table__card-group crudit-ui-table__card-group--level2">{{ child.label }}{% if child.count is defined and child.count is not null %} <span class="crudit-ui-table__group-count">{{ child.count }}</span>{% endif %}</h4>{% endif -%}
+                    <ul class="crudit-ui-table__card-list">
+                        {%- for item in child.rows -%}
+                            <li{% if item.domId ?? null %} data-row-id="{{ item.domId }}"{% endif %} data-id="{{ item.id }}" class="crudit-ui-table__card{{ (item.tone ?? null) ? ' crudit-ui-table__card--' ~ item.tone : '' }}{{ (item.selected ?? false) ? ' crudit-ui-table__card--selected' : '' }}">
+                                <twig:LleCruditUi:Table:Row variant="card" :tableId="id" :columns="visible" :row="item" :selectable="selectable" :sortable="manual" :sortDisabled="sortReason" :position="loop.index" :count="child.rows|length"/>
+                            </li>
+                        {%- endfor -%}
+                    </ul>
+                {%- endfor -%}
                 {%- if grp.subtotals ?? null %}
-                    <p class="crudit-ui-table__card-subtotal">{{ 'crudit_ui.table.subtotal'|trans({'%group%': grp.label}, domain) }} :
-                        {%- for col in visible|filter(c => grp.subtotals[c.id] ?? null) %} {{ col.label }} {{ grp.subtotals[col.id]|raw }}{{ loop.last ? '' : ' ·' }}{% endfor -%}
+                    <p class="crudit-ui-table__card-subtotal">{{ 'crudit_ui.table.subtotal_cards'|trans({'%group%': grp.label}, domain) }}
+                        {%- for col in visible|filter(c => grp.subtotals[c.id] ?? null) %}{% set subtotal = grp.subtotals[col.id] %} {{ col.label }} {{ subtotal is iterable ? (subtotal.html ?? '')|raw : subtotal }}{{ loop.last ? '' : ' ·' }}{% endfor -%}
                     </p>
                 {%- endif -%}
             {%- endfor -%}
             {%- if aligned %}
                 <dl class="crudit-ui-table__totals">
-                    {%- for tot in aligned %}<div class="crudit-ui-table__totals-item"><dt>{{ tot.label ?? totalLabel }}</dt><dd{% if tot.id ?? null %} data-cell-id="{{ tot.id }}"{% endif %}>{{ tot.html|raw }}</dd></div>{% endfor -%}
+                    {%- for tot in aligned %}<div class="crudit-ui-table__totals-item"><dt>{{ tot.label ?? totalLabel ?? ('crudit_ui.table.total'|trans(domain: domain)) }}</dt><dd{% if tot.id ?? null %} data-cell-id="{{ tot.id }}"{% endif %}>{{ tot.html|raw }}</dd></div>{% endfor -%}
                 </dl>
             {%- endif -%}
         </div>

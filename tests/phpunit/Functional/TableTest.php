@@ -263,6 +263,17 @@ class TableTest extends TestCase
         self::assertSame(self::SORT . '#down', $buttons[1]->getAttribute('data-action'));
     }
 
+    public function testManualOrderTokenAndItsHeader(): void
+    {
+        $with = $this->table(':sortable="{url: \'/sort\', token: \'abc\', tokenHeader: \'X-Sort\'}"');
+        self::assertSame('abc', $with->getAttribute('data-' . self::SORT . '-token-value'));
+        self::assertSame('X-Sort', $with->getAttribute('data-' . self::SORT . '-token-header-value'));
+
+        $without = $this->table(':sortable="{url: \'/sort\'}"');
+        self::assertSame('', $without->getAttribute('data-' . self::SORT . '-token-value'));
+        self::assertSame('X-CSRF-Token', $without->getAttribute('data-' . self::SORT . '-token-header-value'));
+    }
+
     public function testManualOrderDisabledByAFilter(): void
     {
         $table = $this->table(':sortable="{url: \'/sort\', disabledReason: \'A filter is active.\'}"');
@@ -287,6 +298,48 @@ class TableTest extends TestCase
         // The position is read in the group: one row of one.
         self::assertSame('Move V-0413, position 1 of 1', trim((string) $table->querySelector('tbody[data-group="b"] .crudit-ui-table__handle .crudit-ui-visually-hidden')?->textContent));
         self::assertCount(2, $table->querySelectorAll('.crudit-ui-table__card-list'));
+    }
+
+    public function testSubgroupsHaveOneListOfCardsEach(): void
+    {
+        $rows = $this->rows();
+        $table = $this->element(
+            '<twig:LleCruditUi:Table id="g" caption="G" :columns="columns" :groups="groups" :sortable="{url: \'/sort\'}"/>',
+            'div',
+            ['columns' => $this->columns(), 'groups' => [['key' => 'a', 'label' => 'A', 'children' => [
+                ['key' => 'a1', 'label' => 'A1', 'rows' => [$rows[0]]],
+                ['key' => 'a2', 'label' => 'A2', 'rows' => [$rows[1]]],
+            ]]]],
+        );
+
+        $lists = $table->querySelectorAll('.crudit-ui-table__card-list');
+        self::assertCount(2, $lists);
+        // The card is its own id for the script that orders the cards, and its position is read in its subgroup.
+        self::assertSame('413', $lists[1]->querySelector('li')?->getAttribute('data-id'));
+        self::assertSame('Position 1 of 1', trim((string) $lists[1]->querySelector('.crudit-ui-table__card-position')?->textContent));
+    }
+
+    public function testSubtotalsAreTextUnlessHtml(): void
+    {
+        $rows = $this->rows();
+        $table = $this->element(
+            '<twig:LleCruditUi:Table id="g" caption="G" :columns="columns" :groups="groups"/>',
+            'div',
+            ['columns' => $this->columns(), 'groups' => [['key' => 'a', 'label' => 'A', 'rows' => [$rows[0]], 'subtotals' => ['amount' => '<b>1</b>', 'customer' => ['html' => '<i>2</i>']]]]],
+        );
+
+        $row = $table->querySelector('tr.crudit-ui-table__total--sub');
+        self::assertSame('<b>1</b>', $row?->querySelector('td.crudit-ui-table__cell--end')?->textContent);
+        self::assertSame('2', $row->querySelector('td i')?->textContent);
+        self::assertNull($table->querySelector('.crudit-ui-table__card-subtotal b'));
+        self::assertStringContainsString('Subtotal A:', (string) $table->querySelector('.crudit-ui-table__card-subtotal')?->textContent);
+    }
+
+    public function testCardTotalWithoutLabelIsTotal(): void
+    {
+        $table = $this->table(':totals="totals"', ['totals' => [['column' => 'amount', 'html' => '1 620 €']]]);
+
+        self::assertSame('Total', $table->querySelector('dl.crudit-ui-table__totals dt')?->textContent);
     }
 
     public function testIdsAreInThePageOnce(): void

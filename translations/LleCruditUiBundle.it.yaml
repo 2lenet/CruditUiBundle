@@ -20,7 +20,7 @@ crudit_ui:
     table:
         loading: "Caricamento dell'elenco…"
         error: "Impossibile caricare l'elenco"
-        error_text: "Il server non ha risposto. I filtri sono mantenuti."
+        error_text: "Il server non ha risposto."
         retry: "Riprova"
         empty: "Nessun risultato"
         order: "Ordine"
@@ -30,6 +30,7 @@ crudit_ui:
         info: "Aiuto sulla colonna %label%"
         actions: "Azioni"
         subtotal: "Subtotale %group%"
+        subtotal_cards: "Subtotale %group%:"
         total: "Totale"
         more_actions: "Altre azioni per %label%"
         position: "Posizione %position% di %total%"

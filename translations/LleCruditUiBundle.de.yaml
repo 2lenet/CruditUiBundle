@@ -20,7 +20,7 @@ crudit_ui:
     table:
         loading: "Liste wird geladen…"
         error: "Die Liste konnte nicht geladen werden"
-        error_text: "Der Server hat nicht geantwortet. Ihre Filter bleiben erhalten."
+        error_text: "Der Server hat nicht geantwortet."
         retry: "Erneut versuchen"
         empty: "Kein Ergebnis"
         order: "Reihenfolge"
@@ -30,6 +30,7 @@ crudit_ui:
         info: "Hilfe zur Spalte %label%"
         actions: "Aktionen"
         subtotal: "Zwischensumme %group%"
+        subtotal_cards: "Zwischensumme %group%:"
         total: "Gesamt"
         more_actions: "Weitere Aktionen für %label%"
         position: "Position %position% von %total%"

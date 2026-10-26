@@ -30,6 +30,10 @@ export default class extends Controller {
         [this.hasWrapTarget && this.wrapTarget, this.hasTableTarget && this.tableTarget]
             .filter(Boolean)
             .forEach(element => this.observer.observe(element));
+        const header = document.querySelector(this.headerSelectorValue);
+        if (header) {
+            this.observer.observe(header);
+        }
         window.addEventListener('resize', this.onResize);
         this.measure();
         this.refreshSelection();

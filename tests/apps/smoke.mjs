@@ -1090,6 +1090,31 @@ try {
     await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('could not be saved'), {timeout: 3000});
     assert.equal(await page.evaluate(() => document.activeElement.closest('#kit-table-groups') !== null), true, 'table: a late refusal takes the focus back');
     page.off('request', held);
+
+    // Moves made while a request is on its way are posts together afterwards, and a refusal puts the rows back to the
+    // last order the server accepted.
+    const posts = [];
+    const queued = (request) => request.url().includes('/crudit-ui/kit-table-sort') ? posts.push(request) : request.continue();
+    page.on('request', queued);
+    await page.focus('#kit-table-sort tbody tr[data-id="412"] .crudit-ui-table__handle');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    for (let wait = 0; posts.length < 1 && wait < 150; wait++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.equal(posts.length, 1, 'table: a second request leaves before the first one is answered');
+    posts[0].respond({status: 200, body: ''});
+    for (let wait = 0; posts.length < 2 && wait < 150; wait++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.equal(posts.length, 2, 'table: the moves made during a request are not posts afterwards');
+    assert.equal(posts[1].headers()['x-csrf-token'], 'kit-token', 'table: the token is not sent in the header');
+    assert.deepEqual(JSON.parse(posts[1].postData()), ['413', '414', '412', '415'], 'table: the last order is not the one posts');
+    page.off('request', queued);
+    posts[1].respond({status: 500, body: ''});
+    await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('could not be saved'), {timeout: 3000});
+    assert.deepEqual(await order('kit-table-sort'), ['413', '412', '414', '415'], 'table: a refusal does not go back to the last accepted order');
     await page.setRequestInterception(false);
 
     // Disabled by a filter: nothing moves, the reason is announced.
@@ -1122,7 +1147,7 @@ try {
     await page.click('#kit-table-sort .crudit-ui-table__card-order button[data-action$="#down"]');
     await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent !== '', {timeout: 3000});
     assert.deepEqual(await page.evaluate(() => [
-        [...document.querySelectorAll('#kit-table-sort .crudit-ui-table__card-list > li')].map((card) => card.querySelector('[data-id]').dataset.id),
+        [...document.querySelectorAll('#kit-table-sort .crudit-ui-table__card-list > li')].map((card) => card.dataset.id),
         document.activeElement?.closest('.crudit-ui-table__card-order') !== null,
     ]), [['413', '412', '414', '415'], true], 'table: a card does not move, or loses the focus');
 

@@ -51,7 +51,7 @@
     :totals="[{column: 'amount', label: 'Amount', html: '4 530,00 €', id: 'kit-total-amount'}, {label: 'Average amount', html: '1 132,50 €', standalone: true}]"/>
 
 <h3 class="crudit-ui-kit__subtitle">Manual order (drag the handle, or ↑ ↓ on it)</h3>
-<twig:LleCruditUi:Table id="kit-table-sort" caption="Technicians, in the order of the planning" :columns="[columns[0], columns[1], columns[5]]" :rows="rows" :sortable="{url: path('crudit_ui_kit_table_sort')}"/>
+<twig:LleCruditUi:Table id="kit-table-sort" caption="Technicians, in the order of the planning" :columns="[columns[0], columns[1], columns[5]]" :rows="rows" :sortable="{url: path('crudit_ui_kit_table_sort'), token: 'kit-token'}"/>
 <h3 class="crudit-ui-kit__subtitle">Manual order, disabled by a filter</h3>
 <twig:LleCruditUi:Table id="kit-table-sort-off" caption="Technicians, filtered" :columns="[columns[0], columns[1]]" :rows="[rows[0], rows[1]]" :sortable="{url: path('crudit_ui_kit_table_sort'), disabledReason: 'The order cannot change while a filter is active.'}"/>
 

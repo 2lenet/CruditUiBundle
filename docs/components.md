@@ -611,7 +611,7 @@ rows as arrays**, with the cells already rendered.
 | `totalLabel` | string | translated "Total" | label of the totals row |
 | `sort` | `{column, dir}` | `null` | the current sort: `aria-sort` of its column (`asc`, `desc`) |
 | `selectable` | bool | `false` | a column of boxes named after the row, and a box for the page |
-| `sortable` | bool, or `{url, disabledReason}` | `false` | manual order of the rows (inside each group); `disabledReason`: why it cannot change now (a filter is active) |
+| `sortable` | bool, or `{url, token, tokenHeader, disabledReason}` | `false` | manual order of the rows (inside each group); `disabledReason`: why it cannot change now (a filter is active) |
 | `state` | `ready`, `loading`, `empty`, `error` | `ready` | `empty` is also chosen when there is no row |
 | `retryUrl` | string | `null` | the "Try again" link of the `error` state |
 
@@ -632,7 +632,7 @@ value (a text, or `{text, tone}`), `url` makes the value a link.
 written under the label in the menu), `attr` (map of attributes: the `data-` attributes that open a confirmation or a
 dialog), `items` (a group of actions in the menu).
 
-**Group**: `key`, `label`, `count` (text), `rows` or `children` (groups of the second level), `subtotals` (column id → html).
+**Group**: `key`, `label`, `count` (text), `rows` or `children` (groups of the second level), `subtotals` (column id → a text, escaped, or `{html}`, like a cell).
 **Total**: `column` (id; none for a `standalone` one), `label`, `html`, `standalone`, `id`. The component adds nothing up: the
 caller gives the values. The first visible column of the totals row holds the label (`totalLabel`, a row header for
 screen readers): a total aimed at that column is ignored, so aim it at another one.
@@ -648,8 +648,14 @@ the cards, for touch), `aria-busy` while loading, `role="alert"` on the error. T
 out of the tab order.
 
 The order is sent as CruditBundle saves it: a `POST` of the JSON list of the ids, in the new order, to `sortable.url`.
-When the server refuses, the rows go back to their place and the error is announced. With groups, a row moves inside
-its group (and its subgroup), never into another one; the order sent is the one of the whole table.
+The orders are sent one at a time: moves made while a request is on its way are sent together afterwards. When the
+server refuses, the rows go back to the last order it accepted and the error is announced. A drag that is cancelled
+(Esc, dropped outside the table) changes nothing. With groups, a row moves inside its group (and its subgroup), never
+into another one; the cards have one list per group or subgroup, so the position of a row (announced, and on its card) is
+counted in it. **The list sent holds the rows of the page shown**: with a pager, the server has to place them among the
+rows of the other pages. The CSRF token is given by the caller (`sortable.token`, for instance `csrf_token('…')`): the component sends it in the
+header `X-CSRF-Token`, or the one named by `sortable.tokenHeader`, and sends no header without a token.
+Folding a group hides its rows but "select all" still ticks them.
 
 The heading of the table follows the page under the header of the application (the first `header` element, or the
 selector of the value `header-selector` of the controller) with an animation linked to the scroll, without JavaScript
