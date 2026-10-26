@@ -1,14 +1,7 @@
 {# Buttons (1.5.a): every variant in every state, sizes, icons, counters, links and groups. Inside a component, its
  # props hide the variables of the template of the same name (`variant`): hence `row`. #}
-{% set variants = [
-    {id: 'primary', label: 'Save'},
-    {id: 'secondary', label: 'Cancel'},
-    {id: 'ghost', label: 'See all'},
-    {id: 'warning', label: 'Stop'},
-    {id: 'danger', label: 'Delete'},
-    {id: 'danger-outline', label: 'Remove'},
-    {id: 'link', label: 'Details'},
-] %}
+{# The variants come from ButtonVariant: a new one shows here, under its id until it has a label. #}
+{% set labels = {primary: 'Save', secondary: 'Cancel', ghost: 'See all', warning: 'Stop', danger: 'Delete', 'danger-outline': 'Remove', link: 'Details'} %}
 {% set states = [
     {id: 'default', label: 'Default', class: ''},
     {id: 'hover', label: 'Hover', class: 'crudit-ui-is-hover'},
@@ -27,7 +20,8 @@
             </tr>
         </thead>
         <tbody>
-            {% for row in variants %}
+            {% for case in enum_cases('Lle\\CruditUiBundle\\Component\\ButtonVariant') %}
+                {% set row = {id: case.value, label: labels[case.value] ?? case.value} %}
                 <tr>
                     <th scope="row"><code>{{ row.id }}</code></th>
                     {% for state in states %}

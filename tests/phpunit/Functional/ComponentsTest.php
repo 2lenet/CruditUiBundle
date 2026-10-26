@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Tests\Functional;
 
+use Lle\CruditUiBundle\Component\ButtonVariant;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -50,7 +51,10 @@ class ComponentsTest extends TestCase
         self::assertSame([], array_keys(array_filter(array_count_values($ids), static fn (int $count): bool => $count > 1)), 'ids of the kit used twice');
         self::assertNotNull($html->querySelector('#kit-colors code'));
         self::assertNotNull($html->querySelector('#kit-typography .crudit-ui-kit__space-bar'));
-        self::assertCount(35, $html->querySelectorAll('#kit-buttons table .crudit-ui-btn'));
+        // The table of the buttons takes its rows from ButtonVariant, five states each.
+        $variants = array_map(static fn (\Dom\Element $cell): string => (string) $cell->textContent, iterator_to_array($html->querySelectorAll('#kit-buttons table tbody th code')));
+        self::assertSame(ButtonVariant::values(), $variants);
+        self::assertCount(5 * count($variants), $html->querySelectorAll('#kit-buttons table .crudit-ui-btn'));
         self::assertNotNull($html->querySelector('#kit-menus #kit-menu-panel .crudit-ui-menu'));
         self::assertCount(4, $html->querySelectorAll('#kit-dialogs dialog.crudit-ui-dialog'));
         // The region is empty without ?toast=; the four tones are shown in place.
