@@ -9,7 +9,11 @@ const css = readFileSync(new URL('../dist/ui.css', import.meta.url), 'utf8');
 test('the alignment of a column wins over the one of the cells', () => {
     assert.ok(css.includes('.crudit-ui-table__table :where(th),.crudit-ui-table__table :where(td){text-align:start}'), 'the start of the cells is not in :where()');
     assert.doesNotMatch(css, /\.crudit-ui-table__table (th|td)[,{][^}]*text-align/, 'a rule on th or td of the table sets text-align');
-    const start = css.indexOf(':where(td){text-align:start}');
-    assert.ok(start < css.indexOf('.crudit-ui-table__cell--end{'), 'the start of the cells comes after the end of a column');
-    assert.ok(start < css.indexOf('.crudit-ui-table__heading--end{'), 'the start of the headings comes after the end of a column');
+    const cells = css.indexOf('.crudit-ui-table__table :where(td)');
+    const headings = css.indexOf('.crudit-ui-table__table :where(th)');
+    assert.ok(cells < css.indexOf('.crudit-ui-table__cell--end{'), 'the start of the cells must come before the end of a column');
+    assert.ok(headings < css.indexOf('.crudit-ui-table__heading--end{'), 'the start of the headings must come before the end of a heading');
+    // The column of selection and of manual order is centred (it was overridden by the former rule on td)
+    assert.match(css, /\.crudit-ui-table__lead\{[^}]*text-align:center/, 'the column of selection is not centred');
+    assert.ok(cells < css.indexOf('.crudit-ui-table__lead{'), 'the start of the cells must come before the centre of the column of selection');
 });
