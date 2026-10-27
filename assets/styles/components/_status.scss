@@ -46,7 +46,8 @@
         color: var(--c-danger-text);
     }
 
-    // Yes is the bad news ("Blocked"): the tones are swapped, the icon and the text stay
+    // Yes is the bad news ("Blocked"): the tones only are swapped, the icon, the text and the weight stay (Yes stays in
+    // medium: the bad news stands out)
     &--reverse#{&}--yes {
         color: var(--c-danger-text);
     }

@@ -48,16 +48,12 @@ class StatusTest extends TestCase
         yield 'false' => [':value="false"', 'crudit-ui-bool crudit-ui-bool--no', 'No'];
         yield 'null' => [':value="null"', 'crudit-ui-empty-value', '—Not set'];
         yield 'labels of the project' => [':value="true" yes="Active"', 'crudit-ui-bool crudit-ui-bool--yes', 'Active'];
+        yield 'reverse yes' => [':value="true" reverse yes="Blocked"', 'crudit-ui-bool crudit-ui-bool--yes crudit-ui-bool--reverse', 'Blocked'];
+        yield 'reverse no' => [':value="false" :reverse="true"', 'crudit-ui-bool crudit-ui-bool--no crudit-ui-bool--reverse', 'No'];
     }
 
-    public function testBooleanReversed(): void
+    public function testNullIsNotReversed(): void
     {
-        $yes = $this->element('<twig:LleCruditUi:Boolean :value="true" reverse yes="Blocked"/>', 'span');
-        $no = $this->element('<twig:LleCruditUi:Boolean :value="false" :reverse="true"/>', 'span');
-
-        self::assertSame('crudit-ui-bool crudit-ui-bool--yes crudit-ui-bool--reverse', $yes->getAttribute('class'));
-        self::assertSame('Blocked', $yes->textContent);
-        self::assertSame('crudit-ui-bool crudit-ui-bool--no crudit-ui-bool--reverse', $no->getAttribute('class'));
         self::assertSame('crudit-ui-empty-value', $this->element('<twig:LleCruditUi:Boolean :value="null" reverse/>', 'span')->getAttribute('class'));
     }
 
