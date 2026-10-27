@@ -60,8 +60,13 @@
             padding: var(--crudit-ui-table-cell-py) var(--crudit-ui-table-cell-px);
             border-block-end: 1px solid var(--c-border);
             background-color: var(--crudit-ui-table-row-bg, var(--c-surface));
-            text-align: start;
             vertical-align: middle;
+        }
+
+        // At the specificity of a class: the alignment of a column (__cell--end, __heading--end) wins over it.
+        :where(th),
+        :where(td) {
+            text-align: start;
         }
 
         tr[hidden] {
