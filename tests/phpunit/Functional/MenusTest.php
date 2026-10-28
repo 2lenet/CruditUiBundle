@@ -53,11 +53,26 @@ class MenusTest extends TestCase
         self::assertSame('Panel', $panel->querySelector('p')?->textContent);
     }
 
+    public function testDropdownWithoutIdHasNone(): void
+    {
+        // A Dropdown in a cell of a Table (rendered twice): no id generated, no aria-controls; the controller finds
+        // its button and its panel by their targets.
+        $dropdown = $this->element('<twig:LleCruditUi:Dropdown label="Actions"><p>Panel</p></twig:LleCruditUi:Dropdown>', 'div');
+
+        self::assertSame([], array_map(static fn (\Dom\Element $element): string => $element->getAttribute('id') ?? '', iterator_to_array($dropdown->querySelectorAll('[id]'))));
+        self::assertFalse($dropdown->hasAttribute('id'));
+        $button = $dropdown->querySelector('button');
+        self::assertSame('false', $button?->getAttribute('aria-expanded'));
+        self::assertFalse($button->hasAttribute('aria-controls'));
+        self::assertSame('panel', $dropdown->querySelector('.crudit-ui-dropdown__panel')?->getAttribute('data-' . self::DROPDOWN . '-target'));
+    }
+
     public function testIconOnlyFloatingDropdownAlignedOnTheStart(): void
     {
         $dropdown = $this->element('<twig:LleCruditUi:Dropdown label="More actions for V-0412" iconOnly floating align="start" size="small">…</twig:LleCruditUi:Dropdown>', 'div');
 
-        self::assertStringStartsWith('crudit-ui-dropdown-', (string) $dropdown->getAttribute('id'));
+        // No id given: none generated (a menu of a line of a Table)
+        self::assertFalse($dropdown->hasAttribute('id'));
         self::assertSame('true', $dropdown->getAttribute('data-' . self::DROPDOWN . '-floating-value'));
         self::assertSame('start', $dropdown->getAttribute('data-' . self::DROPDOWN . '-align-value'));
 

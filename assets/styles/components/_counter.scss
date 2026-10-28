@@ -1,0 +1,62 @@
+@use '../tools/a11y' as *;
+
+// Counters by state: in each box, the Status of the state (its tone, its label), then the number. The state comes
+// first: the number does not take over (the WidgetCounters of the crudit-v2 mockup put it first, in large).
+.crudit-ui-counters {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    list-style: none;
+}
+
+.crudit-ui-counter {
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    color: var(--c-text);
+    text-decoration: none;
+    @include transition(background-color, border-color);
+
+    // The status larger than in a list: the box is about it. A long label wraps, in a narrow box (a phone).
+    .crudit-ui-status {
+        min-width: 0;
+        gap: var(--space-2);
+        padding: 0.125rem var(--space-3);
+        font-size: var(--font-size-sm);
+        white-space: normal;
+    }
+
+    .crudit-ui-status__dot {
+        width: 0.5rem;
+        height: 0.5rem;
+    }
+
+    &__value {
+        font-size: var(--font-size-lg);
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--line-height-tight);
+        white-space: nowrap;
+    }
+
+    // A link: the whole box (hover and focus).
+    @at-root a#{&} {
+        &:hover,
+        &.crudit-ui-is-hover {
+            border-color: var(--c-border-strong);
+            background-color: var(--c-surface-hover);
+        }
+
+        &:focus-visible {
+            @include focus-ring;
+        }
+    }
+}

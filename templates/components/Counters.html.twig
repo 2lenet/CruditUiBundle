@@ -1,0 +1,10 @@
+{#
+ # Counters: the number of elements in each state of a workflow, side by side. Its items are Counter.
+ #
+ # Props: label (optional: names the list, "Orders by state"). Block: content (the counters).
+ # Contract: docs/components.md.
+ #}
+{% props label = null %}
+<ul {% if label is not null %}aria-label="{{ label }}" {% endif %}{{ attributes.defaults({class: 'crudit-ui-counters'}) }}>
+    {%- block content %}{% endblock -%}
+</ul>
