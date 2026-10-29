@@ -124,7 +124,7 @@ try {
         neutral: getComputedStyle(document.querySelector('#kit-counters div .crudit-ui-status')).color,
         text: status.closest('a').textContent,
     }));
-    assert.equal(counter.text, 'In progress12');
+    assert.equal(counter.text, 'In progress 12');
     assert.notEqual(counter.color, counter.neutral, 'the status of the counter has no colour of its tone');
 
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.

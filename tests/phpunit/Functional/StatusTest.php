@@ -61,7 +61,7 @@ class StatusTest extends TestCase
         self::assertSame('/order?state=progress', $link->getAttribute('href'));
         self::assertSame('false', $link->getAttribute('data-turbo'));
         // The status first (its tone, its label), then the number: named "In progress 1,250"
-        self::assertSame('In progress1,250', $link->textContent);
+        self::assertSame('In progress 1,250', $link->textContent);
         self::assertSame('In progress', $link->querySelector('.crudit-ui-status.crudit-ui-tone--info')?->textContent);
         self::assertSame('1,250', $link->querySelector('.crudit-ui-counter__value')?->textContent);
 
@@ -70,7 +70,7 @@ class StatusTest extends TestCase
         self::assertNotNull($box);
         self::assertSame('crudit-ui-counter', $box->getAttribute('class'));
         self::assertNotNull($box->querySelector('.crudit-ui-status.crudit-ui-tone--neutral'));
-        self::assertSame('Archived0', $box->textContent);
+        self::assertSame('Archived 0', $box->textContent);
 
         self::assertFalse($this->element('<twig:LleCruditUi:Counters/>', 'ul')->hasAttribute('aria-label'));
     }

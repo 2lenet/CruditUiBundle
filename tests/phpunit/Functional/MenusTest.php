@@ -67,6 +67,26 @@ class MenusTest extends TestCase
         self::assertSame('panel', $dropdown->querySelector('.crudit-ui-dropdown__panel')?->getAttribute('data-' . self::DROPDOWN . '-target'));
     }
 
+    public function testDropdownMenuGroupWithoutIdHasNone(): void
+    {
+        // A menu of actions with groups in a cell of a Table (rendered twice): no id at all.
+        $dropdown = $this->element(<<<'TWIG'
+            <twig:LleCruditUi:Dropdown label="Actions">
+                <twig:LleCruditUi:Menu>
+                    <twig:LleCruditUi:MenuGroup label="Export">
+                        <twig:LleCruditUi:MenuItem href="/export.csv">CSV</twig:LleCruditUi:MenuItem>
+                    </twig:LleCruditUi:MenuGroup>
+                    <twig:LleCruditUi:MenuItem>Archive</twig:LleCruditUi:MenuItem>
+                </twig:LleCruditUi:Menu>
+            </twig:LleCruditUi:Dropdown>
+            TWIG, 'div');
+
+        self::assertFalse($dropdown->hasAttribute('id'));
+        self::assertSame([], array_map(static fn (\Dom\Element $element): string => $element->getAttribute('id') ?? '', iterator_to_array($dropdown->querySelectorAll('[id]'))));
+        self::assertNull($dropdown->querySelector('[aria-labelledby], [aria-controls]'));
+        self::assertSame('Export', $dropdown->querySelector('ul.crudit-ui-menu__sub')?->getAttribute('aria-label'));
+    }
+
     public function testIconOnlyFloatingDropdownAlignedOnTheStart(): void
     {
         $dropdown = $this->element('<twig:LleCruditUi:Dropdown label="More actions for V-0412" iconOnly floating align="start" size="small">…</twig:LleCruditUi:Dropdown>', 'div');
@@ -165,7 +185,10 @@ class MenusTest extends TestCase
         $group = $menu->querySelector('li.crudit-ui-menu__group');
         $heading = $group?->querySelector('span.crudit-ui-menu__heading');
         self::assertSame('Language', $heading?->textContent);
-        self::assertSame($heading->getAttribute('id'), $group->querySelector('ul.crudit-ui-menu__sub')?->getAttribute('aria-labelledby'));
+        // Named by aria-label, without an id; the heading is hidden so as not to be read twice.
+        self::assertSame('true', $heading->getAttribute('aria-hidden'));
+        self::assertFalse($heading->hasAttribute('id'));
+        self::assertSame('Language', $group->querySelector('ul.crudit-ui-menu__sub')?->getAttribute('aria-label'));
 
         [$french, $english] = iterator_to_array($group->querySelectorAll('.crudit-ui-menu__item'));
         self::assertSame('true', $french->getAttribute('aria-current'));

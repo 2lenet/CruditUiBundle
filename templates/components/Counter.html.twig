@@ -1,16 +1,18 @@
 {#
  # Counter of a Counters: the Status of the state (its tone, its label always written), then the number of elements.
+ # A space separates them: invisible in the flex box, but the name is "In progress 12", not "In progress12".
  # With href, a link (the list filtered on the state), named by its label and its number ("In progress 12").
  #
  # Props: value (required, a number in the format of the locale), tone (neutral, info, primary, success, warning, danger,
  # a hue such as blue, or a colour of the project; neutral), href. Block: content (the label).
+ # Always inside a Counters: it renders its own <li>.
  # Attributes: on the link or the box, not on the <li>. Contract: docs/components.md.
  #}
 {% props value, tone = 'neutral', href = null %}
 {%- set tag = href is not null ? 'a' : 'div' -%}
 <li class="crudit-ui-counters__item">
     <{{ tag }} {% if href is not null %}href="{{ href }}" {% endif %}{{ attributes.defaults({class: 'crudit-ui-counter'}) }}>
-        {#- -#}<twig:LleCruditUi:Status tone="{{ tone }}">{{ block(outerBlocks.content) }}</twig:LleCruditUi:Status>
+        {#- -#}<twig:LleCruditUi:Status tone="{{ tone }}">{{ block(outerBlocks.content) }}</twig:LleCruditUi:Status>{{ ' ' }}
         {#- -#}<span class="crudit-ui-counter__value">{{ value|ui_number }}</span>
     {#- -#}</{{ tag }}>
 </li>
