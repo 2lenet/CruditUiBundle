@@ -1,14 +1,16 @@
 {#
  # Boolean value: an icon and Yes or No, written. Null: a dash, read as "Not set".
  #
- # Props: value (true, false or null), yes, no (the labels; translated Yes and No by default).
+ # Props: value (true, false or null), yes, no (the labels; translated Yes and No by default), reverse (false; true:
+ # Yes in the danger tone and No in the success one, when Yes is the bad news, as "Blocked"; icon and text unchanged).
  # Contract: docs/components.md.
  #}
-{% props value = null, yes = null, no = null %}
+{% props value = null, yes = null, no = null, reverse = false %}
+{%- set reversed = reverse ? ' crudit-ui-bool--reverse' : '' -%}
 {%- if value is null -%}
     <span {{ attributes.defaults({class: 'crudit-ui-empty-value'}) }}><span aria-hidden="true">—</span><span class="crudit-ui-visually-hidden">{{ 'crudit_ui.value.empty'|trans(domain: 'LleCruditUiBundle') }}</span></span>
 {%- elseif value -%}
-    <span {{ attributes.defaults({class: 'crudit-ui-bool crudit-ui-bool--yes'}) }}>{{ ui_icon('check') }}{{ yes ?? 'crudit_ui.boolean.yes'|trans(domain: 'LleCruditUiBundle') }}</span>
+    <span {{ attributes.defaults({class: 'crudit-ui-bool crudit-ui-bool--yes' ~ reversed}) }}>{{ ui_icon('check') }}{{ yes ?? 'crudit_ui.boolean.yes'|trans(domain: 'LleCruditUiBundle') }}</span>
 {%- else -%}
-    <span {{ attributes.defaults({class: 'crudit-ui-bool crudit-ui-bool--no'}) }}>{{ ui_icon('close') }}{{ no ?? 'crudit_ui.boolean.no'|trans(domain: 'LleCruditUiBundle') }}</span>
+    <span {{ attributes.defaults({class: 'crudit-ui-bool crudit-ui-bool--no' ~ reversed}) }}>{{ ui_icon('close') }}{{ no ?? 'crudit_ui.boolean.no'|trans(domain: 'LleCruditUiBundle') }}</span>
 {%- endif -%}
