@@ -158,6 +158,12 @@ A value without its rule gives a component in the neutral colours.
 <twig:LleCruditUi:Status tone="{{ state.tone }}">{{ state.label }}</twig:LleCruditUi:Status>
 <twig:LleCruditUi:Badge tone="danger" label="visits to plan">12</twig:LleCruditUi:Badge>
 <twig:LleCruditUi:Boolean :value="visit.done"/>
+
+<twig:LleCruditUi:Counters label="Orders by state">
+    {% for state in states %}
+        <twig:LleCruditUi:Counter :value="state.count" tone="{{ state.tone }}" href="{{ state.url }}">{{ state.label }}</twig:LleCruditUi:Counter>
+    {% endfor %}
+</twig:LleCruditUi:Counters>
 ```
 
 | Component | Props | Block | Accessibility |
@@ -169,6 +175,8 @@ A value without its rule gives a component in the neutral colours.
 | `LleCruditUi:Tag` | `pressed`, `busy` | `content`: the label | toggle button (`aria-pressed`): solid border, check and weight when associated; `busy` shows a spinner and ignores the click. The project switches the props; group the tags in a `role="group"` named by their title |
 | `LleCruditUi:Chip` | `removeLabel`, `removable` (`true`) | `content`: the text only (it is rendered twice: shown, and in the name of the button) | an active filter, in a `<ul class="crudit-ui-chips">` named "Active filters"; the remove button is named "Remove the filter " and the text of the chip ("Remove the filter Status: planned"), or by `removeLabel`. Its attributes are passed with the `remove:` prefix: `remove:data-action="filters#remove"` |
 | `LleCruditUi:Avatar` | `name` (required), `size` (`small`, `md`, `large`), `impersonated` | | the initials (two at most) are hidden: write the name next to it. The impersonation is read ("(impersonation)") |
+| `LleCruditUi:Counters` | `label` (names the list) | `content`: the `Counter` | a list (`<ul>`): one box per state, side by side, as many per line as fit. Always name it: by `label`, or by `aria-labelledby` towards the visible title of the widget |
+| `LleCruditUi:Counter` | `value` (required, a number in the format of the locale), `tone` (`neutral`), `href` | `content`: the label | always inside a `Counters` (it renders its own `<li>`). The `Status` of the state (its tone, its label), then the number: a link is named "In progress 12". With `href`, the whole box is a link to the list filtered on the state. Its attributes go on the link or the box, not on the `<li>` |
 | `LleCruditUi:ProgressBar` | `value`, `label` (required), `max` (`100`), `tone` (`primary`, `success` when `value` reaches `max`), `valueText` (the percentage in the format of the locale: `45 %` in French) | | the native `<progress>`, named by the label; the value is written. Above `max`, the bar is full and `valueText` says the real value. Write the level too when it matters: `valueText="85 %, to watch"`. An `id` passed by the project names the label too (`<id>-label`) |
 
 ### Loading, empty and messages
@@ -227,13 +235,16 @@ Blocks: `content`, the panel (a `Menu`, or anything: `crudit-ui-dropdown__header
 lay out a panel with a title and buttons); `trigger`, the content of the button in place of the icon, the label and the
 chevron (an avatar and a name). Attributes: on the root; `trigger:` on the button (`trigger:data-action`, added to the
 toggle), `panel:` on the panel (`panel:class`). The `id` passed by the project, if any, names the panel too
-(`<id>-panel`).
+(`<id>-panel`), and the button takes `aria-controls`. Without an `id`, the Dropdown has none: the controller finds its
+button and its panel by their targets. So it can go in a cell of a `Table`, whose HTML is rendered twice and must not
+carry an `id`.
 
 Controller `2lenet--crudit-ui-bundle--dropdown`, events `…dropdown:open` and `…dropdown:close` on the root. A project
 that writes its own markup gives the controller to a container, the target `button` and the action `toggle` to the
 button (with `aria-expanded="false"`), the target `panel` to the panel (with `hidden`).
 
-Accessibility: `aria-expanded` and `aria-controls` on the button. Escape closes the panel and gives the focus back to
+Accessibility: `aria-expanded` on the button, and `aria-controls` when the Dropdown has an `id` (optional in the
+disclosure pattern: the panel follows the button). Escape closes the panel and gives the focus back to
 the button (and stops there, its default prevented: a dialog around, a native `<dialog>` too, stays open); a click
 outside or the focus leaving the dropdown close it; the choice of an item of a `Menu` closes it and gives the focus
 back to the button, before the action of the item runs: a dialog that the action opens takes the focus, and gives it
@@ -261,7 +272,7 @@ The list of a `Dropdown`: a `<ul>` of links and buttons.
 |---|---|---|---|
 | `LleCruditUi:Menu` | | `content`: the items | a list, not `role="menu"` |
 | `LleCruditUi:MenuItem` | `icon`, `href` (a link, else a button), `type` (`button`), `tone` (`danger`: a destructive action, confirmed in a dialog that names the element), `disabled`, `reason` (why it is disabled: written under the label; disables the item), `current` (`null`: no check; `true`: checked; `false`: the room of the check is kept, in a list of options such as the languages) | `content`: the label | the attributes go on the button or the link (`data-action`, `form`, `hreflang`…), not on the `<li>`. Disabled: `aria-disabled`, still focusable, its reason read with its label; the click is ignored (controller `button`). A disabled link loses its `href` and is rendered as a button. `current`: `aria-current="true"`, the check is hidden |
-| `LleCruditUi:MenuGroup` | `label` (required) | `content`: the items | a heading, then a list named by it; a rule sets the group apart |
+| `LleCruditUi:MenuGroup` | `label` (required) | `content`: the items | a heading, then a list named by it (`aria-label`, no `id`: it can go in a cell of a `Table`); a rule sets the group apart |
 
 #### LleCruditUi:Tooltip
 

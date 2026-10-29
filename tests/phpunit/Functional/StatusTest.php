@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- * Components that describe a value: Badge, Status, Boolean, Tag, Chip, Avatar, ProgressBar, ColorSwatch.
+ * Components that describe a value: Badge, Status, Counters, Boolean, Tag, Chip, Avatar, ProgressBar, ColorSwatch.
  */
 class StatusTest extends TestCase
 {
@@ -37,6 +37,42 @@ class StatusTest extends TestCase
         self::assertSame('crudit-ui-status crudit-ui-tone--teal crudit-ui-status--small', $status->getAttribute('class'));
         self::assertSame('true', $status->querySelector('.crudit-ui-status__dot')?->getAttribute('aria-hidden'));
         self::assertSame('Preparation', $status->textContent);
+
+        // No blank after it: a status in a sentence ("To plan, change the status of INT-1")
+        self::assertSame('To plan, change', $this->element('<p><twig:LleCruditUi:Status>To plan</twig:LleCruditUi:Status>, change</p>', 'p')->textContent);
+    }
+
+    public function testCountersAreAListOfLinksNamedByTheirNumberAndLabel(): void
+    {
+        $counters = $this->element(
+            '<twig:LleCruditUi:Counters label="Orders by state">'
+            . '<twig:LleCruditUi:Counter :value="1250" tone="info" href="/order?state=progress" data-turbo="false">In progress</twig:LleCruditUi:Counter>'
+            . '<twig:LleCruditUi:Counter :value="0">Archived</twig:LleCruditUi:Counter>'
+            . '</twig:LleCruditUi:Counters>',
+            'ul',
+        );
+
+        self::assertSame('crudit-ui-counters', $counters->getAttribute('class'));
+        self::assertSame('Orders by state', $counters->getAttribute('aria-label'));
+
+        $link = $counters->querySelector('li.crudit-ui-counters__item > a');
+        self::assertNotNull($link);
+        self::assertSame('crudit-ui-counter', $link->getAttribute('class'));
+        self::assertSame('/order?state=progress', $link->getAttribute('href'));
+        self::assertSame('false', $link->getAttribute('data-turbo'));
+        // The status first (its tone, its label), then the number: named "In progress 1,250"
+        self::assertSame('In progress 1,250', $link->textContent);
+        self::assertSame('In progress', $link->querySelector('.crudit-ui-status.crudit-ui-tone--info')?->textContent);
+        self::assertSame('1,250', $link->querySelector('.crudit-ui-counter__value')?->textContent);
+
+        // Without href, a box, neutral.
+        $box = $counters->querySelector('li.crudit-ui-counters__item > div');
+        self::assertNotNull($box);
+        self::assertSame('crudit-ui-counter', $box->getAttribute('class'));
+        self::assertNotNull($box->querySelector('.crudit-ui-status.crudit-ui-tone--neutral'));
+        self::assertSame('Archived 0', $box->textContent);
+
+        self::assertFalse($this->element('<twig:LleCruditUi:Counters/>', 'ul')->hasAttribute('aria-label'));
     }
 
     /**

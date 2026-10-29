@@ -19,6 +19,14 @@ test('every tone and every hue sets the two variables of a tone, read by the bad
     assert.doesNotMatch(css, /\.crudit-ui-(badge|status)--(blue|danger)\{/);
 });
 
+test('a counter is one line, its status then its number; a counter link has the focus ring', () => {
+    assert.match(css, /\.crudit-ui-counter\{display:flex;[^}]*align-items:center;justify-content:space-between/);
+    assert.match(css, /\.crudit-ui-counter__value\{[^}]*font-variant-numeric:tabular-nums/);
+    // The status larger than in a list
+    assert.match(css, /\.crudit-ui-counter \.crudit-ui-status\{[^}]*font-size:var\(--font-size-sm\)/);
+    assert.match(css, /a\.crudit-ui-counter:focus-visible\{outline:var\(--focus-ring-width\) solid var\(--c-focus\)/);
+});
+
 test('the progress bar is styled in each engine, its colour from its tone', () => {
     for (const pseudo of ['::-webkit-progress-bar', '::-webkit-progress-value', '::-moz-progress-bar']) {
         assert.ok(css.includes(`.crudit-ui-progress__track${pseudo}{`), pseudo);
