@@ -45,6 +45,16 @@
     &--no {
         color: var(--c-danger-text);
     }
+
+    // Yes is the bad news ("Blocked"): the tones only are swapped, the icon, the text and the weight stay (Yes stays in
+    // medium: the bad news stands out)
+    &--reverse#{&}--yes {
+        color: var(--c-danger-text);
+    }
+
+    &--reverse#{&}--no {
+        color: var(--c-success-text);
+    }
 }
 
 // Value not filled in: a dash, read as "Not set".
