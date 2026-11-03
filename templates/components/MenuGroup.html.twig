@@ -1,13 +1,14 @@
 {#
- # Group of a Menu: a heading, then its items, set apart from the others by a rule. The list is named by the heading.
+ # Group of a Menu: a heading, then its items, set apart from the others by a rule. The list is named by the heading,
+ # through aria-label and without an id: a menu of a line of a Table is rendered twice. The heading is hidden, so as
+ # not to be read twice.
  #
  # Props: label (required, the heading). Block: content (MenuItem). Contract: docs/components.md.
  #}
 {% props label %}
-{%- set id = 'crudit-ui-menu-group-' ~ random() -%}
 <li {{ attributes.defaults({class: 'crudit-ui-menu__group'}) }}>
-    <span id="{{ id }}" class="crudit-ui-menu__heading">{{ label }}</span>
-    <ul class="crudit-ui-menu__sub" aria-labelledby="{{ id }}">
+    <span class="crudit-ui-menu__heading" aria-hidden="true">{{ label }}</span>
+    <ul class="crudit-ui-menu__sub" aria-label="{{ label }}">
         {%- block content %}{% endblock -%}
     </ul>
 </li>

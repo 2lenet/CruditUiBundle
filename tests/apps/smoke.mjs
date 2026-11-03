@@ -118,6 +118,15 @@ try {
     await audit('crudit-ui/kit', 'dark');
     await audit('crudit-ui/kit/ar', 'light');
 
+    // Counters: the status first, in the colour of its tone, then the number; the link is named by both.
+    const counter = await page.$eval('#kit-counters a .crudit-ui-status.crudit-ui-tone--info', (status) => ({
+        color: getComputedStyle(status).color,
+        neutral: getComputedStyle(document.querySelector('#kit-counters div .crudit-ui-status')).color,
+        text: status.closest('a').textContent,
+    }));
+    assert.equal(counter.text, 'In progress 12');
+    assert.notEqual(counter.color, counter.neutral, 'the status of the counter has no colour of its tone');
+
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});
     const widths = await page.evaluate(() => ({client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth}));

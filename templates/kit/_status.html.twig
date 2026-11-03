@@ -34,6 +34,15 @@
     {% for item in hues %}<twig:LleCruditUi:Badge tone="{{ item }}">{{ item }}</twig:LleCruditUi:Badge>{% endfor %}
 </div>
 
+<h3 class="crudit-ui-kit__subtitle">Counters by state</h3>
+<p class="crudit-ui-kit__text">The number of elements in each state, the dot of its colour and the label. A link opens the list filtered on the state.</p>
+<twig:LleCruditUi:Counters id="kit-counters" label="Orders by state">
+    <twig:LleCruditUi:Counter :value="12" tone="info" href="#kit-counters">In progress</twig:LleCruditUi:Counter>
+    <twig:LleCruditUi:Counter :value="1250" tone="teal" href="#kit-counters" class="crudit-ui-is-hover">Preparation (forced hover)</twig:LleCruditUi:Counter>
+    <twig:LleCruditUi:Counter :value="3" tone="danger" href="#kit-counters" class="crudit-ui-is-focus">Cancelled (forced focus)</twig:LleCruditUi:Counter>
+    <twig:LleCruditUi:Counter :value="0">Archived</twig:LleCruditUi:Counter>
+</twig:LleCruditUi:Counters>
+
 <h3 class="crudit-ui-kit__subtitle">Booleans, colour</h3>
 <div class="crudit-ui-kit__row">
     <twig:LleCruditUi:Boolean :value="true"/>

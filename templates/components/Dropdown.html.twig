@@ -9,10 +9,12 @@
  # loading while an item of the panel sends a form.
  # Blocks: content (the panel), trigger (the content of the button, in place of icon, label and chevron).
  # Attributes: on the root; `trigger:` on the button, `panel:` on the panel. The id passed by the project, if any,
- # names the panel too (<id>-panel). Contract: docs/components.md.
+ # names the panel too (<id>-panel, aria-controls of the button). Without one, no id at all: the controller finds its
+ # button and its panel by their targets, and aria-expanded is enough (the panel follows the button). So a Dropdown
+ # can go in a cell of a Table, whose HTML is rendered twice and must carry no id. Contract: docs/components.md.
  #}
 {% props label, icon = null, iconOnly = false, variant = 'secondary', size = 'md', align = 'end', floating = false %}
-{%- set id = attributes.render('id') ?? ('crudit-ui-dropdown-' ~ random()) -%}
+{%- set id = attributes.render('id') -%}
 {%- set controller = '2lenet--crudit-ui-bundle--dropdown' -%}
 {%- set root = {class: 'crudit-ui-dropdown', 'data-controller': controller} -%}
 {%- if floating %}{% set root = root|merge({('data-' ~ controller ~ '-floating-value'): 'true'}) %}{% endif -%}
@@ -22,13 +24,14 @@
 {%- else -%}
     {%- set class = 'crudit-ui-btn crudit-ui-btn--' ~ variant ~ (size == 'small' ? ' crudit-ui-btn--small' : '') -%}
 {%- endif -%}
-<div id="{{ id }}" {{ attributes.defaults(root) }}>
-    {{- include('@LleCruditUi/partials/_button_open.html.twig', {attributes: attributes.nested('trigger'), class: class, href: null, type: 'button', disabled: false, loading: false, busyOnSubmit: false, extra: {
-        'aria-expanded': 'false',
-        'aria-controls': id ~ '-panel',
-        ('data-' ~ controller ~ '-target'): 'button',
-        'data-action': controller ~ '#toggle',
-    }}, with_context: false) -}}
+{%- set extra = {
+    'aria-expanded': 'false',
+    ('data-' ~ controller ~ '-target'): 'button',
+    'data-action': controller ~ '#toggle',
+} -%}
+{%- if id %}{% set extra = extra|merge({'aria-controls': id ~ '-panel'}) %}{% endif -%}
+<div {% if id %}id="{{ id }}" {% endif %}{{ attributes.defaults(root) }}>
+    {{- include('@LleCruditUi/partials/_button_open.html.twig', {attributes: attributes.nested('trigger'), class: class, href: null, type: 'button', disabled: false, loading: false, busyOnSubmit: false, extra: extra}, with_context: false) -}}
         {#- Spinner of the loading state, while an item of the panel sends a form (controllers dropdown and button). It
          # takes the place of the first svg child of the button: the icon, or the chevron when there is none. Keep
          # this order if the button is reordered. -#}
@@ -43,7 +46,7 @@
             {%- endif -%}
         {%- endblock -%}
     </button>
-    <div id="{{ id }}-panel" hidden {{ attributes.nested('panel').defaults({
+    <div {% if id %}id="{{ id }}-panel" {% endif %}hidden {{ attributes.nested('panel').defaults({
         class: 'crudit-ui-dropdown__panel' ~ (align == 'start' ? ' crudit-ui-dropdown__panel--start' : '') ~ (floating ? ' crudit-ui-dropdown__panel--floating' : ''),
         ('data-' ~ controller ~ '-target'): 'panel',
     }) }}>
