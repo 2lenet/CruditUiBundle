@@ -43,6 +43,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "selection-bar": {
+                "main": "dist/controllers/selection_bar_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "table": {
                 "main": "dist/controllers/table_controller.js",
                 "webpackMode": "eager",

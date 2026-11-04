@@ -17,7 +17,13 @@ import { Controller } from '@hotwired/stimulus';
  *   Ctrl or Cmd opens it in a new tab. By keyboard, the link of the main cell does the job.
  * - Groups: the button of a group folds its rows (data-group-body) and its subtotals.
  * - Selection: the box of the page, indeterminate when some rows are selected; the row and its card (same data-id)
- *   stay in step. Dispatches "select" ({ids}) when it changes.
+ *   stay in step. The ids checked follow the pager and nothing else: a click on a link that only changes the page
+ *   (same address, same filters) keeps them in sessionStorage for the next page, which reads them once and checks the
+ *   rows again. A sort, a filter, a reload, a return to the list or an action start from an empty selection (acting
+ *   on rows the user no longer sees is dangerous). Dispatches "select"
+ *   ({table, ids, count, pageSelected}: the id of the table, the ids checked on the pages visited with the pager, the number of rows of the
+ *   page, how many of them are checked) when it changes. clearSelection() forgets everything (the button of the
+ *   SelectionBar).
  */
 export default class extends Controller {
     static targets = ['wrap', 'table', 'topBar', 'spacer', 'selectAll', 'selectAllCards', 'rowCheck'];
@@ -35,13 +41,21 @@ export default class extends Controller {
             this.observer.observe(header);
         }
         window.addEventListener('resize', this.onResize);
+        this.onLeave = event => this.keepForPager(event);
+        document.addEventListener('click', this.onLeave);
         this.measure();
+        this.restoreSelection();
         this.refreshSelection();
+        // After the connection of the SelectionBar (after the table in the page), which listens to the event
+        if (this.selection.size > 0) {
+            setTimeout(() => this.dispatchSelection());
+        }
     }
 
     disconnect() {
         this.observer?.disconnect();
         window.removeEventListener('resize', this.onResize);
+        document.removeEventListener('click', this.onLeave);
     }
 
     measure() {
@@ -118,15 +132,13 @@ export default class extends Controller {
 
     toggleRow(event) {
         this.setRow(event.currentTarget.dataset.id, event.currentTarget.checked);
-        this.refreshSelection();
-        this.dispatchSelection();
+        this.commitSelection();
     }
 
     togglePage(event) {
         const checked = event.currentTarget.checked;
         this.rowCheckTargets.forEach(box => this.setRow(box.dataset.id, checked));
-        this.refreshSelection();
-        this.dispatchSelection();
+        this.commitSelection();
     }
 
     setRow(id, checked) {
@@ -135,21 +147,105 @@ export default class extends Controller {
             box.closest('tr')?.classList.toggle('crudit-ui-table__row--selected', checked);
             box.closest('li')?.classList.toggle('crudit-ui-table__card--selected', checked);
         });
+        if (checked) {
+            this.selection.add(id);
+        } else {
+            this.selection.delete(id);
+        }
+    }
+
+    commitSelection() {
+        this.refreshSelection();
+        this.dispatchSelection();
     }
 
     refreshSelection() {
-        const ids = this.selectedIds();
-        const all = new Set(this.rowCheckTargets.map(box => box.dataset.id));
-        const state = {checked: all.size > 0 && ids.length === all.size, indeterminate: ids.length > 0 && ids.length < all.size};
+        const ids = this.pageIds().filter(id => this.selection.has(id));
+        const all = this.pageIds();
+        const state = {checked: all.length > 0 && ids.length === all.length, indeterminate: ids.length > 0 && ids.length < all.length};
         [...(this.hasSelectAllTarget ? [this.selectAllTarget] : []), ...(this.hasSelectAllCardsTarget ? [this.selectAllCardsTarget] : [])]
             .forEach(box => Object.assign(box, state));
     }
 
+    pageIds() {
+        return [...new Set(this.rowCheckTargets.map(box => box.dataset.id))];
+    }
+
     selectedIds() {
-        return [...new Set(this.rowCheckTargets.filter(box => box.checked).map(box => box.dataset.id))];
+        return [...this.selection];
     }
 
     dispatchSelection() {
-        this.dispatch('select', {detail: {ids: this.selectedIds()}});
+        const pageIds = this.pageIds();
+        this.dispatch('select', {detail: {
+            table: this.element.id,
+            ids: this.selectedIds(),
+            count: pageIds.length,
+            pageSelected: pageIds.filter(id => this.selection.has(id)).length,
+        }});
+    }
+
+    clearSelection() {
+        this.selection.clear();
+        this.rowCheckTargets.forEach(box => this.setRow(box.dataset.id, false));
+        this.commitSelection();
+    }
+
+    get storageKey() {
+        return `crudit-ui:selection:${this.element.id}`;
+    }
+
+    // The address without the page (`page`, or `<list>_offset` in Crudit): the same list, the same filters and sort
+    static pageParam = /^page$|_offset$/;
+
+    pageParams(url) {
+        return [...url.searchParams.entries()].filter(([name]) => this.constructor.pageParam.test(name));
+    }
+
+    scopeOf(url) {
+        const query = new URLSearchParams(url.search);
+        this.pageParams(url).forEach(([name]) => query.delete(name));
+
+        return `${url.pathname}?${query.toString()}`;
+    }
+
+    // A click on a link that only changes the page keeps the selection for the next one (read once by restoreSelection)
+    keepForPager(event) {
+        const link = event.target.closest?.('a[href]');
+        if (!link || this.selection.size === 0 || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || link.target === '_blank') {
+            return;
+        }
+        const url = new URL(link.href, window.location.href);
+        const current = new URL(window.location.href);
+        const sameList = url.origin === current.origin && this.scopeOf(url) === this.scopeOf(current)
+            && JSON.stringify(this.pageParams(url)) !== JSON.stringify(this.pageParams(current));
+        if (!sameList) {
+            return;
+        }
+        try {
+            window.sessionStorage.setItem(this.storageKey, JSON.stringify({scope: this.scopeOf(current), ids: [...this.selection]}));
+        } catch (e) {
+            // No storage: the selection ends with the page
+        }
+        this.dispatch('paginate', {detail: {table: this.element.id, scope: this.scopeOf(current)}});
+    }
+
+    restoreSelection() {
+        this.selection = new Set();
+        try {
+            const stored = JSON.parse(window.sessionStorage.getItem(this.storageKey) ?? 'null');
+            window.sessionStorage.removeItem(this.storageKey);
+            if (stored?.scope === this.scopeOf(new URL(window.location.href))) {
+                stored.ids.forEach(id => this.selection.add(String(id)));
+            }
+        } catch (e) {
+            // No storage (private window, blocked)
+        }
+        this.rowCheckTargets.forEach(box => {
+            const checked = this.selection.has(box.dataset.id);
+            box.checked = checked;
+            box.closest('tr')?.classList.toggle('crudit-ui-table__row--selected', checked);
+            box.closest('li')?.classList.toggle('crudit-ui-table__card--selected', checked);
+        });
     }
 }

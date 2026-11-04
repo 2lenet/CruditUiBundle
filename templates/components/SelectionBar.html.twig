@@ -1,0 +1,40 @@
+{#
+ # SelectionBar: the bar of the actions on the rows checked in a Table (controller selection-bar), stuck at the bottom
+ # of the screen and hidden while no row is checked. It says how many rows are selected, offers to select all the
+ # results when the whole page is checked, and gives the selection to its actions: a link marked
+ # data-action="2lenet--crudit-ui-bundle--selection-bar#fill" gets ids (separated by commas) and all_page (0 or 1) in
+ # its address; a form marked the same way on its submit event fills the fields data-selection-field="ids" and
+ # "all_page".
+ #
+ # Props: table (required: the id of the Table), total (the number of results of the list, all pages: without it, no
+ # offer to select them all), label (names the region, "Actions on the selection").
+ # Blocks: actions (the buttons, links and menus), after (outside the bar, in the scope of the controller: the dialogs
+ # of the actions with a form). Contract: docs/components.md.
+ #}
+{% props table, total = 0, label = null %}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set controller = '2lenet--crudit-ui-bundle--selection-bar' -%}
+<div {{ attributes.defaults({
+    'data-controller': controller,
+    ('data-' ~ controller ~ '-table-value'): table,
+    ('data-' ~ controller ~ '-total-value'): total,
+    ('data-' ~ controller ~ '-one-value'): 'crudit_ui.selection.one'|trans(domain: domain),
+    ('data-' ~ controller ~ '-many-value'): 'crudit_ui.selection.many'|trans(domain: domain),
+    ('data-' ~ controller ~ '-select-all-label-value'): 'crudit_ui.selection.select_all'|trans(domain: domain),
+    ('data-' ~ controller ~ '-all-selected-value'): 'crudit_ui.selection.all_selected'|trans(domain: domain),
+    ('data-' ~ controller ~ '-cleared-value'): 'crudit_ui.selection.cleared'|trans(domain: domain),
+    ('data-action'): '2lenet--crudit-ui-bundle--table:select@window->' ~ controller ~ '#update 2lenet--crudit-ui-bundle--table:paginate@window->' ~ controller ~ '#keepForPager',
+}) }}>
+    <p class="crudit-ui-visually-hidden" role="status" data-{{ controller }}-target="status"></p>
+    <div class="crudit-ui-selection-bar" role="region" aria-label="{{ label ?? 'crudit_ui.selection.label'|trans(domain: domain) }}" data-{{ controller }}-target="bar" hidden>
+        <p class="crudit-ui-selection-bar__count">
+            <span data-{{ controller }}-target="count"></span>
+            <button type="button" class="crudit-ui-btn crudit-ui-btn--link crudit-ui-btn--small" data-{{ controller }}-target="selectAll" data-action="{{ controller }}#selectAll" hidden></button>
+        </p>
+        <div class="crudit-ui-selection-bar__actions">
+            {%- block actions %}{% endblock -%}
+            <button type="button" class="crudit-ui-btn crudit-ui-btn--ghost crudit-ui-btn--small" data-{{ controller }}-target="clearButton" data-action="{{ controller }}#clear">{{ 'crudit_ui.selection.clear'|trans(domain: domain) }}</button>
+        </div>
+    </div>
+    {%- block after %}{% endblock -%}
+</div>
