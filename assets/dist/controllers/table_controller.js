@@ -250,7 +250,7 @@ export default class extends Controller {
 
     restoreSelection() {
         // The rows the server checked (`selected`) count, whatever else is restored
-        this.selection = new Set(this.rowCheckTargets.filter(box => box.checked).map(box => box.dataset.id));
+        this.selection = new Set(this.rowCheckTargets.filter(box => box.defaultChecked).map(box => box.dataset.id));
         this.all = false;
         // Turbo shows the cached copy of a page first (a preview), and connects the controllers on it: the real page,
         // which comes next, reads the entry

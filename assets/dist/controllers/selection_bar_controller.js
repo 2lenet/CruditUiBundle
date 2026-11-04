@@ -112,7 +112,7 @@ export default class extends Controller {
         root.querySelectorAll('a[href][data-selection-link], a[href][data-action]')
             .forEach(link => {
                 // data-action ends with "selection-bar#fill" (not #fillDialog)
-                if (link.hasAttribute('data-selection-link') || link.dataset.action.split(/\s+/).some(action => action.endsWith('selection-bar#fill'))) {
+                if (link.hasAttribute('data-selection-link') || link.dataset.action.split(/\s+/).some(action => /selection-bar#fill(:\w+)*$/.test(action))) {
                     this.syncLink(link);
                 }
             });
