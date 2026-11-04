@@ -23,8 +23,8 @@ class SelectionBarTest extends TestCase
         self::assertSame('visits', $root->getAttribute('data-' . self::BAR . '-table-value'));
         self::assertSame('137', $root->getAttribute('data-' . self::BAR . '-total-value'));
         self::assertSame('2lenet--crudit-ui-bundle--table:select@window->' . self::BAR . '#update', $root->getAttribute('data-action'));
-        self::assertStringContainsString('crudit-ui-selection-bar-root', $root->getAttribute('class'), 'the root has no box (display: contents): the bar sticks inside the container of the table');
-        self::assertStringContainsString('%count%', $root->getAttribute('data-' . self::BAR . '-all-ended-value'));
+        self::assertStringContainsString('crudit-ui-selection-bar-root', (string) $root->getAttribute('class'), 'the root has no box (display: contents): the bar sticks inside the container of the table');
+        self::assertStringContainsString('%count%', (string) $root->getAttribute('data-' . self::BAR . '-all-ended-value'));
         self::assertTrue($root->querySelector('[role="region"]')?->hasAttribute('hidden'));
         self::assertSame('Actions on the selection', $root->querySelector('[role="region"]')->getAttribute('aria-label'));
         self::assertSame('status', $root->querySelector('p.crudit-ui-visually-hidden')?->getAttribute('role'));
