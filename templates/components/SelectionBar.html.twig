@@ -10,8 +10,8 @@
  # offer to select them all), label (names the region, "Actions on the selection").
  # Blocks: actions (the buttons, links and menus), after (outside the bar, in the scope of the controller: the dialogs
  # of the actions with a form). Place it AFTER the Table, in the same container: the bar sticks to the bottom of the
- # screen inside its parent (its root has no box of its own, `display: contents`), so it stays while the table is in
- # view and goes away with it. Contract: docs/components.md.
+ # screen inside its parent (its root has no box of its own, `display: contents`), so it stays as long as its parent is
+ # in view: the parent should hold the table and little else, or the bar stays stuck below other content. Contract: docs/components.md.
  #}
 {% props table, total = 0, label = null %}
 {%- set domain = 'LleCruditUiBundle' -%}
@@ -25,7 +25,8 @@
     ('data-' ~ controller ~ '-many-value'): 'crudit_ui.selection.many'|trans(domain: domain),
     ('data-' ~ controller ~ '-select-all-label-value'): 'crudit_ui.selection.select_all'|trans(domain: domain),
     ('data-' ~ controller ~ '-all-selected-value'): 'crudit_ui.selection.all_selected'|trans(domain: domain),
-    ('data-' ~ controller ~ '-all-ended-value'): 'crudit_ui.selection.all_ended'|trans(domain: domain),
+    ('data-' ~ controller ~ '-all-ended-one-value'): 'crudit_ui.selection.all_ended_one'|trans(domain: domain),
+    ('data-' ~ controller ~ '-all-ended-many-value'): 'crudit_ui.selection.all_ended_many'|trans(domain: domain),
     ('data-' ~ controller ~ '-cleared-value'): 'crudit_ui.selection.cleared'|trans(domain: domain),
     ('data-action'): '2lenet--crudit-ui-bundle--table:select@window->' ~ controller ~ '#update',
 }) }}>

@@ -656,7 +656,7 @@ Blocks: `before` (above the table), `empty` (the empty state: put the action tha
 (under the table: the pager). The cells are not a block: the caller renders them.
 Controllers: `table` (second scrollbar above the table, sticky header, click on a row, folding of groups, selection;
 keeps the ids checked, and the mode "all the results", when the user goes to another page with the pager (`sessionStorage`, read once); dispatches `select` with `{table, ids, count, pageSelected, all, exitedAll}`, also when it connects) and `table-sort` (when `sortable`, loaded on demand). The bar of the selection, `LleCruditUi:SelectionBar`, has its own controller `selection-bar`.
-Events: `2lenet--crudit-ui-bundle--table:select` (`event.detail.table`, `ids`: those of the pages visited with the pager, `count`: rows of the page, `pageSelected`: of them checked); `2lenet--crudit-ui-bundle--table-sort:sorted` and `…:failed` (`event.detail.ids`).
+Events: `2lenet--crudit-ui-bundle--table:select` (`event.detail.table`, `ids`: those of the pages visited with the pager, `count`: rows of the page, `pageSelected`: of them checked, `all`: the mode "all the results", `exitedAll`: it has just ended); `2lenet--crudit-ui-bundle--table-sort:sorted` and `…:failed` (`event.detail.ids`).
 Accessibility: `<caption>`, `scope`, `aria-sort`, a `<tbody>` per group with a `aria-expanded` button, boxes named after
 the row, a handle that is a button (↑ ↓ move the row and announce the new position; "Move up" and "Move down" buttons in
 the cards, for touch), `aria-busy` while loading, `role="alert"` on the error. The second scrollbar is `aria-hidden` and
@@ -691,7 +691,8 @@ region: "3 rows selected", then "Selection cleared."), and when the whole page i
 (`total`), offers "Select all the N results": the actions then receive `all_page=1`.
 
 **Place it after the `Table`, in the same container.** The bar is `position: sticky` and sticks inside its parent: it stays
-at the bottom of the screen while the table is in view and goes away with it. The root of the component has no box
+at the bottom of the screen as long as its parent is in view: put it in a container that holds the table and little else, or it stays
+stuck below the other content of the container. The root of the component has no box
 (`display: contents`), so the parent is the container of the table, not the component.
 
 Props: `table` (required: the `id` of the Table), `total` (the number of results of the list, all pages; without it, no offer
@@ -713,7 +714,8 @@ with a form, in the scope of the controller).
 address, same filters and sort) keeps the ids and the mode "all the results" for the next page: the Table writes them in one go in
 `sessionStorage`, the next page reads them once (if the entry is less than 15 seconds old) and checks the rows again. A sort, a
 filter, a reload, a return to the list or an action start from an empty selection: acting on rows the user no longer sees is
-dangerous. The rows `selected` by the server are part of the selection.
+dangerous. The rows `selected` by the server are part of the selection. On a list that takes more than 15 seconds to load, the
+selection is lost without a word.
 
 In the mode "all the results", every row of the next pages is shown checked. Unchecking one leaves the mode, and the bar says so
 ("The selection of all the results ended: 5 rows still selected."): the rows still checked are the only ones left. "Deselect all"

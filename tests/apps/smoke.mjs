@@ -1180,6 +1180,8 @@ try {
         const boxes = () => bar.$$eval('#kit-table-default tbody tr[data-id] input[type=checkbox]', (inputs) => inputs.map((input) => input.checked));
         const go = async (selector) => {
             await Promise.all([bar.waitForNavigation({waitUntil: 'networkidle0'}), bar.$eval(selector, (link) => link.click())]);
+            // Turbo shows the cached copy of a page first (a preview): wait for the real page
+            await bar.waitForFunction(() => !document.documentElement.hasAttribute('data-turbo-preview'));
             await sleep(100);
         };
         await open();
@@ -1192,17 +1194,20 @@ try {
         await bar.click('[data-2lenet--crudit-ui-bundle--selection-bar-target=selectAll]');
         assert.match(await text(), /^All 137 results are selected/, 'selection bar: all the results are not offered');
         assert.equal(await bar.$eval('#kit-selection-export', (a) => new URL(a.href).searchParams.get('all_page')), '1');
-        // another page of the pager: the mode and the checked rows follow, all the rows are checked
+        // another page of the pager (other rows): the mode and the rows checked follow, the rows of the page are all checked
         await go('#kit-pager-2');
         assert.match(await text(), /^All 137 results are selected/, 'selection bar: "all the results" does not follow the pager');
         assert.deepEqual(await boxes(), [true, true, true, true], 'selection bar: the rows of the next page are not checked in the mode "all"');
-        // unchecking a row leaves the mode, and says so
-        await bar.click('#kit-table-default tbody tr[data-id="412"] input');
-        assert.match(await text(), /^3 rows selected/, 'selection bar: unchecking a row does not leave the mode "all"');
-        assert.match(await live(), /ended: 3 rows still selected/, 'selection bar: the end of the mode "all" is not announced');
-        // a page change with some rows: they follow
+        // unchecking a row leaves the mode, and says so: the 4 rows of the page 1 and 3 of the page 2 are left
+        await bar.click('#kit-table-default tbody tr[data-id="422"] input');
+        assert.match(await text(), /^7 rows selected/, 'selection bar: unchecking a row does not leave the mode "all", or the rows of the page 1 are lost');
+        assert.match(await live(), /ended: 7 rows still selected/, 'selection bar: the end of the mode "all" is not announced');
+        // back to the page 1 (already seen: under Turbo, shown from its cache first), then to the page 2 again
         await go('#kit-pager-1');
-        assert.deepEqual(await boxes(), [false, true, true, true], 'selection bar: the rows do not follow the pager');
+        assert.deepEqual(await boxes(), [true, true, true, true], 'selection bar: the rows do not follow the pager');
+        await go('#kit-pager-2');
+        assert.deepEqual(await boxes(), [false, true, true, true], 'selection bar: the rows do not follow the pager when the page was seen already (cache of Turbo)');
+        assert.match(await text(), /^7 rows selected/);
         // a sort starts again from the rows the server checked
         await go('#kit-pager-sort');
         assert.match(await text(), /^1 row selected/, 'selection bar: a sort keeps the selection');

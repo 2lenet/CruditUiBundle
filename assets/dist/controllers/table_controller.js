@@ -252,6 +252,13 @@ export default class extends Controller {
         // The rows the server checked (`selected`) count, whatever else is restored
         this.selection = new Set(this.rowCheckTargets.filter(box => box.checked).map(box => box.dataset.id));
         this.all = false;
+        // Turbo shows the cached copy of a page first (a preview), and connects the controllers on it: the real page,
+        // which comes next, reads the entry
+        if (document.documentElement.hasAttribute('data-turbo-preview')) {
+            this.rowCheckTargets.forEach(box => this.setRow(box.dataset.id, box.checked));
+
+            return;
+        }
         try {
             const stored = JSON.parse(window.sessionStorage.getItem(this.storageKey) ?? 'null');
             window.sessionStorage.removeItem(this.storageKey);

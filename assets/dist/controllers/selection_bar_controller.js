@@ -29,7 +29,8 @@ export default class extends Controller {
         many: String,
         selectAllLabel: String,
         allSelected: String,
-        allEnded: String,
+        allEndedOne: String,
+        allEndedMany: String,
         cleared: String,
     };
 
@@ -108,7 +109,13 @@ export default class extends Controller {
 
     // The links of the actions carry the selection in their address as soon as it changes
     syncLinks(root) {
-        root.querySelectorAll('a[href][data-selection-link], a[href][data-action*="selection-bar#fill"]').forEach(link => this.syncLink(link));
+        root.querySelectorAll('a[href][data-selection-link], a[href][data-action]')
+            .forEach(link => {
+                // data-action ends with "selection-bar#fill" (not #fillDialog)
+                if (link.hasAttribute('data-selection-link') || link.dataset.action.split(/\s+/).some(action => action.endsWith('selection-bar#fill'))) {
+                    this.syncLink(link);
+                }
+            });
     }
 
     syncLink(link) {
@@ -138,7 +145,7 @@ export default class extends Controller {
         this.selectAllTarget.hidden = !offer;
         this.selectAllTarget.textContent = this.selectAllLabelValue.replace('%total%', total);
         this.announce(this.exitedAll
-            ? this.allEndedValue.replace('%count%', String(this.ids.length))
+            ? (this.ids.length === 1 ? this.allEndedOneValue : this.allEndedManyValue).replace('%count%', String(this.ids.length))
             : text.replace('%total%', total));
     }
 

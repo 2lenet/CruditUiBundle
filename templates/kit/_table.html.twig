@@ -31,6 +31,10 @@
         ref: 'V-0415', customer: 'Sigma Foods', status: 'On hold', date: '—', duration: '—', amount: '0,00 €', zone: 'Gironde',
     }},
 ] %}
+{# Page 2 of the pager of the kit: other rows (other ids), none checked by the server #}
+{% if app.request is not null and app.request.query.get('page') == '2' %}
+    {% set rows = rows|map(row => row|merge({id: (row.id + 10) ~ '', selected: false})) %}
+{% endif %}
 
 <h3 class="crudit-ui-kit__subtitle">Default: sort, help on a column, row actions, a tone, a selected row</h3>
 <twig:LleCruditUi:Table id="kit-table-default" caption="Visits, sorted by planned date" :columns="columns" :rows="rows" :sort="{column: 'date', dir: 'asc'}" selectable>
