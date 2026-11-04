@@ -35,8 +35,33 @@
 <h3 class="crudit-ui-kit__subtitle">Default: sort, help on a column, row actions, a tone, a selected row</h3>
 <twig:LleCruditUi:Table id="kit-table-default" caption="Visits, sorted by planned date" :columns="columns" :rows="rows" :sort="{column: 'date', dir: 'asc'}" selectable>
     <twig:block name="before"><p class="crudit-ui-kit__text">Rows with an address are clickable with the mouse; by keyboard, the link of the first column does the job.</p></twig:block>
-    <twig:block name="footer"><p class="crudit-ui-kit__text">The pager of the list goes in the footer block.</p></twig:block>
+    <twig:block name="footer">
+        <p class="crudit-ui-kit__text">The pager of the list goes in the footer block (here two links that only change the page: the selection follows them).</p>
+        <p class="crudit-ui-kit__text"><a id="kit-pager-1" href="?page=1">Page 1</a> · <a id="kit-pager-2" href="?page=2">Page 2</a> · <a id="kit-pager-sort" href="?page=1&amp;sort=ref">Sort (the selection ends)</a></p>
+    </twig:block>
 </twig:LleCruditUi:Table>
+{# After the table, in the same container: the bar sticks to the bottom of the screen while the table is in view. #}
+<twig:LleCruditUi:SelectionBar table="kit-table-default" :total="137">
+    <twig:block name="actions">
+        <twig:LleCruditUi:Button id="kit-selection-export" href="#kit-table" icon="download" size="small" data-action="click->2lenet--crudit-ui-bundle--selection-bar#fill">Export</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button id="kit-selection-message" icon="send" size="small" commandfor="kit-selection-dialog" command="show-modal" data-action="click->2lenet--crudit-ui-bundle--selection-bar#fillDialog">Send a message</twig:LleCruditUi:Button>
+    </twig:block>
+    <twig:block name="after">
+        <twig:LleCruditUi:Dialog id="kit-selection-dialog" title="Message to the selected visits">
+            <twig:block name="content">
+                <form id="kit-selection-form" method="post" action="#kit-table">
+                    <input type="hidden" name="ids" data-selection-field="ids">
+                    <input type="hidden" name="all_page" data-selection-field="all_page">
+                    <p class="crudit-ui-kit__text">Fields marked <code>data-selection-field</code> receive the ids when the dialog opens.</p>
+                </form>
+            </twig:block>
+            <twig:block name="footer">
+                <twig:LleCruditUi:Button variant="ghost" commandfor="kit-selection-dialog" command="close">Cancel</twig:LleCruditUi:Button>
+                <twig:LleCruditUi:Button variant="primary" type="submit" form="kit-selection-form">Send</twig:LleCruditUi:Button>
+            </twig:block>
+        </twig:LleCruditUi:Dialog>
+    </twig:block>
+</twig:LleCruditUi:SelectionBar>
 
 <h3 class="crudit-ui-kit__subtitle">Groups, subtotals, totals, and the manual order inside a group</h3>
 <twig:LleCruditUi:Table id="kit-table-groups" caption="Invoices by month" :columns="columns"

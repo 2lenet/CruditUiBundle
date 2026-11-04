@@ -17,13 +17,17 @@ import { Controller } from '@hotwired/stimulus';
  *   Ctrl or Cmd opens it in a new tab. By keyboard, the link of the main cell does the job.
  * - Groups: the button of a group folds its rows (data-group-body) and its subtotals.
  * - Selection: the box of the page, indeterminate when some rows are selected; the row and its card (same data-id)
- *   stay in step. The ids checked follow the pager and nothing else: a click on a link that only changes the page
- *   (same address, same filters) keeps them in sessionStorage for the next page, which reads them once and checks the
- *   rows again. A sort, a filter, a reload, a return to the list or an action start from an empty selection (acting
- *   on rows the user no longer sees is dangerous). Dispatches "select"
- *   ({table, ids, count, pageSelected}: the id of the table, the ids checked on the pages visited with the pager, the number of rows of the
- *   page, how many of them are checked) when it changes. clearSelection() forgets everything (the button of the
- *   SelectionBar).
+ *   stay in step. The rows already checked by the server (`selected`) are part of it. The selection follows the pager
+ *   and nothing else: a click on a link that only changes the page (same address, same filters and sort) writes, in
+ *   one go, {scope, ids, all, ts} in sessionStorage; the next page reads it once (if it is less than 15 s old and of the
+ *   same list) and checks the rows again. A sort, a filter, a reload, a return to the list or an action start from an
+ *   empty selection (acting on rows the user no longer sees is dangerous).
+ *   Mode "all the results" (selectAll(), asked by the SelectionBar): every row of the page is checked, also on the
+ *   next pages; unchecking one leaves the mode (the event says it: exitedAll) and only the rows checked are left.
+ *   Dispatches "select" ({table, ids, count, pageSelected, all, exitedAll}: the id of the table, the ids checked on the
+ *   pages visited with the pager, the number of rows of the page, how many of them are checked, the mode, the mode just
+ *   left) when it changes, and once when the controller connects (the bar may be outside the element, in another
+ *   Turbo Frame). clearSelection() forgets everything and puts the focus back on the box of the page.
  */
 export default class extends Controller {
     static targets = ['wrap', 'table', 'topBar', 'spacer', 'selectAll', 'selectAllCards', 'rowCheck'];
@@ -47,9 +51,7 @@ export default class extends Controller {
         this.restoreSelection();
         this.refreshSelection();
         // After the connection of the SelectionBar (after the table in the page), which listens to the event
-        if (this.selection.size > 0) {
-            setTimeout(() => this.dispatchSelection());
-        }
+        setTimeout(() => this.dispatchSelection());
     }
 
     disconnect() {
@@ -131,14 +133,29 @@ export default class extends Controller {
     }
 
     toggleRow(event) {
+        const wasAll = this.all;
         this.setRow(event.currentTarget.dataset.id, event.currentTarget.checked);
-        this.commitSelection();
+        if (wasAll && !event.currentTarget.checked) {
+            this.all = false;
+        }
+        this.commitSelection(wasAll && !this.all);
     }
 
     togglePage(event) {
         const checked = event.currentTarget.checked;
+        const wasAll = this.all;
         this.rowCheckTargets.forEach(box => this.setRow(box.dataset.id, checked));
-        this.commitSelection();
+        if (wasAll && !checked) {
+            this.all = false;
+        }
+        this.commitSelection(wasAll && !this.all);
+    }
+
+    // All the results (the SelectionBar offers it when the whole page is checked)
+    selectAll() {
+        this.all = true;
+        this.rowCheckTargets.forEach(box => this.setRow(box.dataset.id, true));
+        this.commitSelection(false);
     }
 
     setRow(id, checked) {
@@ -154,14 +171,14 @@ export default class extends Controller {
         }
     }
 
-    commitSelection() {
+    commitSelection(exitedAll) {
         this.refreshSelection();
-        this.dispatchSelection();
+        this.dispatchSelection(exitedAll);
     }
 
     refreshSelection() {
-        const ids = this.pageIds().filter(id => this.selection.has(id));
         const all = this.pageIds();
+        const ids = all.filter(id => this.selection.has(id));
         const state = {checked: all.length > 0 && ids.length === all.length, indeterminate: ids.length > 0 && ids.length < all.length};
         [...(this.hasSelectAllTarget ? [this.selectAllTarget] : []), ...(this.hasSelectAllCardsTarget ? [this.selectAllCardsTarget] : [])]
             .forEach(box => Object.assign(box, state));
@@ -171,42 +188,44 @@ export default class extends Controller {
         return [...new Set(this.rowCheckTargets.map(box => box.dataset.id))];
     }
 
-    selectedIds() {
-        return [...this.selection];
-    }
-
-    dispatchSelection() {
+    dispatchSelection(exitedAll = false) {
         const pageIds = this.pageIds();
         this.dispatch('select', {detail: {
             table: this.element.id,
-            ids: this.selectedIds(),
+            ids: [...this.selection],
             count: pageIds.length,
             pageSelected: pageIds.filter(id => this.selection.has(id)).length,
+            all: this.all,
+            exitedAll,
         }});
     }
 
     clearSelection() {
+        this.all = false;
         this.selection.clear();
         this.rowCheckTargets.forEach(box => this.setRow(box.dataset.id, false));
-        this.commitSelection();
+        this.commitSelection(false);
+        // The button that was pressed goes away with the bar: the focus goes to the box of the page
+        [this.hasSelectAllTarget && this.selectAllTarget, this.hasSelectAllCardsTarget && this.selectAllCardsTarget]
+            .find(box => box && box.offsetParent !== null)?.focus();
     }
 
     get storageKey() {
         return `crudit-ui:selection:${this.element.id}`;
     }
 
-    // The address without the page (`page`, or `<list>_offset` in Crudit): the same list, the same filters and sort
-    static pageParam = /^page$|_offset$/;
-
-    pageParams(url) {
-        return [...url.searchParams.entries()].filter(([name]) => this.constructor.pageParam.test(name));
-    }
-
+    // The address without the page (`page`, or `<list>_offset` in Crudit), the parameters in a fixed order: the same
+    // list, the same filters and sort
     scopeOf(url) {
         const query = new URLSearchParams(url.search);
         this.pageParams(url).forEach(([name]) => query.delete(name));
+        query.sort();
 
         return `${url.pathname}?${query.toString()}`;
+    }
+
+    pageParams(url) {
+        return [...url.searchParams.entries()].filter(([name]) => /^page$|_offset$/.test(name));
     }
 
     // A click on a link that only changes the page keeps the selection for the next one (read once by restoreSelection)
@@ -223,23 +242,28 @@ export default class extends Controller {
             return;
         }
         try {
-            window.sessionStorage.setItem(this.storageKey, JSON.stringify({scope: this.scopeOf(current), ids: [...this.selection]}));
+            window.sessionStorage.setItem(this.storageKey, JSON.stringify({scope: this.scopeOf(current), ids: [...this.selection], all: this.all, ts: Date.now()}));
         } catch (e) {
             // No storage: the selection ends with the page
         }
-        this.dispatch('paginate', {detail: {table: this.element.id, scope: this.scopeOf(current)}});
     }
 
     restoreSelection() {
-        this.selection = new Set();
+        // The rows the server checked (`selected`) count, whatever else is restored
+        this.selection = new Set(this.rowCheckTargets.filter(box => box.checked).map(box => box.dataset.id));
+        this.all = false;
         try {
             const stored = JSON.parse(window.sessionStorage.getItem(this.storageKey) ?? 'null');
             window.sessionStorage.removeItem(this.storageKey);
-            if (stored?.scope === this.scopeOf(new URL(window.location.href))) {
+            if (stored && Date.now() - stored.ts < 15000 && stored.scope === this.scopeOf(new URL(window.location.href))) {
                 stored.ids.forEach(id => this.selection.add(String(id)));
+                this.all = stored.all === true;
             }
         } catch (e) {
             // No storage (private window, blocked)
+        }
+        if (this.all) {
+            this.pageIds().forEach(id => this.selection.add(id));
         }
         this.rowCheckTargets.forEach(box => {
             const checked = this.selection.has(box.dataset.id);

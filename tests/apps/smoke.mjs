@@ -1164,6 +1164,76 @@ try {
     assert.deepEqual(await order('kit-table-sort-off'), ['412', '413'], 'table: the order changes while a filter is active');
     assert.equal(await page.$eval('#kit-table-sort-off [role="status"]', (status) => status.textContent), 'The order cannot change while a filter is active.');
 
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // SelectionBar: the rows checked by the server count, the pager carries the selection (and "all the results"), a sort
+    // or a reload do not, the links carry the ids, the focus is not lost.
+    {
+        const bar = await browser.newPage();
+        await bar.setViewport({width: 1280, height: 800});
+        const open = async (query = '') => {
+            await bar.goto(new URL('crudit-ui/kit' + query, url).href, {waitUntil: 'networkidle0'});
+            await bar.waitForFunction(() => document.querySelector('[data-controller~="2lenet--crudit-ui-bundle--selection-bar"] [data-2lenet--crudit-ui-bundle--selection-bar-target=count]') !== null);
+            await sleep(50);
+        };
+        const text = () => bar.$eval('[data-2lenet--crudit-ui-bundle--selection-bar-target=count]', (e) => e.textContent.trim());
+        const live = () => bar.$eval('[data-controller~="2lenet--crudit-ui-bundle--selection-bar"] [role=status]', (e) => e.textContent.trim());
+        const boxes = () => bar.$$eval('#kit-table-default tbody tr[data-id] input[type=checkbox]', (inputs) => inputs.map((input) => input.checked));
+        const go = async (selector) => {
+            await Promise.all([bar.waitForNavigation({waitUntil: 'networkidle0'}), bar.$eval(selector, (link) => link.click())]);
+            await sleep(100);
+        };
+        await open();
+        assert.match(await text(), /^1 row selected/, 'selection bar: the row checked by the server does not count');
+        assert.deepEqual(await boxes(), [false, false, true, false], 'selection bar: the row checked by the server is unchecked');
+        assert.equal(await bar.$eval('#kit-selection-export', (a) => new URL(a.href).searchParams.get('ids')), '414', 'selection bar: the link does not carry the ids');
+        // the whole page, then all the results
+        await bar.click('#kit-table-default thead input');
+        assert.match(await text(), /^4 rows selected/);
+        await bar.click('[data-2lenet--crudit-ui-bundle--selection-bar-target=selectAll]');
+        assert.match(await text(), /^All 137 results are selected/, 'selection bar: all the results are not offered');
+        assert.equal(await bar.$eval('#kit-selection-export', (a) => new URL(a.href).searchParams.get('all_page')), '1');
+        // another page of the pager: the mode and the checked rows follow, all the rows are checked
+        await go('#kit-pager-2');
+        assert.match(await text(), /^All 137 results are selected/, 'selection bar: "all the results" does not follow the pager');
+        assert.deepEqual(await boxes(), [true, true, true, true], 'selection bar: the rows of the next page are not checked in the mode "all"');
+        // unchecking a row leaves the mode, and says so
+        await bar.click('#kit-table-default tbody tr[data-id="412"] input');
+        assert.match(await text(), /^3 rows selected/, 'selection bar: unchecking a row does not leave the mode "all"');
+        assert.match(await live(), /ended: 3 rows still selected/, 'selection bar: the end of the mode "all" is not announced');
+        // a page change with some rows: they follow
+        await go('#kit-pager-1');
+        assert.deepEqual(await boxes(), [false, true, true, true], 'selection bar: the rows do not follow the pager');
+        // a sort starts again from the rows the server checked
+        await go('#kit-pager-sort');
+        assert.match(await text(), /^1 row selected/, 'selection bar: a sort keeps the selection');
+        // a reload too
+        await bar.click('#kit-table-default thead input');
+        await bar.reload({waitUntil: 'networkidle0'});
+        await sleep(100);
+        assert.match(await text(), /^1 row selected/, 'selection bar: a reload keeps the selection');
+        // a stale entry (a navigation that did not end) is ignored
+        await bar.evaluate(() => sessionStorage.setItem('crudit-ui:selection:kit-table-default', JSON.stringify({scope: location.pathname + '?', ids: ['412', '413'], all: false, ts: Date.now() - 60000})));
+        await bar.reload({waitUntil: 'networkidle0'});
+        await sleep(100);
+        assert.match(await text(), /^1 row selected/, 'selection bar: an old entry is read');
+        // Clear: the focus goes to the box of the page, the bar is hidden
+        await bar.click('[data-2lenet--crudit-ui-bundle--selection-bar-target=clearButton]');
+        assert.equal(await bar.evaluate(() => document.activeElement === document.querySelector('#kit-table-default thead input')), true, 'selection bar: the focus is lost when the selection is cleared');
+        assert.equal(await bar.$eval('.crudit-ui-selection-bar', (e) => e.hidden), true);
+        // The bar sticks to the bottom of the screen while the table is in view (a low screen: in the flow, it would be below)
+        await bar.click('#kit-table-default tbody tr[data-id="412"] input');
+        await bar.setViewport({width: 1280, height: 260});
+        const place = await bar.evaluate(() => {
+            document.querySelector('#kit-table-default').scrollIntoView({block: 'start'});
+            const rect = document.querySelector('.crudit-ui-selection-bar').getBoundingClientRect();
+
+            // the table goes below the screen: only a sticky bar is in view
+            return [document.querySelector('#kit-table-default').getBoundingClientRect().bottom > window.innerHeight, rect.bottom <= window.innerHeight, rect.top >= 0, getComputedStyle(document.querySelector('.crudit-ui-selection-bar')).position === 'sticky'];
+        });
+        assert.deepEqual(place, [true, true, true, true], 'selection bar: the bar does not stay at the bottom of the screen while the table is in view');
+        await bar.close();
+    }
+
     // A click on a row goes to its address, not a click on its link, its box or its menu.
     await page.click('#kit-table-default tbody tr[data-id="413"] td:nth-child(5)');
     await page.waitForFunction(() => location.hash === '#kit-table', {timeout: 2000});

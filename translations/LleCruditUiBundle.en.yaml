@@ -23,6 +23,7 @@ crudit_ui:
         many: "%count% rows selected"
         select_all: "Select all %total% results"
         all_selected: "All %total% results are selected"
+        all_ended: "The selection of all the results ended: %count% rows still selected."
         cleared: "Selection cleared."
         clear: "Clear selection"
     table:

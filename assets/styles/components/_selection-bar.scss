@@ -1,5 +1,11 @@
 // SelectionBar (component SelectionBar, controller selection-bar): the bar of the actions on the rows checked in a
 // Table, stuck at the bottom of the screen. Same as `.batch-bar` of the crudit-v2 mockup.
+// The root of the component has no box: a sticky element stays inside its parent, which must be the container of the
+// table (the bar goes after the table), not a root that only holds the bar.
+.crudit-ui-selection-bar-root {
+    display: contents;
+}
+
 .crudit-ui-selection-bar {
     position: sticky;
     z-index: var(--z-sticky);

@@ -23,6 +23,7 @@ crudit_ui:
         many: "%count% righe selezionate"
         select_all: "Seleziona tutti i %total% risultati"
         all_selected: "Tutti i %total% risultati sono selezionati"
+        all_ended: "La selezione di tutti i risultati è terminata: %count% righe restano selezionate."
         cleared: "Selezione annullata."
         clear: "Deseleziona tutto"
     table:
