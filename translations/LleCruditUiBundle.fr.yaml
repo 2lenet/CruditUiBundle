@@ -17,6 +17,16 @@ crudit_ui:
         remove: "Retirer le filtre %label%"
     language:
         label: Langue
+    selection:
+        label: "Actions sur la sélection"
+        one: "%count% ligne sélectionnée"
+        many: "%count% lignes sélectionnées"
+        select_all: "Sélectionner les %total% résultats"
+        all_selected: "Les %total% résultats sont sélectionnés"
+        all_ended_one: "Fin de la sélection de tous les résultats : 1 ligne reste sélectionnée."
+        all_ended_many: "Fin de la sélection de tous les résultats : %count% lignes restent sélectionnées."
+        cleared: "Sélection vidée."
+        clear: "Tout désélectionner"
     table:
         loading: "Chargement de la liste…"
         error: "La liste n'a pas pu être chargée"

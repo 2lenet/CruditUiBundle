@@ -17,6 +17,16 @@ crudit_ui:
         remove: "Filter %label% entfernen"
     language:
         label: Sprache
+    selection:
+        label: "Aktionen für die Auswahl"
+        one: "%count% Zeile ausgewählt"
+        many: "%count% Zeilen ausgewählt"
+        select_all: "Alle %total% Ergebnisse auswählen"
+        all_selected: "Alle %total% Ergebnisse sind ausgewählt"
+        all_ended_one: "Die Auswahl aller Ergebnisse wurde beendet: 1 Zeile bleibt ausgewählt."
+        all_ended_many: "Die Auswahl aller Ergebnisse wurde beendet: %count% Zeilen bleiben ausgewählt."
+        cleared: "Auswahl aufgehoben."
+        clear: "Auswahl aufheben"
     table:
         loading: "Liste wird geladen…"
         error: "Die Liste konnte nicht geladen werden"

@@ -1,0 +1,60 @@
+// SelectionBar (component SelectionBar, controller selection-bar): the bar of the actions on the rows checked in a
+// Table, stuck at the bottom of the screen. Same as `.batch-bar` of the crudit-v2 mockup.
+// The root of the component has no box: a sticky element stays inside its parent, which must be the container of the
+// table (the bar goes after the table), not a root that only holds the bar.
+.crudit-ui-selection-bar-root {
+    display: contents;
+}
+
+.crudit-ui-selection-bar {
+    position: sticky;
+    z-index: var(--z-sticky);
+    inset-block-end: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin-block-start: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    background-color: var(--c-inverse-bg);
+    box-shadow: var(--shadow-lg);
+    color: var(--c-inverse-text);
+
+    &[hidden] {
+        display: none;
+    }
+
+    @media print {
+        display: none;
+    }
+
+    &__count {
+        margin: 0;
+        font-weight: var(--fw-semibold, 600);
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+        margin-inline-start: auto;
+    }
+
+    // Ghost and link buttons are written for a light surface: on the bar they take its text colour.
+    .crudit-ui-btn--ghost,
+    .crudit-ui-btn--link {
+        color: inherit;
+
+        &:hover:not(:disabled):not([aria-disabled='true']) {
+            background-color: color-mix(in srgb, currentcolor 15%, transparent);
+            color: inherit;
+        }
+    }
+
+    .crudit-ui-btn--link {
+        font-weight: var(--fw-semibold, 600);
+        text-decoration: underline;
+    }
+}

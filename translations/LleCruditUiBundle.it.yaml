@@ -17,6 +17,16 @@ crudit_ui:
         remove: "Rimuovi il filtro %label%"
     language:
         label: Lingua
+    selection:
+        label: "Azioni sulla selezione"
+        one: "%count% riga selezionata"
+        many: "%count% righe selezionate"
+        select_all: "Seleziona tutti i %total% risultati"
+        all_selected: "Tutti i %total% risultati sono selezionati"
+        all_ended_one: "La selezione di tutti i risultati è terminata: 1 riga resta selezionata."
+        all_ended_many: "La selezione di tutti i risultati è terminata: %count% righe restano selezionate."
+        cleared: "Selezione annullata."
+        clear: "Deseleziona tutto"
     table:
         loading: "Caricamento dell'elenco…"
         error: "Impossibile caricare l'elenco"

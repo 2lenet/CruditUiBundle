@@ -17,6 +17,16 @@ crudit_ui:
         remove: "Remove the filter %label%"
     language:
         label: Language
+    selection:
+        label: "Actions on the selection"
+        one: "%count% row selected"
+        many: "%count% rows selected"
+        select_all: "Select all %total% results"
+        all_selected: "All %total% results are selected"
+        all_ended_one: "The selection of all the results ended: 1 row still selected."
+        all_ended_many: "The selection of all the results ended: %count% rows still selected."
+        cleared: "Selection cleared."
+        clear: "Clear selection"
     table:
         loading: "Loading the list…"
         error: "The list could not be loaded"

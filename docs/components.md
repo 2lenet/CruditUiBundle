@@ -655,8 +655,8 @@ screen readers): a total aimed at that column is ignored, so aim it at another o
 Blocks: `before` (above the table), `empty` (the empty state: put the action that creates the first record), `footer`
 (under the table: the pager). The cells are not a block: the caller renders them.
 Controllers: `table` (second scrollbar above the table, sticky header, click on a row, folding of groups, selection;
-dispatches `select` with `{ids}`) and `table-sort` (when `sortable`, loaded on demand).
-Events: `2lenet--crudit-ui-bundle--table:select` (`event.detail.ids`); `2lenet--crudit-ui-bundle--table-sort:sorted` and `…:failed` (`event.detail.ids`).
+keeps the ids checked, and the mode "all the results", when the user goes to another page with the pager (`sessionStorage`, read once); dispatches `select` with `{table, ids, count, pageSelected, all, exitedAll}`, also when it connects) and `table-sort` (when `sortable`, loaded on demand). The bar of the selection, `LleCruditUi:SelectionBar`, has its own controller `selection-bar`.
+Events: `2lenet--crudit-ui-bundle--table:select` (`event.detail.table`, `ids`: those of the pages visited with the pager, `count`: rows of the page, `pageSelected`: of them checked, `all`: the mode "all the results", `exitedAll`: it has just ended); `2lenet--crudit-ui-bundle--table-sort:sorted` and `…:failed` (`event.detail.ids`).
 Accessibility: `<caption>`, `scope`, `aria-sort`, a `<tbody>` per group with a `aria-expanded` button, boxes named after
 the row, a handle that is a button (↑ ↓ move the row and announce the new position; "Move up" and "Move down" buttons in
 the cards, for touch), `aria-busy` while loading, `role="alert"` on the error. The second scrollbar is `aria-hidden` and
@@ -682,6 +682,48 @@ The cards repeat the cells of the table in the page, hidden by the CSS: the HTML
 `data-cell-id`. A script that refreshes a cell by its id (CruditBundle, `fieldsToUpdate`) updates `#<id>` and
 `[data-cell-id="<id>"]`: the page has each id once, and the table and the card stay in step. The content of the
 cell, in the HTML you give, must not carry an `id`.
+
+### LleCruditUi:SelectionBar
+
+The bar of the actions on the rows checked in a `Table` (controller `selection-bar`), stuck at the bottom of the screen and
+hidden while no row is checked. It listens to the event `select` of the table, says how many rows are selected (in a live
+region: "3 rows selected", then "Selection cleared."), and when the whole page is checked and the list has more results
+(`total`), offers "Select all the N results": the actions then receive `all_page=1`.
+
+**Place it after the `Table`, in the same container.** The bar is `position: sticky` and sticks inside its parent: it stays
+at the bottom of the screen as long as its parent is in view: put it in a container that holds the table and little else, or it stays
+stuck below the other content of the container. The root of the component has no box
+(`display: contents`), so the parent is the container of the table, not the component.
+
+Props: `table` (required: the `id` of the Table), `total` (the number of results of the list, all pages; without it, no offer
+to select them all), `label` (names the region). Blocks: `actions` (buttons, links, menus), `after` (the dialogs of the actions
+with a form, in the scope of the controller).
+
+**The actions get the selection by the controller**
+- a link with `data-action="2lenet--crudit-ui-bundle--selection-bar#fill"` (or `data-selection-link` in a dialog) always has `ids`
+  (separated by commas) and `all_page` (0 or 1) in its address, kept up to date as the selection changes: a middle click, "open in a
+  new tab" and "copy the link" work. **A long selection makes a long address** (a few hundred ids and more may be refused by
+  the server or a proxy): for such an action, send a form (POST) instead;
+- a form with the same `data-action` on its `submit` event fills the fields `data-selection-field="ids"` and
+  `data-selection-field="all_page"`;
+- a button that opens a dialog (`commandfor`) with `data-action="…selection-bar#fillDialog"` feeds the dialog when it opens,
+  whatever its content: the fields `data-selection-field`, the links `data-selection-link`, `data-ids` and `data-all-page` on the
+  `<dialog>`, and the event `crudit-ui:selection` (`detail.ids`, `detail.allPage`) for a script of the project.
+
+**The selection follows the pager only.** A click on a link that changes nothing but the page (`page` or `<list>_offset`, same
+address, same filters and sort) keeps the ids and the mode "all the results" for the next page: the Table writes them in one go in
+`sessionStorage`, the next page reads them once (if the entry is less than 15 seconds old) and checks the rows again. A sort, a
+filter, a reload, a return to the list or an action start from an empty selection: acting on rows the user no longer sees is
+dangerous. The rows `selected` by the server are part of the selection. On a list that takes more than 15 seconds to load, the
+selection is lost without a word.
+
+In the mode "all the results", every row of the next pages is shown checked. Unchecking one leaves the mode, and the bar says so
+("The selection of all the results ended: 5 rows still selected."): the rows still checked are the only ones left. "Deselect all"
+puts the focus back on the box of the page of the table.
+
+**Browsers.** The buttons that open a dialog use `commandfor` / `command` (Invoker Commands). The controller `dialog` of the bundle
+runs them itself in the browsers that do not know them yet, so nothing to add (the selection is given to the dialog on the click
+of the button, before the dialog opens).
 
 ### LleCruditUi:Kit:Section
 
