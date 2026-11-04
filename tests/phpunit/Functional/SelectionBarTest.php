@@ -22,7 +22,11 @@ class SelectionBarTest extends TestCase
         self::assertSame(self::BAR, $root->getAttribute('data-controller'));
         self::assertSame('visits', $root->getAttribute('data-' . self::BAR . '-table-value'));
         self::assertSame('137', $root->getAttribute('data-' . self::BAR . '-total-value'));
-        self::assertSame('2lenet--crudit-ui-bundle--table:select@window->' . self::BAR . '#update', $root->getAttribute('data-action'));
+        self::assertSame(
+            '2lenet--crudit-ui-bundle--table:select@window->' . self::BAR . '#update '
+            . '2lenet--crudit-ui-bundle--table:paginate@window->' . self::BAR . '#keepForPager',
+            $root->getAttribute('data-action'),
+        );
         self::assertTrue($root->querySelector('[role="region"]')?->hasAttribute('hidden'));
         self::assertSame('Actions on the selection', $root->querySelector('[role="region"]')->getAttribute('aria-label'));
         self::assertSame('status', $root->querySelector('p.crudit-ui-visually-hidden')?->getAttribute('role'));
