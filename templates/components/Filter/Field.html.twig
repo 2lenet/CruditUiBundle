@@ -6,10 +6,11 @@
  # Props: name (required: prefix of the names), label (required), type ('text', 'number', 'range', 'boolean', 'date',
  # 'datetime', 'period', 'choice'; 'text'), choices (of a 'choice': list of {value, label}), operators ({value, label, icon, noValue}; none: no condition), operator (the current value),
  # value (of a 'choice': the chosen values, a list or a string separated by commas), to (second bound of a range or
- # of a period), unit (after the input), placeholder, id (base of the ids, random otherwise).
+ # of a period), unit (after the input), placeholder, id (base of the ids, random otherwise), inline (of a 'period': the dates shown directly, for a field that
+ # is already in a menu: a main filter of the bar).
  # A boolean sends 'all', 'true' or 'false', as the 1.x does. Controller: filter-field. Contract: docs/components.md.
  #}
-{% props name, label, type = 'text', operators = [], operator = null, value = null, to = null, choices = [], unit = null, placeholder = null, id = null %}
+{% props name, label, type = 'text', operators = [], operator = null, value = null, to = null, choices = [], unit = null, placeholder = null, id = null, inline = false %}
 {%- set base = id ?? ('crudit-ui-filter-' ~ random()) -%}
 {%- set group = type in ['range', 'boolean', 'period', 'choice'] -%}
 {%- set chosenValues = type == 'choice' ? (value is iterable ? value : (value ? value|split(',') : [])) : [] -%}
@@ -43,7 +44,7 @@
                 <label class="crudit-ui-visually-hidden" for="{{ base }}-to">{{ 'crudit_ui.filter.maximum'|trans({'%label%': label}, 'LleCruditUiBundle') }}</label>
                 <input class="crudit-ui-filter-field__text" id="{{ base }}-to" type="number" inputmode="decimal" name="{{ name }}_to" value="{{ to }}" placeholder="{{ 'crudit_ui.filter.max'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
             {%- elseif type == 'period' -%}
-                <twig:LleCruditUi:Filter:Period id="{{ base }}-period" :name="name" :label="label" :value="value" :to="to" />
+                <twig:LleCruditUi:Filter:Period id="{{ base }}-period" :name="name" :label="label" :value="value" :to="to" :inline="inline" :disabled="noValue" />
             {%- elseif type == 'choice' -%}
                 <ul class="crudit-ui-filter-field__choices">
                     {% for choice in choices %}
@@ -59,7 +60,7 @@
                 <div class="crudit-ui-filter-field__segmented">
                     {% for option in [{value: 'all', label: 'crudit_ui.filter.all'}, {value: 'true', label: 'crudit_ui.filter.yes'}, {value: 'false', label: 'crudit_ui.filter.no'}] %}
                         <label class="crudit-ui-filter-field__segment">
-                            <input class="crudit-ui-filter-field__radio" type="radio" name="{{ name }}_value" value="{{ option.value }}"{{ (value ?? 'all') == option.value ? ' checked' : '' }}>
+                            <input class="crudit-ui-filter-field__radio" type="radio" name="{{ name }}_value" value="{{ option.value }}"{{ (value ?? 'all') == option.value ? ' checked' : '' }}{{ noValue ? ' disabled' : '' }}>
                             <span>{{ option.label|trans({}, 'LleCruditUiBundle') }}</span>
                         </label>
                     {% endfor %}

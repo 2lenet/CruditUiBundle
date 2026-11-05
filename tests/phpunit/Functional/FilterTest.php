@@ -117,6 +117,45 @@ class FilterTest extends TestCase
         self::assertTrue($field->querySelector('input[type=checkbox]')?->hasAttribute('disabled'));
     }
 
+    public function testAPeriodAndABooleanAreDisabledByIsEmpty(): void
+    {
+        $operators = ":operators=\"" . self::OPERATORS . "\" operator=\"isnull\"";
+
+        $period = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="d" label="Date" type="period" value="2026-10-01" to="2026-10-31" ' . $operators . ' />', '.crudit-ui-filter-field');
+        foreach ($period->querySelectorAll('input[type=date]') as $date) {
+            self::assertTrue($date->hasAttribute('disabled'), 'the dates of a period are not sent without the script');
+        }
+
+        $boolean = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="b" label="Done" type="boolean" ' . $operators . ' />', '.crudit-ui-filter-field');
+        foreach ($boolean->querySelectorAll('input[name=b_value]') as $radio) {
+            self::assertTrue($radio->hasAttribute('disabled'));
+        }
+
+        $enabled = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="d" label="Date" type="period" value="2026-10-01" />', '.crudit-ui-filter-field');
+        self::assertFalse($enabled->querySelector('input[type=date]')?->hasAttribute('disabled'));
+    }
+
+    public function testAMainPeriodIsInlineInItsDropdown(): void
+    {
+        $form = $this->element("<twig:LleCruditUi:Filter:Bar id=\"b\" label=\"Filter\" :filters=\"[{id: 'date', label: 'Date', name: 'f_date', type: 'period', primary: true}, {id: 'since', label: 'Since', name: 'f_since', type: 'period'}]\" />", 'form');
+
+        $main = $form->querySelector('.crudit-ui-filter-bar__quick .crudit-ui-period');
+        self::assertStringContainsString('crudit-ui-period--inline', (string) $main?->getAttribute('class'));
+        self::assertNull($main->querySelector('.crudit-ui-dropdown'), 'no dropdown in the dropdown');
+
+        $other = $form->querySelector('.crudit-ui-filter-panel .crudit-ui-period');
+        self::assertStringNotContainsString('crudit-ui-period--inline', (string) $other?->getAttribute('class'));
+    }
+
+    public function testTheBarKeepsItsActionsInTheDefaultAttribute(): void
+    {
+        $form = $this->bar();
+
+        $actions = (string) $form->getAttribute('data-action');
+        self::assertStringContainsString('filters#changed', $actions);
+        self::assertStringContainsString('dropdown:close->2lenet--crudit-ui-bundle--filters#closed', $actions);
+    }
+
     public function testAPeriodHasTwoDatesAndReadyMadePeriods(): void
     {
         $field = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="filter_date" label="Date" type="period" value="2026-10-01" to="2026-10-31" />', '.crudit-ui-filter-field');

@@ -49,12 +49,6 @@
                 "fetch": "eager",
                 "enabled": true
             },
-            "filter-field": {
-                "main": "dist/controllers/filter_field_controller.js",
-                "webpackMode": "eager",
-                "fetch": "eager",
-                "enabled": true
-            },
             "filter-period": {
                 "main": "dist/controllers/filter_period_controller.js",
                 "webpackMode": "eager",

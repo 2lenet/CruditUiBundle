@@ -735,7 +735,7 @@ form that holds the field sends them as `<name>_op`, `<name>_value` and, for a r
 `Filter:Field` props: `name` (required: prefix of the names), `label` (required), `type` (`text`, `number`, `range`, `boolean`,
 `date`, `datetime`, `period`, `choice`; `text`), `choices` (of a `choice`: `{value, label}`), `operators` (list of `{value, label, icon, noValue}`; `icon` is a name of the icon catalogue,
 `operator-equals`…; none or a single one: no condition button), `operator` (current value, the first by default), `value`, `to`
-(second bound of a range), `unit` (after the input), `placeholder`, `id` (base of the ids, random otherwise). A `boolean` sends
+(second bound of a range), `unit` (after the input), `placeholder`, `id` (base of the ids, random otherwise), `inline` (of a `period`: the dates shown directly, for a field already in a menu; the bar sets it on the main filters). A `boolean` sends
 `all`, `true` or `false`, as the 1.x does.
 
 `Filter:Operator` props: `name`, `label`, `operators`, `current`, `id`. It is a `Dropdown` of radio buttons, used by the field.
@@ -746,9 +746,9 @@ CruditBundle (lot 3.1.e). A `period` is a `Filter:Period` (below); it needs the 
 by the form even when its panel is closed.
 
 `Filter:Period` props: `name`, `label`, `value` and `to` (`Y-m-d`), `id`, `inline` (the dates and the periods shown directly, for
-a menu that already is a panel), `periods` (list of `{label, from, to}`: today, the last 7 and 30 days, this month, last month,
+a menu that already is a panel), `disabled` (the dates are not sent: an "is empty" condition; `Filter:Field` sets it), `periods` (list of `{label, from, to}`: today, the last 7 and 30 days, this month, last month,
 next month and this year by default, computed on the server's today). Controller `filter-period`: a ready-made period fills the
-two dates, the summary of the button follows them; event `2lenet--crudit-ui-bundle--filter-period:change`.
+two dates, the summary of the button follows them; event `2lenet--crudit-ui-bundle--filter-period:change` (`detail.start`, `detail.end`, `detail.chosen`: true for a ready-made period, false for a date typed).
 
 Controller `filter-field`: keeps the pictogram and the name of the button in step with the choice; an `isnull` / `isnotnull`
 kind of condition (`noValue: true`) replaces the input by the label of the condition and **disables** the input, so the old
@@ -767,14 +767,17 @@ nothing of Crudit: the project (the `FilterBrick`) gives the filters as data, th
 (`<name>_op`, `<name>_value`, `<name>_to`), and the server does what it does with them.
 
 - **The search and the main filters apply at once**: the form is sent when one of their fields changes (a short delay while one
-  types). What is in the panel is a draft, sent with "Apply" (the same form: the fields of the panel go with it).
+  types). The dates of a main period are sent when its dropdown closes (a ready-made period sends at once). **What is in the panel
+  is a draft**: a filter of the panel changed since the page was drawn is left out of a send that does not come from the panel (the
+  search, the bar, a chip), so the server keeps its previous value; "Apply" (or Enter in a field of the panel) sends them all.
+  The panel closed by its button or Escape stays closed after a reload.
 - **The panel** is a `Dialog` (`variant="drawer"`): shown **in the page from 768 px** (not modal, between the bar and the list; it
   stays open after "Apply", and is open again after a reload if the user left it so: `sessionStorage`), a **modal side panel below**.
   Its fields are in a grid of **4 per row at the most**, never narrower than 14rem. The button "Filters" shows the number of active
   filters and carries `aria-expanded` and `aria-controls`.
 - **Below 1024 px the main filters move into the panel** (the same fields, moved, never duplicated) and go back above.
 - **Chips**: the active filters that are not main ones ("Title: **boiler**" and a button "Remove the filter Title: boiler"). A chip
-  empties its filter's fields and sends the form. "Clear all" (the address `resetUrl`) shows from two active filters.
+  empties its filter's fields (inputs, lists, text areas; an "is empty" condition goes back to the first one that takes a value) and sends the form. "Clear all" (the address `resetUrl`) shows from two active filters.
 - **A filter whose `hidden` is true shows nowhere**: neither in the bar, the panel nor as a chip. The server keeps its value.
 - A field that is **not checked, not typed** sends nothing: that is why every filter with a condition sends `<name>_op` (a hidden
   field when it has only one), so that the server knows the filter was in the form and empty. **The server must take an `_op` with no

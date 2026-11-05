@@ -8,7 +8,9 @@ import { Controller } from '@hotwired/stimulus';
  *   the page.
  * An "end" before the "start" is not corrected: the filter then finds nothing, which the summary shows.
  *
- * Event: "change" (2lenet--crudit-ui-bundle--filter-period:change), detail {start, end}, after each change.
+ * Event: "change" (2lenet--crudit-ui-bundle--filter-period:change), detail {start, end, chosen}, after each change;
+ * `chosen` is true when a ready-made period was clicked (the period is then complete), false when a date was typed (the
+ * other one may still come).
  */
 export default class extends Controller {
     static targets = ['start', 'end', 'summary'];
@@ -19,10 +21,14 @@ export default class extends Controller {
         const {from, to} = event.currentTarget.dataset;
         this.startTarget.value = from;
         this.endTarget.value = to;
-        this.changed();
+        this.update(true);
     }
 
     changed() {
+        this.update(false);
+    }
+
+    update(chosen) {
         const start = this.startTarget.value;
         const end = this.endTarget.value;
         const texts = this.textsValue;
@@ -37,7 +43,7 @@ export default class extends Controller {
         if (this.hasSummaryTarget) {
             this.summaryTarget.textContent = summary;
         }
-        this.dispatch('change', {detail: {start, end}});
+        this.dispatch('change', {detail: {start, end, chosen}});
     }
 
     format(iso) {

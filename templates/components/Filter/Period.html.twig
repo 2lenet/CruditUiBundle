@@ -8,10 +8,10 @@
  # The dates stay editable by hand, so a period can be typed. Format sent: Y-m-d, as the native date input does.
  #
  # Props: name (required), label (required: the label of the filter), value, to (Y-m-d), id (base of the ids, random
- # otherwise), inline (false), periods (list of {label, from, to}; the ones above by default).
+ # otherwise), inline (false), disabled (false: the dates are not sent, an "is empty" condition), periods (list of {label, from, to}; the ones above by default).
  # Controller: filter-period. Contract: docs/components.md.
  #}
-{% props name, label, value = null, to = null, id = null, inline = false, periods = null %}
+{% props name, label, value = null, to = null, id = null, inline = false, disabled = false, periods = null %}
 {%- set base = id ?? ('crudit-ui-period-' ~ random()) -%}
 {%- set filterName = name -%}
 {%- set filterLabel = label -%}
@@ -47,11 +47,11 @@
     <div class="crudit-ui-period__dates">
         <div class="crudit-ui-period__date">
             <label for="{{ base }}-value">{{ 'crudit_ui.filter.period.from'|trans({}, 'LleCruditUiBundle') }}</label>
-            <input type="date" id="{{ base }}-value" name="{{ filterName }}_value" value="{{ start }}" data-{{ periodController }}-target="start" data-action="{{ periodController }}#changed">
+            <input type="date" id="{{ base }}-value" name="{{ filterName }}_value" value="{{ start }}" data-{{ periodController }}-target="start" data-action="{{ periodController }}#changed"{{ disabled ? ' disabled' : '' }}>
         </div>
         <div class="crudit-ui-period__date">
             <label for="{{ base }}-to">{{ 'crudit_ui.filter.period.to'|trans({}, 'LleCruditUiBundle') }}</label>
-            <input type="date" id="{{ base }}-to" name="{{ filterName }}_to" value="{{ end }}" data-{{ periodController }}-target="end" data-action="{{ periodController }}#changed">
+            <input type="date" id="{{ base }}-to" name="{{ filterName }}_to" value="{{ end }}" data-{{ periodController }}-target="end" data-action="{{ periodController }}#changed"{{ disabled ? ' disabled' : '' }}>
         </div>
     </div>
     <ul class="crudit-ui-period__periods" aria-label="{{ 'crudit_ui.filter.period.ready_made'|trans({'%label%': filterLabel}, 'LleCruditUiBundle') }}">

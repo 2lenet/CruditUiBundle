@@ -16,7 +16,7 @@
 <div {{ attributes.defaults({class: 'crudit-ui-operator'}) }}>
     <twig:LleCruditUi:Dropdown id="{{ base }}" label="{{ 'crudit_ui.filter.operator_for'|trans({'%label%': filterLabel, '%operator%': selected.label}, 'LleCruditUiBundle') }}" size="small" align="start" floating>
         <twig:block name="trigger">
-            <span class="crudit-ui-operator__icon" data-2lenet--crudit-ui-bundle--filter-field-target="operatorIcon">{{ ui_icon(selected.icon) }}</span>
+            <span class="crudit-ui-operator__icon" data-2lenet--crudit-ui-bundle--filter-field-target="operatorIcon">{{ ui_icon(selected.icon|default('')) }}</span>
             {{- ui_icon('dropdown', 'crudit-ui-operator__chevron') -}}
             <span class="crudit-ui-visually-hidden" data-2lenet--crudit-ui-bundle--filter-field-target="operatorName">{{ 'crudit_ui.filter.operator_for'|trans({'%label%': filterLabel, '%operator%': selected.label}, 'LleCruditUiBundle') }}</span>
         </twig:block>
@@ -29,7 +29,7 @@
                         data-no-value="{{ operator.noValue|default(false) ? 'true' : 'false' }}"
                         data-name="{{ 'crudit_ui.filter.operator_for'|trans({'%label%': filterLabel, '%operator%': operator.label}, 'LleCruditUiBundle') }}"
                         data-action="2lenet--crudit-ui-bundle--filter-field#choose">
-                    {{- ui_icon(operator.icon, 'crudit-ui-operator__option-icon') -}}
+                    {{- ui_icon(operator.icon|default(''), 'crudit-ui-operator__option-icon') -}}
                     <span>{{ operator.label }}</span>
                 </label>
             {% endfor %}

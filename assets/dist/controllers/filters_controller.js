@@ -3,13 +3,18 @@ import { matchBreakpoint } from '../utils/breakpoints.js';
 
 const SEARCH_DELAY = 400;
 const FOCUS_MAX_AGE = 5000;
+const PERIOD = '[data-controller~="2lenet--crudit-ui-bundle--filter-period"]';
+const DROPDOWN = '[data-controller~="2lenet--crudit-ui-bundle--dropdown"]';
 
 /*
  * Filter:Bar: the GET form of the filters of a list.
  *
  * - The search and the main filters of the bar apply at once: the form is sent (after a short delay while one types)
- *   as soon as one of their fields changes. What is in the panel is a draft, sent by "Apply" (the same form: the fields
- *   of the panel go with it).
+ *   as soon as one of their fields changes. The dates of a period are sent when its dropdown closes (or at once by a
+ *   ready-made period), not while the second one is still to be typed.
+ * - What is in the panel is a draft: a filter of the panel changed since the page was drawn is left out of a send that
+ *   does not come from the panel (search, bar, chip), so the server keeps its previous value; "Apply" (or Enter in a
+ *   field of the panel) sends them all.
  * - The button "Filters" (target "toggle") shows the panel (target "panel", a Dialog): in the page from md, kept open
  *   after "Apply" (remembered for the tab); a side panel, modal, below md. aria-expanded follows.
  * - Below lg, the main filters (target "quick", each with a "slot" in its dropdown) move into the panel (target
@@ -28,6 +33,15 @@ export default class extends Controller {
     connect() {
         this.timer = null;
         this.moved = new Map();
+        this.leaving = false;
+        this.periodWaiting = null;
+        // Before Turbo caches the page the dialogs close by themselves: that is not a choice of the user. Capture: runs
+        // before the close of the dropdowns and dialogs.
+        this.onBeforeCache = () => {
+            this.leaving = true;
+            clearTimeout(this.timer);
+        };
+        document.addEventListener('turbo:before-cache', this.onBeforeCache, {capture: true});
 
         this.wide = matchBreakpoint('>md');
         this.large = matchBreakpoint('>lg');
@@ -48,7 +62,9 @@ export default class extends Controller {
     }
 
     disconnect() {
+        this.leaving = true;
         clearTimeout(this.timer);
+        document.removeEventListener('turbo:before-cache', this.onBeforeCache, {capture: true});
         this.wide?.removeEventListener('change', this.onWide);
         this.large?.removeEventListener('change', this.onLarge);
         if (this.hasPanelTarget) {
@@ -84,8 +100,16 @@ export default class extends Controller {
         this.toggleTarget.setAttribute('aria-expanded', 'true');
     }
 
+    // Closed by the button of the dialog or Escape: a choice, remembered. Not when the page closes it (before the cache,
+    // on disconnect), nor when the window crosses md (closed and shown again at once: the event comes after).
     panelClosed() {
+        if (this.panelTarget.open) {
+            return;
+        }
         this.toggleTarget.setAttribute('aria-expanded', 'false');
+        if (!this.leaving) {
+            this.store('open', '0');
+        }
     }
 
     // The window crosses md with the panel open: shown again the way that suits the new width.
@@ -127,11 +151,28 @@ export default class extends Controller {
     // --- Sending ------------------------------------------------------------------------------------------------
 
     // A field of the bar changed (not one in the panel, which is a draft, nor the search, which waits for the delay).
+    // The dates of a period wait for its dropdown to close (see closed()): "From" is typed before "To". A ready-made
+    // period is complete, and sends at once.
     changed(event) {
         if (this.inPanel(event.target) || this.isTyped(event.target)) {
             return;
         }
+        const period = event.target.closest?.(PERIOD);
+        if (period && !event.detail?.chosen) {
+            this.periodWaiting = period;
+            return;
+        }
+        this.periodWaiting = null;
         this.schedule(0);
+    }
+
+    // The dropdown of a period of the bar closes after its dates were typed: sent.
+    closed(event) {
+        const period = this.periodWaiting;
+        if (period && event.target.contains(period) && period.closest(DROPDOWN) === event.target && !this.leaving) {
+            this.periodWaiting = null;
+            this.schedule(0);
+        }
     }
 
     // Typing in a field of the bar (the search, the text or number of a main filter) sends after a pause. The boxes,
@@ -147,7 +188,7 @@ export default class extends Controller {
     keydown(event) {
         if (event.key === 'Enter' && this.isTyped(event.target)) {
             event.preventDefault();
-            this.schedule(0);
+            this.schedule(0, {apply: this.inPanel(event.target)});
         }
     }
 
@@ -155,14 +196,58 @@ export default class extends Controller {
         return element instanceof HTMLInputElement && ['text', 'search', 'number', 'email', 'tel', 'url'].includes(element.type);
     }
 
-    schedule(delay) {
+    schedule(delay, options = {}) {
         clearTimeout(this.timer);
-        this.timer = setTimeout(() => this.send(), delay);
+        this.timer = setTimeout(() => this.send(options), delay);
     }
 
-    send() {
+    // Sends the form. Without `apply`, the filters of the panel that changed since the page was drawn (the draft) are
+    // disabled for the time of the send, so they are left out; `keep` is a filter that goes anyway (the one a chip
+    // just emptied).
+    send({apply = false, keep = null} = {}) {
         clearTimeout(this.timer);
-        this.element.requestSubmit(this.hasApplyTarget ? this.applyTarget : undefined);
+        const draft = apply ? [] : this.draftInputs(keep);
+        draft.forEach((input) => {
+            input.disabled = true;
+        });
+        try {
+            this.element.requestSubmit(this.hasApplyTarget ? this.applyTarget : undefined);
+        } finally {
+            draft.forEach((input) => {
+                input.disabled = false;
+            });
+        }
+    }
+
+    // The fields (all the inputs of a filter, its condition too: the server then keeps the filter as it was) of the
+    // filters of the panel that have been changed.
+    draftInputs(keep) {
+        if (!this.hasPanelTarget) {
+            return [];
+        }
+        const inputs = [];
+        this.panelTarget.querySelectorAll('[data-filter-id]').forEach((field) => {
+            if (field === keep) {
+                return;
+            }
+            const own = Array.from(field.querySelectorAll('input, select, textarea')).filter((input) => !input.disabled);
+            if (own.some((input) => this.modified(input))) {
+                inputs.push(...own);
+            }
+        });
+
+        return inputs;
+    }
+
+    modified(input) {
+        if (input instanceof HTMLSelectElement) {
+            return Array.from(input.options).some((option) => option.selected !== option.defaultSelected);
+        }
+        if (input.type === 'checkbox' || input.type === 'radio') {
+            return input.checked !== input.defaultChecked;
+        }
+
+        return input.value !== input.defaultValue;
     }
 
     // The search keeps its focus (and its caret) when the page comes back.
@@ -196,11 +281,18 @@ export default class extends Controller {
         if (!field) {
             return;
         }
-        field.querySelectorAll('input').forEach((input) => {
-            if (input.type === 'checkbox') {
+        field.querySelectorAll('input, select, textarea').forEach((input) => {
+            if (input instanceof HTMLSelectElement) {
+                Array.from(input.options).forEach((option) => {
+                    option.selected = false;
+                });
+                if (!input.multiple) {
+                    input.value = '';
+                }
+            } else if (input.type === 'checkbox') {
                 input.checked = false;
             } else if (input.type === 'radio') {
-                // The conditions keep theirs; the boolean goes back to "All".
+                // The conditions keep theirs (see below); the boolean goes back to "All".
                 if (input.name.endsWith('_value')) {
                     input.checked = input.value === 'all';
                 }
@@ -209,7 +301,15 @@ export default class extends Controller {
             }
             input.disabled = false;
         });
-        this.send();
+        // An "is empty" condition would go on filtering with its values emptied: the first condition that needs a value.
+        const conditions = Array.from(field.querySelectorAll('input[type="radio"][name$="_op"]'));
+        if (conditions.find((radio) => radio.checked)?.dataset.noValue === 'true') {
+            const other = conditions.find((radio) => radio.dataset.noValue !== 'true');
+            if (other) {
+                other.checked = true;
+            }
+        }
+        this.send({keep: field});
     }
 
     // --- Helpers ----------------------------------------------------------------------------------------------

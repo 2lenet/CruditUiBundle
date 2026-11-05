@@ -25,8 +25,7 @@
 {%- set activeFilters = visible|filter(item => item.active|default(false)) -%}
 {%- set chips = activeFilters|filter(item => not (item.primary|default(false))) -%}
 {%- set panelTitle = title ?? ('crudit_ui.filter.filters'|trans({}, 'LleCruditUiBundle')) -%}
-<form {{ attributes.defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController, ('data-' ~ filtersController ~ '-id-value'): barId}) }}{% if action is not null %} action="{{ action }}"{% endif %}
-    data-action="change->{{ filtersController }}#changed input->{{ filtersController }}#typed 2lenet--crudit-ui-bundle--filter-period:change->{{ filtersController }}#changed 2lenet--crudit-ui-bundle--filter-field:operator->{{ filtersController }}#changed keydown->{{ filtersController }}#keydown submit->{{ filtersController }}#submitted">
+<form {{ attributes.defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController, ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': 'change->' ~ filtersController ~ '#changed input->' ~ filtersController ~ '#typed 2lenet--crudit-ui-bundle--filter-period:change->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--filter-field:operator->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--dropdown:close->' ~ filtersController ~ '#closed keydown->' ~ filtersController ~ '#keydown submit->' ~ filtersController ~ '#submitted'}) }}{% if action is not null %} action="{{ action }}"{% endif %}>
     {%- if applyName %}<input type="hidden" name="{{ applyName }}" value="filter">{% endif %}
     <div class="crudit-ui-filter-bar__toolbar">
         {%- if search %}
@@ -61,7 +60,7 @@
                             {{- ui_icon('dropdown', 'crudit-ui-dropdown__chevron') -}}
                         </twig:block>
                         <div class="crudit-ui-filter-bar__quick-panel" data-2lenet--crudit-ui-bundle--filters-target="slot">
-                            <twig:LleCruditUi:Filter:Item :item="item" id="{{ barId }}-{{ item.id }}" />
+                            <twig:LleCruditUi:Filter:Item :item="item" id="{{ barId }}-{{ item.id }}" :inline="true" />
                         </div>
                     </twig:LleCruditUi:Dropdown>
                 </div>

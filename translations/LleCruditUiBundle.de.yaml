@@ -9,8 +9,8 @@ crudit_ui:
     avatar:
         impersonated: "(Identitätswechsel)"
     boolean:
-        yes: "Ja"
-        no: "Nein"
+        "yes": "Ja"
+        "no": "Nein"
     breadcrumb:
         label: "Brotkrümelnavigation"
     chip:
@@ -23,8 +23,8 @@ crudit_ui:
         min: "Min."
         max: "Max."
         all: "Alle"
-        yes: "Ja"
-        no: "Nein"
+        "yes": "Ja"
+        "no": "Nein"
         filters: "Filter"
         active_filters: "Aktive Filter"
         clear_all: "Alle löschen"

@@ -9,8 +9,8 @@ crudit_ui:
     avatar:
         impersonated: "(impersonation)"
     boolean:
-        yes: "Yes"
-        no: "No"
+        "yes": "Yes"
+        "no": "No"
     breadcrumb:
         label: "Breadcrumb"
     chip:
@@ -23,8 +23,8 @@ crudit_ui:
         min: "Min."
         max: "Max."
         all: "All"
-        yes: "Yes"
-        no: "No"
+        "yes": "Yes"
+        "no": "No"
         filters: "Filters"
         active_filters: "Active filters"
         clear_all: "Clear all"
