@@ -1,0 +1,520 @@
+@use '../tools/a11y' as *;
+@use '../tools/responsive' as *;
+
+// Filter field (components Filter:Field and Filter:Operator): the label, then one frame [condition ▾ | input]. From
+// `.filter-field` and `.operator-picker` of the crudit-v2 mockup (src/styles/components/_filter-bar.scss). The frame
+// carries the border (3:1) and the focus; the inputs inside have none of their own.
+.crudit-ui-filter-field {
+    min-width: 0;
+
+    &__group {
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+
+    &__label {
+        display: block;
+        padding: 0;
+        margin-block-end: var(--space-1);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__control {
+        display: flex;
+        min-height: var(--control-h);
+        align-items: stretch;
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--radius-md);
+        background-color: var(--c-surface);
+
+        &:has(input:focus-visible) {
+            border-color: var(--c-focus);
+            @include focus-ring(0);
+        }
+
+        // Boolean: a segmented control, without frame.
+        &--plain {
+            min-height: 0;
+            border: 0;
+            background-color: transparent;
+
+            &:has(input:focus-visible) {
+                outline: none;
+            }
+        }
+    }
+
+    &__input,
+    &__no-value {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        align-items: center;
+    }
+
+    // The attribute `hidden` loses against `display: flex` above.
+    &__input[hidden],
+    &__no-value[hidden] {
+        display: none;
+    }
+
+    &__text {
+        width: 100%;
+        min-width: 0;
+        min-height: calc(var(--control-h) - 2px);
+        flex: 1;
+        padding: 0 var(--space-3);
+        border: 0;
+        border-radius: var(--radius-md);
+        background-color: transparent;
+        color: var(--c-text);
+        font: inherit;
+        font-size: var(--font-size-sm);
+
+        &:focus-visible {
+            outline: none;
+        }
+
+        &::placeholder {
+            color: var(--c-text-muted);
+        }
+    }
+
+    // « – » of a range, unit: discreet text in the frame.
+    &__affix {
+        flex: none;
+        padding: 0 var(--space-1);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+
+        &:last-child {
+            padding-inline-end: var(--space-3);
+        }
+    }
+
+    &__no-value {
+        padding: 0 var(--space-3);
+        margin: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+        font-style: italic;
+    }
+
+    // All / Yes / No: the checked one is told by its fill and its weight, not by the colour alone.
+    &__segmented {
+        display: flex;
+        flex: 1;
+        gap: var(--space-1);
+    }
+
+    &__segment {
+        position: relative;
+        display: flex;
+        min-height: var(--control-h);
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        padding: 0 var(--space-3);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--radius-md);
+        background-color: var(--c-surface);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--c-surface-hover);
+        }
+
+        &:has(:checked) {
+            border-color: var(--c-primary);
+            background-color: var(--c-primary-subtle);
+            color: var(--c-primary-text);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        &:has(:focus-visible) {
+            @include focus-ring(0);
+        }
+    }
+
+    &__radio {
+        @include sr-only;
+    }
+}
+
+// Condition: prefix of the frame (pictogram and chevron), cut from the input by a rule.
+.crudit-ui-operator {
+    display: flex;
+    flex: none;
+
+    .crudit-ui-dropdown {
+        display: flex;
+    }
+
+    // The trigger of the Dropdown, a small Button: reshaped as the prefix of the frame.
+    .crudit-ui-btn {
+        gap: var(--space-1);
+        padding: 0 var(--space-2);
+        border: 0;
+        border-inline-end: 1px solid var(--c-border);
+        border-radius: 0;
+        border-start-start-radius: calc(var(--radius-md) - 1px);
+        border-end-start-radius: calc(var(--radius-md) - 1px);
+        background-color: transparent;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+
+        &:hover:not(:disabled),
+        &[aria-expanded='true'] {
+            background-color: var(--c-surface-hover);
+            color: var(--c-text);
+        }
+    }
+
+    &__chevron {
+        font-size: var(--font-size-2xs);
+    }
+
+    .crudit-ui-dropdown__panel {
+        width: 15rem;
+    }
+
+    &__options {
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+
+    &__option {
+        position: relative;
+        display: flex;
+        min-height: var(--control-h-small);
+        align-items: center;
+        gap: var(--space-2);
+        padding: 0 var(--space-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--c-surface-hover);
+        }
+
+        // The chosen condition: fill and weight.
+        &:has(:checked) {
+            background-color: var(--c-primary-subtle);
+            color: var(--c-primary-text);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        &:has(:focus-visible) {
+            @include focus-ring(-2px);
+        }
+    }
+
+    &__radio {
+        @include sr-only;
+    }
+
+    &__option-icon {
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+
+        .crudit-ui-operator__option:has(:checked) & {
+            color: inherit;
+        }
+    }
+}
+
+// Choice list (Filter:Field, type choice): checkboxes in the frame, the list scrolls when it is long. The input is
+// the native one, so it works without script and the screen readers read it as a group of checkboxes.
+.crudit-ui-filter-field {
+    &__choices {
+        display: flex;
+        min-width: 0;
+        max-height: 9rem;
+        flex: 1;
+        flex-direction: column;
+        padding: var(--space-1);
+        margin: 0;
+        list-style: none;
+        overflow-y: auto;
+    }
+
+    &__choice {
+        display: flex;
+        min-height: var(--control-h-small);
+        align-items: center;
+        gap: var(--space-2);
+        padding: 0 var(--space-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--c-surface-hover);
+        }
+
+        &:has(:checked) {
+            font-weight: var(--font-weight-semibold);
+        }
+
+        &:has(:focus-visible) {
+            @include focus-ring(-2px);
+        }
+
+        input {
+            flex: none;
+            accent-color: var(--c-primary);
+        }
+    }
+}
+
+// Period (Filter:Period): the summary in the frame, the dates and the ready-made periods in the panel.
+.crudit-ui-period {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+
+    // The trigger of the Dropdown fills the frame; it reads as the input, not as a button.
+    > .crudit-ui-dropdown {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+
+        > .crudit-ui-btn {
+            min-width: 0;
+            flex: 1;
+            justify-content: space-between;
+            border: 0;
+            background-color: transparent;
+            color: var(--c-text);
+            font-weight: var(--font-weight-regular);
+
+            &:hover:not(:disabled) {
+                background-color: transparent;
+            }
+        }
+    }
+
+    &__summary {
+        overflow: hidden;
+        margin: 0;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__icon {
+        flex: none;
+        color: var(--c-text-muted);
+    }
+
+    &__panel {
+        display: grid;
+        gap: var(--space-3);
+        padding: var(--space-2);
+    }
+
+    &__dates {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-2);
+    }
+
+    &__date {
+        display: grid;
+        gap: var(--space-1);
+        font-size: var(--font-size-sm);
+
+        label {
+            font-weight: var(--font-weight-semibold);
+        }
+
+        input {
+            min-width: 0;
+            min-height: var(--control-h);
+            padding: 0 var(--space-2);
+            border: 1px solid var(--c-border-strong);
+            border-radius: var(--radius-md);
+            background-color: var(--c-surface);
+            color: var(--c-text);
+            font: inherit;
+            font-size: var(--font-size-sm);
+        }
+    }
+
+    &__periods {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    &__period {
+        min-height: var(--control-h-small);
+        padding: 0 var(--space-3);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-full);
+        background-color: var(--c-surface);
+        color: var(--c-text);
+        font: inherit;
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--c-surface-hover);
+        }
+    }
+
+    // In a menu already: no frame of its own, the summary on top of the dates.
+    &--inline {
+        flex-direction: column;
+        gap: var(--space-3);
+
+        .crudit-ui-period__summary {
+            color: var(--c-text);
+        }
+    }
+}
+
+// Filter bar (component Filter:Bar, controller filters): the search and the tools on one line (they wrap on a phone),
+// then the panel of all the filters. From `.filter-bar` of the crudit-v2 mockup.
+.crudit-ui-filter-bar {
+    display: grid;
+    gap: var(--space-3);
+
+    &__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2) var(--space-3);
+    }
+
+    &__search {
+        position: relative;
+        display: flex;
+        min-width: min(10rem, 100%);
+        max-width: 24rem;
+        flex: 1 1 14rem;
+        align-items: center;
+    }
+
+    &__search-icon {
+        position: absolute;
+        inset-inline-start: var(--space-3);
+        color: var(--c-text-muted);
+        pointer-events: none;
+    }
+
+    &__search-input {
+        width: 100%;
+        min-height: var(--control-h);
+        padding-block: 0;
+        padding-inline: var(--space-6) var(--space-3);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--radius-md);
+        background-color: var(--c-surface);
+        color: var(--c-text);
+        font: inherit;
+        font-size: var(--font-size-sm);
+
+        &:focus-visible {
+            border-color: var(--c-focus);
+            @include focus-ring(0);
+        }
+    }
+
+    // Right-aligned, on the line of the search when there is room.
+    &__tools {
+        display: flex;
+        min-width: 0;
+        flex: 1 1 auto;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--space-2);
+    }
+
+    &__chips {
+        min-width: 0;
+    }
+
+    // Main filters: dashed while empty, solid once active (the value is told in words, not by the line alone).
+    &__quick {
+        @include media('<lg') {
+            display: none;
+        }
+    }
+
+    &__quick-button {
+        max-width: 18rem;
+        border-style: dashed;
+        border-color: var(--c-border-strong);
+
+        &--active {
+            border-style: solid;
+            border-color: var(--c-primary);
+            background-color: var(--c-primary-subtle);
+            color: var(--c-primary-text);
+        }
+    }
+
+    &__quick-label {
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__quick-value {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__quick-panel {
+        width: min(20rem, calc(100vw - 2 * var(--gutter)));
+        padding: var(--space-2);
+    }
+}
+
+// The panel of all the filters: a Dialog. In the page from md (not modal, between the bar and the list), a side panel
+// below (the drawer of the Dialog).
+.crudit-ui-filter-panel {
+    @include media('>md') {
+        &.crudit-ui-dialog--drawer:not(:modal) {
+            position: static;
+            width: 100%;
+            height: auto;
+            max-height: none;
+            margin: 0;
+            border-width: 1px;
+            border-radius: var(--radius-lg);
+            box-shadow: none;
+            translate: none;
+
+            .crudit-ui-dialog__inner {
+                height: auto;
+            }
+
+            // Named by aria-labelledby: the title stays in the page for the screen readers, the toggle button is the
+            // way to close it.
+            .crudit-ui-dialog__header {
+                @include sr-only;
+            }
+
+            .crudit-ui-dialog__body {
+                padding-block-start: var(--space-4);
+            }
+        }
+    }
+
+    // 4 filters per row at the most, fewer when the room is short (a field never goes below 14rem).
+    &__grid {
+        display: grid;
+        gap: var(--space-4);
+        grid-template-columns: repeat(auto-fill, minmax(max(14rem, calc((100% - 3 * var(--space-4)) / 4)), 1fr));
+    }
+}

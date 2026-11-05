@@ -1267,6 +1267,192 @@ try {
         document.activeElement?.closest('.crudit-ui-table__card-order') !== null,
     ]), [['413', '412', '414', '415'], true], 'table: a card does not move, or loses the focus');
 
+    // Filter:Field: "is empty" replaces the input by its label and leaves its value out of the form; the button of the condition
+    // is renamed; the old condition brings the input back. Without a condition button, no script is needed (radios).
+    await page.setViewport({width: 1280, height: 900});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const filterState = () => page.evaluate(() => {
+        const field = document.querySelector('#kit-filter-text-value').closest('.crudit-ui-filter-field');
+        return [
+            field.querySelector('button .crudit-ui-visually-hidden').textContent,
+            field.querySelector('.crudit-ui-filter-field__input').hidden,
+            [...new FormData(field.closest('form')).keys()].filter((key) => key.startsWith('filter_visit_title')),
+        ];
+    });
+    assert.deepEqual(await filterState(), ['Condition for Title: Contains', false, ['filter_visit_title_op', 'filter_visit_title_value']], 'filter: initial state');
+    // The panel is floating: it closes when the page scrolls, so bring the field into view before opening it.
+    await page.evaluate(() => document.querySelector('#kit-filter-text-operator').scrollIntoView({block: 'center'}));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const openOperator = () => page.click('#kit-filter-text-operator button[aria-expanded]');
+    const chooseOperator = (value) => page.click(`#kit-filter-text-operator label:has(input[value="${value}"])`);
+    await openOperator();
+    await chooseOperator('isnull');
+    assert.deepEqual(await filterState(), ['Condition for Title: Is empty', true, ['filter_visit_title_op']], 'filter: "is empty" sends no value');
+    if (await page.evaluate(() => document.querySelector('#kit-filter-text-operator button[aria-expanded]').getAttribute('aria-expanded') !== 'true')) {
+        await openOperator();
+    }
+    await chooseOperator('eq');
+    assert.deepEqual(await filterState(), ['Condition for Title: Is', false, ['filter_visit_title_op', 'filter_visit_title_value']], 'filter: the input is back');
+
+    // Filter:Period: a ready-made period fills the two dates and the summary follows; Filter choice sends the checked boxes.
+    const period = '.crudit-ui-period:has(#kit-filter-period-period-value)';
+    await page.evaluate(() => document.querySelector('#kit-filter-period-period-value').scrollIntoView({block: 'center'}));
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await page.click(`${period} button[aria-expanded]`);
+    await page.click(`${period} .crudit-ui-period__period[data-from]`);
+    // The first ready-made period is today: both dates are the same day, not the ones of the page.
+    const periodState = await page.evaluate((selector) => {
+        const start = document.querySelector('#kit-filter-period-period-value').value;
+        const end = document.querySelector('#kit-filter-period-period-to').value;
+        return [
+            start === end && start !== '2026-10-01',
+            document.querySelector(`${selector} .crudit-ui-period__summary`).textContent.includes('→'),
+            [...new FormData(document.querySelector('#kit-filter-period-period-value').closest('form')).keys()].filter((key) => key.startsWith('filter_visit_period')),
+        ];
+    }, period);
+    assert.deepEqual(periodState, [true, true, ['filter_visit_period_op', 'filter_visit_period_value', 'filter_visit_period_to']], 'filter: period');
+    assert.deepEqual(await page.evaluate(() => [...new FormData(document.querySelector('#kit-filter-text-value').closest('form')).getAll('filter_visit_status_value[]')]), ['planned', 'done'], 'filter: choice');
+
+    // Filter:Bar: the panel opens in the page from md (not modal), the search and the main filters send at once, a chip
+    // empties its filter, the panel is a modal side panel on a phone where the main filters moved into it. The form is
+    // not really sent: the test records what it would send.
+    const barForm = 'form.crudit-ui-filter-bar';
+    const barToggle = `${barForm} [data-2lenet--crudit-ui-bundle--filters-target="toggle"]`;
+    const openBarPage = async (width, height) => {
+        await page.setViewport({width, height});
+        await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+        await page.evaluate((selector) => {
+            window.__sent = [];
+            const form = document.querySelector(selector);
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                window.__sent.push([...new FormData(form)].map(([key, value]) => `${key}=${value}`));
+            });
+            form.scrollIntoView({block: 'start'});
+        }, barForm);
+    };
+    const barSent = () => page.evaluate(() => window.__sent);
+    await openBarPage(1280, 900);
+    await page.click(barToggle);
+    assert.deepEqual(await page.evaluate((selector) => {
+        const panel = document.querySelector('#kit-bar-panel');
+        return [panel.open, panel.matches(':modal'), document.querySelector(selector).getAttribute('aria-expanded'), [...panel.querySelectorAll('[data-filter-id]')].map((field) => field.dataset.filterId).includes('status')];
+    }, barToggle), [true, false, 'true', false], 'filter bar: the panel opens in the page, without the main filters');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await page.addScriptTag({content: axeSource});
+    const barViolations = await page.evaluate(async (selector) => (await window.axe.run(document.querySelector(selector), {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations.map((violation) => `${violation.id} (${violation.nodes.map((node) => node.target.join(' ')).join(', ')})`), barForm);
+    assert.deepEqual(barViolations, [], 'filter bar: accessibility, panel open');
+    await page.type(`${barForm} input[type="search"]`, 'ab');
+    assert.deepEqual(await barSent(), [], 'filter bar: nothing is sent before the delay');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.ok((await barSent())[0].includes('visit_search=ab') && (await barSent())[0].includes('visit_filter=filter'), 'filter bar: the search is sent with the others');
+    await page.evaluate(() => { window.__sent = []; });
+    await page.click(`${barForm} ul.crudit-ui-chips button.crudit-ui-chip__remove`);
+    assert.deepEqual((await barSent())[0]?.filter((entry) => entry.startsWith('filter_visit_title')), ['filter_visit_title_op=contains', 'filter_visit_title_value='], 'filter bar: a chip empties its filter and keeps its condition');
+    await page.evaluate(() => { window.__sent = []; });
+    await page.click(`${barForm} .crudit-ui-filter-bar__quick-button`);
+    await page.click(`${barForm} .crudit-ui-filter-bar__quick-panel input[value="done"]`);
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.deepEqual((await barSent())[0].filter((entry) => entry.startsWith('filter_visit_status')), ['filter_visit_status_op=in', 'filter_visit_status_value[]=planned'], 'filter bar: a main filter is sent at once');
+    // Open on its own after a reload, as the user left it.
+    await page.reload({waitUntil: 'networkidle0'});
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), true, 'filter bar: the panel is remembered');
+    await page.click(barToggle);
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), false, 'filter bar: the button closes the panel');
+    await page.reload({waitUntil: 'networkidle0'});
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), false, 'filter bar: closed stays closed');
+
+    // Closed with the button of the dialog (not the one of the bar): remembered too.
+    await page.click(barToggle);
+    await page.evaluate(() => document.querySelector('#kit-bar-panel .crudit-ui-dialog__close').click());
+    await page.reload({waitUntil: 'networkidle0'});
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), false, 'filter bar: closed with its own button stays closed');
+
+    // The panel is a draft: a send from the bar leaves out what changed in the panel, and the change is put back.
+    const setField = (selector, value) => page.evaluate((selector, value) => {
+        const input = document.querySelector(selector);
+        input.value = value;
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+        input.dispatchEvent(new Event('change', {bubbles: true}));
+    }, selector, value);
+    const titleInput = '#kit-bar-panel input[name="filter_visit_title_value"]';
+    await openBarPage(1280, 900);
+    await page.click(barToggle);
+    await setField(titleInput, 'zz');
+    await page.type(`${barForm} input[type="search"]`, 'x');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.deepEqual((await barSent())[0].filter((entry) => entry.startsWith('filter_visit_title')), [], 'filter bar: a send from the search leaves out the draft of the panel');
+    assert.ok((await barSent())[0].some((entry) => entry.startsWith('visit_search=')), 'filter bar: and sends the search');
+    await openBarPage(1280, 900);
+    assert.equal(await page.$eval(titleInput, (input) => input.value), 'zz', 'filter bar: the draft is put back in the next page');
+    await page.click('#kit-bar-panel [data-2lenet--crudit-ui-bundle--filters-target="apply"]');
+    assert.ok((await barSent())[0].includes('filter_visit_title_value=zz'), 'filter bar: "Apply" sends the draft');
+    await openBarPage(1280, 900);
+    assert.equal(await page.$eval(titleInput, (input) => input.value), 'boiler', 'filter bar: the draft is put back once only');
+
+    // The dates of a main period wait for the dropdown to close; a ready-made period sends at once.
+    const periodQuick = `${barForm} [data-filter-quick="period"]`;
+    await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
+    assert.equal(await page.$(`${periodQuick} .crudit-ui-period .crudit-ui-dropdown`), null, 'filter bar: a main period has no dropdown in the dropdown');
+    await setField(`${periodQuick} input[name="filter_visit_period_value"]`, '2026-10-01');
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    assert.deepEqual(await barSent(), [], 'filter bar: a date typed in a main period is not sent yet');
+    await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.ok((await barSent())[0].includes('filter_visit_period_value=2026-10-01'), 'filter bar: the period is sent when its dropdown closes');
+    await page.evaluate(() => { window.__sent = []; });
+    await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
+    await page.click(`${periodQuick} .crudit-ui-period__period`);
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    const readyMade = (await barSent())[0].filter((entry) => entry.startsWith('filter_visit_period_'));
+    assert.ok(readyMade.length === 3 && readyMade.every((entry) => !entry.endsWith('=')) && readyMade[1].split('=')[1] === readyMade[2].split('=')[1] && /^\d{4}-\d{2}-\d{2}$/.test(readyMade[1].split('=')[1]), `filter bar: the first ready-made period (today) fills both dates: ${readyMade}`);
+
+    // A chip of an "is empty" filter takes the condition back to one that has a value.
+    await openBarPage(1280, 900);
+    await page.evaluate(() => {
+        const radio = document.querySelector('#kit-bar-panel input[name="filter_visit_title_op"][value="isnull"]');
+        radio.checked = true;
+        radio.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    await page.click(`${barForm} ul.crudit-ui-chips button.crudit-ui-chip__remove`);
+    assert.deepEqual((await barSent())[0]?.filter((entry) => entry.startsWith('filter_visit_title')), ['filter_visit_title_op=contains', 'filter_visit_title_value='], 'filter bar: the chip of an "is empty" filter gives back a condition with a value');
+
+    // What depends on a restored value follows: "is empty" hides the input, a period tells its dates.
+    await openBarPage(1280, 900);
+    await page.click(barToggle);
+    await page.evaluate(() => {
+        const radio = document.querySelector('#kit-bar-panel input[name="filter_visit_title_op"][value="isnull"]');
+        radio.checked = true;
+        radio.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    await page.type(`${barForm} input[type="search"]`, 'y');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    await openBarPage(1280, 900);
+    await page.waitForFunction(() => document.querySelector('#kit-bar-panel [data-filter-id="title"]').dataset.noValue === 'true', {timeout: 3000});
+    assert.equal(await page.$eval('#kit-bar-panel [data-filter-id="title"] .crudit-ui-filter-field__input', (element) => element.hidden), true, 'filter bar: a restored "is empty" hides the input');
+    await openBarPage(360, 800);
+    await page.click(barToggle);
+    await setField('#kit-bar-panel input[name="filter_visit_period_value"]', '2026-10-01');
+    await page.keyboard.press('Escape');
+    await page.type(`${barForm} input[type="search"]`, 'x');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.deepEqual((await barSent())[0].filter((entry) => entry.startsWith('filter_visit_period')), [], 'filter bar: the period of the panel, on a phone, is a draft too');
+    await openBarPage(360, 800);
+    await page.waitForFunction(() => document.querySelector('#kit-bar-panel [data-filter-id="period"] .crudit-ui-period__summary').textContent.includes('2026'), {timeout: 3000});
+
+    await openBarPage(360, 800);
+    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#kit-bar-panel [data-filter-id]')].map((field) => field.dataset.filterId).slice(0, 2)), ['status', 'period'], 'filter bar: on a phone the main filters are in the panel');
+    await page.click(barToggle);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').matches(':modal')), true, 'filter bar: a modal side panel on a phone');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'filter bar: no horizontal scroll on a phone');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), false, 'filter bar: Escape closes the side panel');
+    // Back to a wide window: the fields go back to the bar.
+    await page.setViewport({width: 1280, height: 900});
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert.equal(await page.evaluate(() => document.querySelectorAll('#kit-bar-panel [data-filter-id="status"]').length), 0, 'filter bar: the main filters go back to the bar');
+
     assert.deepEqual(errors, [], 'errors while loading the page');
     console.log(`OK ${url}`);
 } finally {
