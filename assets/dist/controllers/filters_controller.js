@@ -3,6 +3,8 @@ import { matchBreakpoint } from '../utils/breakpoints.js';
 
 const SEARCH_DELAY = 400;
 const FOCUS_MAX_AGE = 5000;
+// A draft waits for the answer of the server, which may be slow.
+const DRAFT_MAX_AGE = 30000;
 const PERIOD = '[data-controller~="2lenet--crudit-ui-bundle--filter-period"]';
 const DROPDOWN = '[data-controller~="2lenet--crudit-ui-bundle--dropdown"]';
 
@@ -59,12 +61,15 @@ export default class extends Controller {
             }
         }
         this.restoreFocus();
-        this.restoreDraft();
+        // After the controllers of the fields, which Stimulus connects after this one (the form comes first in the
+        // document): the events of the restoration must reach their actions.
+        this.draftTimer = setTimeout(() => this.restoreDraft(), 0);
     }
 
     disconnect() {
         this.leaving = true;
         clearTimeout(this.timer);
+        clearTimeout(this.draftTimer);
         document.removeEventListener('turbo:before-cache', this.onBeforeCache, {capture: true});
         this.wide?.removeEventListener('change', this.onWide);
         this.large?.removeEventListener('change', this.onLarge);
@@ -256,6 +261,7 @@ export default class extends Controller {
             value: input.value,
             type: input instanceof HTMLSelectElement ? 'select' : input.type,
             checked: input.checked,
+            values: input instanceof HTMLSelectElement ? Array.from(input.selectedOptions).map((option) => option.value) : null,
         }));
         this.store('draft', JSON.stringify({time: Date.now(), changes}));
     }
@@ -268,11 +274,12 @@ export default class extends Controller {
             saved = null;
         }
         this.store('draft', null);
-        if (!saved || !this.hasPanelTarget || Date.now() - saved.time > FOCUS_MAX_AGE) {
+        if (!saved || !this.element.isConnected || Date.now() - saved.time > DRAFT_MAX_AGE) {
             return;
         }
-        saved.changes.forEach(({name, value, type, checked}) => {
-            const inputs = Array.from(this.panelTarget.querySelectorAll('input, select, textarea')).filter((input) => input.name === name);
+        saved.changes.forEach(({name, value, type, checked, values}) => {
+            // In the whole form: a main filter that was in the panel (narrow window) may be back in the bar.
+            const inputs = Array.from(this.element.querySelectorAll('input, select, textarea')).filter((input) => input.name === name);
             const input = type === 'checkbox' || type === 'radio' ? inputs.find((candidate) => candidate.value === value) : inputs[0];
             if (!input) {
                 return;
@@ -285,6 +292,10 @@ export default class extends Controller {
                     return;
                 }
                 input.checked = true;
+            } else if (type === 'select') {
+                Array.from(input.options).forEach((option) => {
+                    option.selected = values.includes(option.value);
+                });
             } else {
                 input.value = value;
             }

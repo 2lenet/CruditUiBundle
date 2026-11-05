@@ -18,8 +18,9 @@ export default class extends Controller {
         const noValue = radio.dataset.noValue === 'true';
         const icon = radio.parentElement.querySelector('svg');
 
-        if (this.hasOperatorIconTarget && icon) {
-            this.operatorIconTarget.replaceChildren(icon.cloneNode(true));
+        if (this.hasOperatorIconTarget) {
+            // A condition without a pictogram empties the button of the previous one.
+            this.operatorIconTarget.replaceChildren(...(icon ? [icon.cloneNode(true)] : []));
         }
         if (this.hasOperatorNameTarget) {
             this.operatorNameTarget.textContent = radio.dataset.name;

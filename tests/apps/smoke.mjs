@@ -1404,6 +1404,8 @@ try {
     await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
     await page.click(`${periodQuick} .crudit-ui-period__period`);
     await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    const readyMade = (await barSent())[0].filter((entry) => entry.startsWith('filter_visit_period_'));
+    assert.ok(readyMade.length === 3 && readyMade.every((entry) => !entry.endsWith('=')) && readyMade[1].split('=')[1] === readyMade[2].split('=')[1] && /^\d{4}-\d{2}-\d{2}$/.test(readyMade[1].split('=')[1]), `filter bar: the first ready-made period (today) fills both dates: ${readyMade}`);
 
     // A chip of an "is empty" filter takes the condition back to one that has a value.
     await openBarPage(1280, 900);
@@ -1414,6 +1416,29 @@ try {
     });
     await page.click(`${barForm} ul.crudit-ui-chips button.crudit-ui-chip__remove`);
     assert.deepEqual((await barSent())[0]?.filter((entry) => entry.startsWith('filter_visit_title')), ['filter_visit_title_op=contains', 'filter_visit_title_value='], 'filter bar: the chip of an "is empty" filter gives back a condition with a value');
+
+    // What depends on a restored value follows: "is empty" hides the input, a period tells its dates.
+    await openBarPage(1280, 900);
+    await page.click(barToggle);
+    await page.evaluate(() => {
+        const radio = document.querySelector('#kit-bar-panel input[name="filter_visit_title_op"][value="isnull"]');
+        radio.checked = true;
+        radio.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    await page.type(`${barForm} input[type="search"]`, 'y');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    await openBarPage(1280, 900);
+    await page.waitForFunction(() => document.querySelector('#kit-bar-panel [data-filter-id="title"]').dataset.noValue === 'true', {timeout: 3000});
+    assert.equal(await page.$eval('#kit-bar-panel [data-filter-id="title"] .crudit-ui-filter-field__input', (element) => element.hidden), true, 'filter bar: a restored "is empty" hides the input');
+    await openBarPage(360, 800);
+    await page.click(barToggle);
+    await setField('#kit-bar-panel input[name="filter_visit_period_value"]', '2026-10-01');
+    await page.keyboard.press('Escape');
+    await page.type(`${barForm} input[type="search"]`, 'x');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.deepEqual((await barSent())[0].filter((entry) => entry.startsWith('filter_visit_period')), [], 'filter bar: the period of the panel, on a phone, is a draft too');
+    await openBarPage(360, 800);
+    await page.waitForFunction(() => document.querySelector('#kit-bar-panel [data-filter-id="period"] .crudit-ui-period__summary').textContent.includes('2026'), {timeout: 3000});
 
     await openBarPage(360, 800);
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#kit-bar-panel [data-filter-id]')].map((field) => field.dataset.filterId).slice(0, 2)), ['status', 'period'], 'filter bar: on a phone the main filters are in the panel');
