@@ -8,7 +8,7 @@
  # value (of a 'choice': the chosen values, a list or a string separated by commas), to (second bound of a range or
  # of a period), unit (after the input), placeholder, id (base of the ids, random otherwise), inline (of a 'period': the dates shown directly, for a field that
  # is already in a menu: a main filter of the bar).
- # A 'datetime' value with seconds (a link or a session of the 1.x) gets step="1", or the browser would find it invalid. A boolean sends 'all', 'true' or 'false', as the 1.x does. Controller: filter-field. Contract: docs/components.md.
+ # A 'datetime' value with seconds, even zero (a link or a session of the 1.x), gets step="1", or the browser would find it invalid. A boolean sends 'all', 'true' or 'false', as the 1.x does. Controller: filter-field. Contract: docs/components.md.
  #}
 {% props name, label, type = 'text', operators = [], operator = null, value = null, to = null, choices = [], unit = null, placeholder = null, id = null, inline = false %}
 {%- set base = id ?? ('crudit-ui-filter-' ~ random()) -%}
