@@ -15,6 +15,38 @@ crudit_ui:
         label: "Fil d'Ariane"
     chip:
         remove: "Retirer le filtre %label%"
+    filter:
+        operator_for: "Condition pour %label% : %operator%"
+        operator_legend: "Condition pour %label%"
+        minimum: "%label%, minimum"
+        maximum: "%label%, maximum"
+        min: "Min."
+        max: "Max."
+        all: "Tous"
+        yes: "Oui"
+        no: "Non"
+        filters: "Filtres"
+        active_filters: "Filtres actifs"
+        clear_all: "Tout effacer"
+        apply: "Appliquer"
+        reset: "Réinitialiser"
+        remove: "Retirer le filtre %label% : %value%"
+        separator: " : "
+        period:
+            today: "Aujourd'hui"
+            last_7_days: "7 derniers jours"
+            last_30_days: "30 derniers jours"
+            this_month: "Ce mois-ci"
+            last_month: "Mois dernier"
+            next_month: "Mois prochain"
+            this_year: "Cette année"
+            range: "%from% → %to%"
+            since: "À partir du %date%"
+            until: "Jusqu'au %date%"
+            all: "Toutes les dates"
+            from: "Du"
+            to: "Au"
+            ready_made: "Périodes prédéfinies pour %label%"
     language:
         label: Langue
     selection:

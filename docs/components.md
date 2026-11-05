@@ -725,6 +725,76 @@ puts the focus back on the box of the page of the table.
 runs them itself in the browsers that do not know them yet, so nothing to add (the selection is given to the dialog on the click
 of the button, before the dialog opens).
 
+### LleCruditUi:Filter:Field and LleCruditUi:Filter:Operator
+
+One filter of a list, on two lines: its label, then one frame `[condition ▾ | input]`. The frame carries the border and the
+focus. It knows nothing of Crudit: the project (or the `FilterBrick`) gives the names, the conditions and the values, and the
+form that holds the field sends them as `<name>_op`, `<name>_value` and, for a range, `<name>_to` (the names of the 1.x of Crudit).
+**It works without JavaScript**: the conditions are radio buttons, the chosen one is what the form sends.
+
+`Filter:Field` props: `name` (required: prefix of the names), `label` (required), `type` (`text`, `number`, `range`, `boolean`,
+`date`, `datetime`, `period`, `choice`; `text`), `choices` (of a `choice`: `{value, label}`), `operators` (list of `{value, label, icon, noValue}`; `icon` is a name of the icon catalogue,
+`operator-equals`…; none or a single one: no condition button), `operator` (current value, the first by default), `value`, `to`
+(second bound of a range), `unit` (after the input), `placeholder`, `id` (base of the ids, random otherwise). A `boolean` sends
+`all`, `true` or `false`, as the 1.x does.
+
+`Filter:Operator` props: `name`, `label`, `operators`, `current`, `id`. It is a `Dropdown` of radio buttons, used by the field.
+
+A `choice` is a list of checkboxes (`<name>_value[]`) that scrolls when it is long; `value` is the list of the chosen values, or a
+string separated by commas (the format the 1.x of Crudit stores). **The form sends an array**: `FilterState` accepts it in
+CruditBundle (lot 3.1.e). A `period` is a `Filter:Period` (below); it needs the script to edit the dates, but the dates are sent
+by the form even when its panel is closed.
+
+`Filter:Period` props: `name`, `label`, `value` and `to` (`Y-m-d`), `id`, `inline` (the dates and the periods shown directly, for
+a menu that already is a panel), `periods` (list of `{label, from, to}`: today, the last 7 and 30 days, this month, last month,
+next month and this year by default, computed on the server's today). Controller `filter-period`: a ready-made period fills the
+two dates, the summary of the button follows them; event `2lenet--crudit-ui-bundle--filter-period:change`.
+
+Controller `filter-field`: keeps the pictogram and the name of the button in step with the choice; an `isnull` / `isnotnull`
+kind of condition (`noValue: true`) replaces the input by the label of the condition and **disables** the input, so the old
+value is not sent. Event `2lenet--crudit-ui-bundle--filter-field:operator` (`detail.value`, `detail.noValue`).
+
+Accessibility: the label is tied to the input by `for` (a `fieldset` and `legend` for a range or a boolean); the button of the
+condition is named "Condition for Duration: Is greater than" and its pictogram is never the only information (the list shows
+the label); a range keeps a hidden label on each field ("Amount, minimum"); the checked boolean option is told by its fill and
+its weight, not by the colour alone.
+
+### LleCruditUi:Filter:Bar
+
+The filters of a list, in **one GET form**: the search, the chips of the active filters, the main filters (a button each, that opens
+its field), a button "Filters" that opens the panel of all the others, and the buttons of the panel ("Reset", "Apply"). It knows
+nothing of Crudit: the project (the `FilterBrick`) gives the filters as data, the form sends them as `Filter:Field` does
+(`<name>_op`, `<name>_value`, `<name>_to`), and the server does what it does with them.
+
+- **The search and the main filters apply at once**: the form is sent when one of their fields changes (a short delay while one
+  types). What is in the panel is a draft, sent with "Apply" (the same form: the fields of the panel go with it).
+- **The panel** is a `Dialog` (`variant="drawer"`): shown **in the page from 768 px** (not modal, between the bar and the list; it
+  stays open after "Apply", and is open again after a reload if the user left it so: `sessionStorage`), a **modal side panel below**.
+  Its fields are in a grid of **4 per row at the most**, never narrower than 14rem. The button "Filters" shows the number of active
+  filters and carries `aria-expanded` and `aria-controls`.
+- **Below 1024 px the main filters move into the panel** (the same fields, moved, never duplicated) and go back above.
+- **Chips**: the active filters that are not main ones ("Title: **boiler**" and a button "Remove the filter Title: boiler"). A chip
+  empties its filter's fields and sends the form. "Clear all" (the address `resetUrl`) shows from two active filters.
+- **A filter whose `hidden` is true shows nowhere**: neither in the bar, the panel nor as a chip. The server keeps its value.
+- A field that is **not checked, not typed** sends nothing: that is why every filter with a condition sends `<name>_op` (a hidden
+  field when it has only one), so that the server knows the filter was in the form and empty. **The server must take an `_op` with no
+  `_value` as an empty filter.**
+
+Props: `id` (required: base of the ids; the panel is `<id>-panel`), `label` (required: names the search region, "Filter the visits"),
+`filters` (required, see below), `action` (the address of the form; the current page), `resetUrl` ("Reset" and "Clear all"),
+`applyName` (a hidden field sent with every submit, `<set>_filter` in Crudit: it takes the list back to page 1), `search`
+(`{name, value, label}`; none, no search), `title` (title of the panel; "Filters"). Block: `tools` (the tools of the list, kept
+on the line of the button "Filters"). Controller `filters`.
+
+Each filter of `filters`: the keys of `Filter:Field` (`name`, `label`, `type`, `operators`, `operator`, `value`, `to`, `choices`,
+`unit`, `placeholder`) and `id` (names the filter for a chip), `primary` (in the bar; **none primary, no main filter**), `hidden`,
+`active` (the filter has a value: counts in the button, makes a chip), `summary` (its value in words, for the chip and the button).
+
+Accessibility: the form is `role="search"`, named by `label`; the panel is a named dialog; the button "Filters" reads "Filters,
+2" (the number is read with the word); a chip's button says what it removes; the main filters in the panel keep their label; the
+focus of the search is given back after the page is replaced. The panel that opens in the page does not take the focus (it is not
+modal): the button stays where it is, and Tab goes on to the first filter.
+
 ### LleCruditUi:Kit:Section
 
 A section of the design kit page, with its title; used by the kit only.

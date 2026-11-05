@@ -1,0 +1,76 @@
+{#
+ # Filter:Field: one filter of a list, on two lines: its label, then one frame `[condition ▾ | input]`. The condition
+ # is a Filter:Operator; "is empty" / "is not empty" replace the input by their label. Sent by the form of the
+ # filters: `<name>_op`, `<name>_value`, and `<name>_to` for a range (the names of the 1.x of Crudit).
+ #
+ # Props: name (required: prefix of the names), label (required), type ('text', 'number', 'range', 'boolean', 'date',
+ # 'datetime', 'period', 'choice'; 'text'), choices (of a 'choice': list of {value, label}), operators ({value, label, icon, noValue}; none: no condition), operator (the current value),
+ # value (of a 'choice': the chosen values, a list or a string separated by commas), to (second bound of a range or
+ # of a period), unit (after the input), placeholder, id (base of the ids, random otherwise).
+ # A boolean sends 'all', 'true' or 'false', as the 1.x does. Controller: filter-field. Contract: docs/components.md.
+ #}
+{% props name, label, type = 'text', operators = [], operator = null, value = null, to = null, choices = [], unit = null, placeholder = null, id = null %}
+{%- set base = id ?? ('crudit-ui-filter-' ~ random()) -%}
+{%- set group = type in ['range', 'boolean', 'period', 'choice'] -%}
+{%- set chosenValues = type == 'choice' ? (value is iterable ? value : (value ? value|split(',') : [])) : [] -%}
+{%- set chosen = operator ?? (operators ? (operators|first).value : null) -%}
+{%- set selected = operators|filter(candidate => candidate.value == chosen)|first ?: null -%}
+{%- set noValue = selected and selected.noValue|default(false) -%}
+{%- set inputType = {number: 'number', date: 'date', datetime: 'datetime-local'}[type]|default('text') -%}
+<div {{ attributes.defaults({class: 'crudit-ui-filter-field', 'data-controller': '2lenet--crudit-ui-bundle--filter-field', 'data-no-value': noValue ? 'true' : 'false'}) }}>
+    {%- if group -%}
+    <fieldset class="crudit-ui-filter-field__group">
+        <legend class="crudit-ui-filter-field__label">{{ label }}</legend>
+    {%- else -%}
+        <label class="crudit-ui-filter-field__label" for="{{ base }}-value">{{ label }}</label>
+    {%- endif %}
+    <div class="crudit-ui-filter-field__control{{ type == 'boolean' ? ' crudit-ui-filter-field__control--plain' : '' }}">
+        {%- if operators|length > 1 %}
+            <twig:LleCruditUi:Filter:Operator id="{{ base }}-operator" :name="name" :label="label" :operators="operators" :current="chosen" />
+        {%- elseif operators|length == 1 %}
+            {#- The only condition is not chosen, but still sent: `<name>_op` tells the server that the filter is part of the
+             # form, so that a list with no box checked clears it (a box that is not checked sends nothing). -#}
+            <input type="hidden" name="{{ name }}_op" value="{{ (operators|first).value }}">
+        {%- endif %}
+        <p class="crudit-ui-filter-field__no-value" data-2lenet--crudit-ui-bundle--filter-field-target="noValue"{{ noValue ? '' : ' hidden' }}>
+            {{- selected ? selected.label : '' -}}
+        </p>
+        <div class="crudit-ui-filter-field__input" data-2lenet--crudit-ui-bundle--filter-field-target="input"{{ noValue ? ' hidden' : '' }}>
+            {%- if type == 'range' -%}
+                <label class="crudit-ui-visually-hidden" for="{{ base }}-value">{{ 'crudit_ui.filter.minimum'|trans({'%label%': label}, 'LleCruditUiBundle') }}</label>
+                <input class="crudit-ui-filter-field__text" id="{{ base }}-value" type="number" inputmode="decimal" name="{{ name }}_value" value="{{ value }}" placeholder="{{ 'crudit_ui.filter.min'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
+                <span class="crudit-ui-filter-field__affix" aria-hidden="true">–</span>
+                <label class="crudit-ui-visually-hidden" for="{{ base }}-to">{{ 'crudit_ui.filter.maximum'|trans({'%label%': label}, 'LleCruditUiBundle') }}</label>
+                <input class="crudit-ui-filter-field__text" id="{{ base }}-to" type="number" inputmode="decimal" name="{{ name }}_to" value="{{ to }}" placeholder="{{ 'crudit_ui.filter.max'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
+            {%- elseif type == 'period' -%}
+                <twig:LleCruditUi:Filter:Period id="{{ base }}-period" :name="name" :label="label" :value="value" :to="to" />
+            {%- elseif type == 'choice' -%}
+                <ul class="crudit-ui-filter-field__choices">
+                    {% for choice in choices %}
+                        <li>
+                            <label class="crudit-ui-filter-field__choice">
+                                <input type="checkbox" name="{{ name }}_value[]" value="{{ choice.value }}"{{ choice.value in chosenValues ? ' checked' : '' }}{{ noValue ? ' disabled' : '' }}>
+                                <span>{{ choice.label }}</span>
+                            </label>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {%- elseif type == 'boolean' -%}
+                <div class="crudit-ui-filter-field__segmented">
+                    {% for option in [{value: 'all', label: 'crudit_ui.filter.all'}, {value: 'true', label: 'crudit_ui.filter.yes'}, {value: 'false', label: 'crudit_ui.filter.no'}] %}
+                        <label class="crudit-ui-filter-field__segment">
+                            <input class="crudit-ui-filter-field__radio" type="radio" name="{{ name }}_value" value="{{ option.value }}"{{ (value ?? 'all') == option.value ? ' checked' : '' }}>
+                            <span>{{ option.label|trans({}, 'LleCruditUiBundle') }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            {%- else -%}
+                <input class="crudit-ui-filter-field__text" id="{{ base }}-value" type="{{ inputType }}"{{ type == 'number' ? ' inputmode="decimal"' : '' }} name="{{ name }}_value" value="{{ value }}"{{ placeholder ? ' placeholder="' ~ placeholder|e('html_attr') ~ '"' : '' }}{{ noValue ? ' disabled' : '' }} autocomplete="off">
+            {%- endif -%}
+            {%- if unit %}<span class="crudit-ui-filter-field__affix" aria-hidden="true">{{ unit }}</span>{% endif -%}
+        </div>
+    </div>
+    {%- if group -%}
+    </fieldset>
+    {%- endif %}
+</div>

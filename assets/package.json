@@ -43,6 +43,30 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "filter-field": {
+                "main": "dist/controllers/filter_field_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "filter-field": {
+                "main": "dist/controllers/filter_field_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "filter-period": {
+                "main": "dist/controllers/filter_period_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "filters": {
+                "main": "dist/controllers/filters_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "selection-bar": {
                 "main": "dist/controllers/selection_bar_controller.js",
                 "webpackMode": "eager",

@@ -15,6 +15,38 @@ crudit_ui:
         label: "Percorso di navigazione"
     chip:
         remove: "Rimuovi il filtro %label%"
+    filter:
+        operator_for: "Condizione per %label%: %operator%"
+        operator_legend: "Condizione per %label%"
+        minimum: "%label%, minimo"
+        maximum: "%label%, massimo"
+        min: "Min."
+        max: "Max."
+        all: "Tutti"
+        yes: "Sì"
+        no: "No"
+        filters: "Filtri"
+        active_filters: "Filtri attivi"
+        clear_all: "Cancella tutto"
+        apply: "Applica"
+        reset: "Reimposta"
+        remove: "Rimuovi il filtro %label%: %value%"
+        separator: ": "
+        period:
+            today: "Oggi"
+            last_7_days: "Ultimi 7 giorni"
+            last_30_days: "Ultimi 30 giorni"
+            this_month: "Questo mese"
+            last_month: "Mese scorso"
+            next_month: "Mese prossimo"
+            this_year: "Quest'anno"
+            range: "%from% → %to%"
+            since: "Dal %date%"
+            until: "Fino al %date%"
+            all: "Tutte le date"
+            from: "Dal"
+            to: "Al"
+            ready_made: "Periodi predefiniti per %label%"
     language:
         label: Lingua
     selection:

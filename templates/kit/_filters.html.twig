@@ -1,0 +1,48 @@
+{# Filters (3.1.e). Filter:Field and Filter:Operator: each type of input, with a condition or without. #}
+{% set texts = [
+    {value: 'contains', label: 'Contains', icon: 'operator-contains'},
+    {value: 'startswith', label: 'Starts with', icon: 'operator-starts-with'},
+    {value: 'eq', label: 'Is', icon: 'operator-equals'},
+    {value: 'neq', label: 'Is not', icon: 'operator-not-equals'},
+    {value: 'isnull', label: 'Is empty', icon: 'operator-empty', noValue: true},
+    {value: 'isnotnull', label: 'Is not empty', icon: 'operator-not-empty', noValue: true},
+] %}
+{% set numbers = [
+    {value: 'eq', label: 'Is', icon: 'operator-equals'},
+    {value: 'lt', label: 'Is less than', icon: 'operator-less-than'},
+    {value: 'gt', label: 'Is greater than', icon: 'operator-greater-than'},
+    {value: 'isnull', label: 'Is empty', icon: 'operator-empty', noValue: true},
+] %}
+<p class="crudit-ui-kit__text">A label, then one frame: the condition as a pictogram (named for the screen readers), then the input. "Is empty" replaces the input by its label. The form sends <code>&lt;name&gt;_op</code>, <code>&lt;name&gt;_value</code> and, for a range, <code>&lt;name&gt;_to</code>.</p>
+<form class="crudit-ui-kit__stack" onsubmit="return false">
+    <twig:LleCruditUi:Filter:Field id="kit-filter-text" name="filter_visit_title" label="Title" :operators="texts" operator="contains" value="boiler" placeholder="Search a title" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-empty" name="filter_visit_notes" label="Notes" :operators="texts" operator="isnull" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-number" name="filter_visit_duration" label="Duration" type="number" unit="min" :operators="numbers" operator="gt" value="45" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-range" name="filter_visit_amount" label="Amount excl. tax" type="range" unit="€" :operators="[{value: 'interval', label: 'Between', icon: 'operator-between'}, {value: 'isnull', label: 'Is empty', icon: 'operator-empty', noValue: true}]" value="100" to="500" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-boolean" name="filter_visit_urgent" label="Urgent" type="boolean" value="true" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-date" name="filter_visit_date" label="Visit date" type="date" :operators="[{value: 'eq', label: 'Is', icon: 'operator-equals'}, {value: 'before', label: 'Before', icon: 'operator-less-than'}, {value: 'after', label: 'After', icon: 'operator-greater-than'}]" operator="after" value="2026-10-13" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-period" name="filter_visit_period" label="Period" type="period" :operators="[{value: 'interval', label: 'Between', icon: 'operator-between'}, {value: 'isnull', label: 'Is empty', icon: 'operator-empty', noValue: true}]" value="2026-10-01" to="2026-10-31" />
+    <twig:LleCruditUi:Filter:Field id="kit-filter-choice" name="filter_visit_status" label="Status" type="choice" :operators="[{value: 'in', label: 'Is one of', icon: 'operator-equals'}, {value: 'notin', label: 'Is none of', icon: 'operator-not-equals'}]" value="planned,done" :choices="[{value: 'draft', label: 'Draft'}, {value: 'planned', label: 'Planned'}, {value: 'in_progress', label: 'In progress'}, {value: 'done', label: 'Done'}, {value: 'cancelled', label: 'Cancelled'}]" />
+</form>
+<h3 class="crudit-ui-kit__subtitle">Period, inline</h3>
+<p class="crudit-ui-kit__text">In a menu already (a filter of the bar): the dates and the ready-made periods without a second panel.</p>
+<twig:LleCruditUi:Filter:Period id="kit-period-inline" name="filter_inline" label="Visit date" inline />
+
+<h3 class="crudit-ui-kit__subtitle">Filter bar</h3>
+<p class="crudit-ui-kit__text">The search and the main filters (Status, Period) apply at once; the others are in the panel, applied with "Apply". The panel stays in the page from 768 px, and is a side panel below, where the main filters move into it. "Notes" is a hidden filter: it shows nowhere. "Clear all" and the chips appear with active filters; a chip removes its filter.</p>
+{% set barConditions = [
+    {value: 'in', label: 'Is one of', icon: 'operator-equals'},
+    {value: 'notin', label: 'Is none of', icon: 'operator-not-equals'},
+    {value: 'isnull', label: 'Is empty', icon: 'operator-empty', noValue: true},
+] %}
+{% set barStatuses = [{value: 'draft', label: 'Draft'}, {value: 'planned', label: 'Planned'}, {value: 'in_progress', label: 'In progress'}, {value: 'done', label: 'Done'}] %}
+<twig:LleCruditUi:Filter:Bar id="kit-bar" label="Filter the visits" action="{{ path('crudit_ui_kit_sent') }}" resetUrl="{{ path('crudit_ui_kit_sent') }}" applyName="visit_filter" :search="{name: 'visit_search', value: '', label: 'Search the visits'}" :filters="[
+    {id: 'status', label: 'Status', name: 'filter_visit_status', type: 'choice', primary: true, active: true, summary: 'Planned, Done', operators: barConditions, operator: 'in', value: 'planned,done', choices: barStatuses},
+    {id: 'period', label: 'Period', name: 'filter_visit_period', type: 'period', primary: true, operators: [{value: 'interval', label: 'Between', icon: 'operator-between'}], operator: 'interval'},
+    {id: 'title', label: 'Title', name: 'filter_visit_title', type: 'text', active: true, summary: 'boiler', operators: [{value: 'contains', label: 'Contains', icon: 'operator-contains'}, {value: 'eq', label: 'Is', icon: 'operator-equals'}], operator: 'contains', value: 'boiler'},
+    {id: 'duration', label: 'Duration', name: 'filter_visit_duration', type: 'number', unit: 'min', operators: [{value: 'gt', label: 'Is greater than', icon: 'operator-greater-than'}, {value: 'lt', label: 'Is less than', icon: 'operator-less-than'}], operator: 'gt'},
+    {id: 'amount', label: 'Amount excl. tax', name: 'filter_visit_amount', type: 'range', unit: '€', operators: [{value: 'interval', label: 'Between', icon: 'operator-between'}], operator: 'interval'},
+    {id: 'urgent', label: 'Urgent', name: 'filter_visit_urgent', type: 'boolean'},
+    {id: 'date', label: 'Visit date', name: 'filter_visit_date', type: 'date', operators: [{value: 'eq', label: 'Is', icon: 'operator-equals'}, {value: 'before', label: 'Before', icon: 'operator-less-than'}], operator: 'eq'},
+    {id: 'notes', label: 'Notes', name: 'filter_visit_notes', type: 'text', hidden: true, active: true, summary: 'seen'},
+]" />

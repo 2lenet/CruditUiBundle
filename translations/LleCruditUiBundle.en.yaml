@@ -15,6 +15,38 @@ crudit_ui:
         label: "Breadcrumb"
     chip:
         remove: "Remove the filter %label%"
+    filter:
+        operator_for: "Condition for %label%: %operator%"
+        operator_legend: "Condition for %label%"
+        minimum: "%label%, minimum"
+        maximum: "%label%, maximum"
+        min: "Min."
+        max: "Max."
+        all: "All"
+        yes: "Yes"
+        no: "No"
+        filters: "Filters"
+        active_filters: "Active filters"
+        clear_all: "Clear all"
+        apply: "Apply"
+        reset: "Reset"
+        remove: "Remove the filter %label%: %value%"
+        separator: ": "
+        period:
+            today: "Today"
+            last_7_days: "Last 7 days"
+            last_30_days: "Last 30 days"
+            this_month: "This month"
+            last_month: "Last month"
+            next_month: "Next month"
+            this_year: "This year"
+            range: "%from% → %to%"
+            since: "From %date%"
+            until: "Until %date%"
+            all: "All dates"
+            from: "From"
+            to: "To"
+            ready_made: "Ready-made periods for %label%"
     language:
         label: Language
     selection:

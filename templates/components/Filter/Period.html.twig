@@ -1,0 +1,76 @@
+{#
+ # Filter:Period: a period in one field. A button summarises it ("10/01/2026 → 10/31/2026", "All dates") and opens a
+ # Dropdown with the two dates ("From", "To") and the ready-made periods (today, the last 7 and 30 days, this month,
+ # last month, next month, this year): a click on one fills the two dates. The dates are the inputs `<name>_value` and
+ # `<name>_to`, sent by the form even when the panel is closed. With `inline`, no Dropdown: the dates and the periods
+ # are shown directly (a filter of the bar, which is already in a menu).
+ #
+ # The dates stay editable by hand, so a period can be typed. Format sent: Y-m-d, as the native date input does.
+ #
+ # Props: name (required), label (required: the label of the filter), value, to (Y-m-d), id (base of the ids, random
+ # otherwise), inline (false), periods (list of {label, from, to}; the ones above by default).
+ # Controller: filter-period. Contract: docs/components.md.
+ #}
+{% props name, label, value = null, to = null, id = null, inline = false, periods = null %}
+{%- set base = id ?? ('crudit-ui-period-' ~ random()) -%}
+{%- set filterName = name -%}
+{%- set filterLabel = label -%}
+{%- set start = value -%}
+{%- set end = to -%}
+{%- set today = 'today'|date('Y-m-d') -%}
+{%- set periods = periods ?? [
+    {label: 'crudit_ui.filter.period.today'|trans({}, 'LleCruditUiBundle'), from: today, to: today},
+    {label: 'crudit_ui.filter.period.last_7_days'|trans({}, 'LleCruditUiBundle'), from: '-6 days'|date('Y-m-d'), to: today},
+    {label: 'crudit_ui.filter.period.last_30_days'|trans({}, 'LleCruditUiBundle'), from: '-29 days'|date('Y-m-d'), to: today},
+    {label: 'crudit_ui.filter.period.this_month'|trans({}, 'LleCruditUiBundle'), from: 'first day of this month'|date('Y-m-d'), to: 'last day of this month'|date('Y-m-d')},
+    {label: 'crudit_ui.filter.period.last_month'|trans({}, 'LleCruditUiBundle'), from: 'first day of last month'|date('Y-m-d'), to: 'last day of last month'|date('Y-m-d')},
+    {label: 'crudit_ui.filter.period.next_month'|trans({}, 'LleCruditUiBundle'), from: 'first day of next month'|date('Y-m-d'), to: 'last day of next month'|date('Y-m-d')},
+    {label: 'crudit_ui.filter.period.this_year'|trans({}, 'LleCruditUiBundle'), from: 'first day of january this year'|date('Y-m-d'), to: 'last day of december this year'|date('Y-m-d')},
+] -%}
+{%- if start and end -%}
+    {%- set summary = 'crudit_ui.filter.period.range'|trans({'%from%': start|ui_date, '%to%': end|ui_date}, 'LleCruditUiBundle') -%}
+{%- elseif start -%}
+    {%- set summary = 'crudit_ui.filter.period.since'|trans({'%date%': start|ui_date}, 'LleCruditUiBundle') -%}
+{%- elseif end -%}
+    {%- set summary = 'crudit_ui.filter.period.until'|trans({'%date%': end|ui_date}, 'LleCruditUiBundle') -%}
+{%- else -%}
+    {%- set summary = 'crudit_ui.filter.period.all'|trans({}, 'LleCruditUiBundle') -%}
+{%- endif -%}
+{%- set periodController = '2lenet--crudit-ui-bundle--filter-period' -%}
+{%- set texts = {
+    range: 'crudit_ui.filter.period.range'|trans({}, 'LleCruditUiBundle'),
+    since: 'crudit_ui.filter.period.since'|trans({}, 'LleCruditUiBundle'),
+    until: 'crudit_ui.filter.period.until'|trans({}, 'LleCruditUiBundle'),
+    all: 'crudit_ui.filter.period.all'|trans({}, 'LleCruditUiBundle'),
+} -%}
+{%- set fields -%}
+    <div class="crudit-ui-period__dates">
+        <div class="crudit-ui-period__date">
+            <label for="{{ base }}-value">{{ 'crudit_ui.filter.period.from'|trans({}, 'LleCruditUiBundle') }}</label>
+            <input type="date" id="{{ base }}-value" name="{{ filterName }}_value" value="{{ start }}" data-{{ periodController }}-target="start" data-action="{{ periodController }}#changed">
+        </div>
+        <div class="crudit-ui-period__date">
+            <label for="{{ base }}-to">{{ 'crudit_ui.filter.period.to'|trans({}, 'LleCruditUiBundle') }}</label>
+            <input type="date" id="{{ base }}-to" name="{{ filterName }}_to" value="{{ end }}" data-{{ periodController }}-target="end" data-action="{{ periodController }}#changed">
+        </div>
+    </div>
+    <ul class="crudit-ui-period__periods" aria-label="{{ 'crudit_ui.filter.period.ready_made'|trans({'%label%': filterLabel}, 'LleCruditUiBundle') }}">
+        {% for period in periods %}
+            <li><button type="button" class="crudit-ui-period__period" data-from="{{ period.from }}" data-to="{{ period.to }}" data-action="{{ periodController }}#choose">{{ period.label }}</button></li>
+        {% endfor %}
+    </ul>
+{%- endset -%}
+<div {{ attributes.defaults({class: 'crudit-ui-period' ~ (inline ? ' crudit-ui-period--inline' : '')}).defaults(stimulus_controller(periodController, {texts: texts})) }}>
+    {%- if inline -%}
+        <p class="crudit-ui-period__summary" aria-live="polite" data-{{ periodController }}-target="summary">{{ summary }}</p>
+        {{ fields|raw }}
+    {%- else -%}
+        <twig:LleCruditUi:Dropdown label="{{ summary }}" align="start" floating>
+            <twig:block name="trigger">
+                <span class="crudit-ui-period__summary" data-{{ periodController }}-target="summary">{{ summary }}</span>
+                {{- ui_icon('calendar', 'crudit-ui-period__icon') -}}
+            </twig:block>
+            <div class="crudit-ui-period__panel">{{ fields|raw }}</div>
+        </twig:LleCruditUi:Dropdown>
+    {%- endif -%}
+</div>
