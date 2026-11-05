@@ -117,6 +117,15 @@ class FilterTest extends TestCase
         self::assertTrue($field->querySelector('input[type=checkbox]')?->hasAttribute('disabled'));
     }
 
+    public function testADateTimeWithSecondsAllowsThem(): void
+    {
+        $minutes = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="at" label="At" type="datetime" value="2026-11-05T10:30" />', '.crudit-ui-filter-field');
+        self::assertFalse($minutes->querySelector('input[type=datetime-local]')?->hasAttribute('step'));
+
+        $seconds = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="at" label="At" type="datetime" value="2026-11-05T10:30:15" />', '.crudit-ui-filter-field');
+        self::assertSame('1', $seconds->querySelector('input[type=datetime-local]')?->getAttribute('step'));
+    }
+
     public function testAPeriodAndABooleanAreDisabledByIsEmpty(): void
     {
         $operators = ":operators=\"" . self::OPERATORS . "\" operator=\"isnull\"";
