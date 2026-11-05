@@ -124,6 +124,9 @@ class FilterTest extends TestCase
 
         $seconds = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="at" label="At" type="datetime" value="2026-11-05T10:30:15" />', '.crudit-ui-filter-field');
         self::assertSame('1', $seconds->querySelector('input[type=datetime-local]')?->getAttribute('step'));
+
+        $zero = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="at" label="At" type="datetime" value="2026-11-05T10:30:00" />', '.crudit-ui-filter-field');
+        self::assertSame('1', $zero->querySelector('input[type=datetime-local]')?->getAttribute('step'), 'seconds at zero are still seconds');
     }
 
     public function testAPeriodAndABooleanAreDisabledByIsEmpty(): void
