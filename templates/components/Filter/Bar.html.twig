@@ -1,0 +1,88 @@
+{#
+ # Filter:Bar: the filters of a list, in one GET form: the search, the chips of the active filters, the main filters
+ # (buttons that open a field, applied at once), and a button "Filters" that opens the panel of all the others (applied
+ # with the button "Apply"). On a phone the main filters move into the panel (the bar keeps the search and the button).
+ #
+ # The panel is a Dialog: shown in the page from 768 px (it stays open after "Apply"), a side panel (modal) below.
+ # A filter whose `hidden` is true shows nowhere (neither in the bar, nor in the panel, nor as a chip); the server
+ # keeps its value.
+ #
+ # Props: id (required: base of the ids), label (required: names the search region, "Filter the visits"), filters
+ # (required: list of {id, label, name, type, operators, operator, value, to, choices, unit, placeholder, primary,
+ # hidden, active, summary}; the keys of Filter:Field, with `summary` the text of the value for the chip and the
+ # button), action (address of the form; the current page), resetUrl (address that clears the filters: "Reset", "Clear
+ # all"), applyName (a hidden field sent with every submit: `<set>_filter`, which takes the list back to page 1),
+ # search ({name, value, label}: the search field, none without), title (title of the panel; "Filters").
+ # Controller: filters. Contract: docs/components.md.
+ #}
+{% props id, label, filters, action = null, resetUrl = null, applyName = null, search = null, title = null %}
+{%- set barId = id -%}
+{%- set barLabel = label -%}
+{%- set filtersController = '2lenet--crudit-ui-bundle--filters' -%}
+{%- set visible = filters|filter(item => not (item.hidden|default(false))) -%}
+{%- set quick = visible|filter(item => item.primary|default(false)) -%}
+{%- set others = visible|filter(item => not (item.primary|default(false))) -%}
+{%- set activeFilters = visible|filter(item => item.active|default(false)) -%}
+{%- set chips = activeFilters|filter(item => not (item.primary|default(false))) -%}
+{%- set panelTitle = title ?? ('crudit_ui.filter.filters'|trans({}, 'LleCruditUiBundle')) -%}
+{#- The actions of the bar, then those of the project (data-action it passes): the two work. -#}
+{%- set barActions = 'change->' ~ filtersController ~ '#changed input->' ~ filtersController ~ '#typed 2lenet--crudit-ui-bundle--filter-period:change->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--filter-field:operator->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--dropdown:close->' ~ filtersController ~ '#closed keydown->' ~ filtersController ~ '#keydown submit->' ~ filtersController ~ '#submitted' -%}
+{%- set projectActions = attributes.all['data-action']|default(null) -%}
+<form {{ attributes.without('data-action').defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController, ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': barActions ~ (projectActions ? ' ' ~ projectActions : '')}) }}{% if action is not null %} action="{{ action }}"{% endif %}>
+    {%- if applyName %}<input type="hidden" name="{{ applyName }}" value="filter">{% endif %}
+    <div class="crudit-ui-filter-bar__toolbar">
+        {%- if search %}
+            <div class="crudit-ui-filter-bar__search">
+                {{- ui_icon('search', 'crudit-ui-filter-bar__search-icon') -}}
+                <input type="search" name="{{ search.name }}" value="{{ search.value|default('') }}" class="crudit-ui-filter-bar__search-input" aria-label="{{ search.label }}" placeholder="{{ search.label }}" autocomplete="off" data-2lenet--crudit-ui-bundle--filters-target="search">
+            </div>
+        {%- endif %}
+        <div class="crudit-ui-filter-bar__tools">
+            {%- if chips %}
+                <p id="{{ barId }}-chips-title" class="crudit-ui-visually-hidden">{{ 'crudit_ui.filter.active_filters'|trans({}, 'LleCruditUiBundle') }}</p>
+                <ul class="crudit-ui-chips crudit-ui-filter-bar__chips" aria-labelledby="{{ barId }}-chips-title">
+                    {% for item in chips %}
+                        <li>
+                            <twig:LleCruditUi:Chip removeLabel="{{ 'crudit_ui.filter.remove'|trans({'%label%': item.label, '%value%': item.summary|default('')}, 'LleCruditUiBundle') }}" remove:data-action="2lenet--crudit-ui-bundle--filters#clear" remove:data-2lenet--crudit-ui-bundle--filters-id-param="{{ item.id }}">
+                                {{ item.label }}{{ 'crudit_ui.filter.separator'|trans({}, 'LleCruditUiBundle') }}<strong>{{ item.summary|default('') }}</strong>
+                            </twig:LleCruditUi:Chip>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {%- endif %}
+            {%- if resetUrl and activeFilters|length > 1 %}
+                <twig:LleCruditUi:Button variant="ghost" size="small" href="{{ resetUrl }}">{{ 'crudit_ui.filter.clear_all'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
+            {%- endif %}
+
+            {%- for item in quick %}
+                <div class="crudit-ui-filter-bar__quick" data-2lenet--crudit-ui-bundle--filters-target="quick" data-filter-quick="{{ item.id }}">
+                    <twig:LleCruditUi:Dropdown label="{{ item.label }}" align="start" floating class="crudit-ui-filter-bar__quick-dropdown" trigger:class="crudit-ui-btn crudit-ui-btn--secondary crudit-ui-btn--small crudit-ui-filter-bar__quick-button{{ item.active|default(false) ? ' crudit-ui-filter-bar__quick-button--active' : '' }}">
+                        <twig:block name="trigger">
+                            <span class="crudit-ui-filter-bar__quick-label">{{ item.label }}</span>
+                            {%- if item.active|default(false) %}<span class="crudit-ui-filter-bar__quick-value"><span class="crudit-ui-visually-hidden">{{ 'crudit_ui.filter.separator'|trans({}, 'LleCruditUiBundle') }}</span>{{ item.summary|default('') }}</span>{% endif -%}
+                            {{- ui_icon('dropdown', 'crudit-ui-dropdown__chevron') -}}
+                        </twig:block>
+                        <div class="crudit-ui-filter-bar__quick-panel" data-2lenet--crudit-ui-bundle--filters-target="slot">
+                            <twig:LleCruditUi:Filter:Item :item="item" id="{{ barId }}-{{ item.id }}" :inline="true" />
+                        </div>
+                    </twig:LleCruditUi:Dropdown>
+                </div>
+            {%- endfor %}
+
+            <twig:LleCruditUi:Button icon="filter" :count="activeFilters|length ?: null" aria-expanded="false" aria-controls="{{ barId }}-panel" data-action="2lenet--crudit-ui-bundle--filters#toggle" data-2lenet--crudit-ui-bundle--filters-target="toggle">{{ 'crudit_ui.filter.filters'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
+            {%- block tools %}{% endblock -%}
+        </div>
+    </div>
+
+    <twig:LleCruditUi:Dialog id="{{ barId }}-panel" variant="drawer" :title="panelTitle" class="crudit-ui-filter-panel" data-2lenet--crudit-ui-bundle--filters-target="panel">
+        <div class="crudit-ui-filter-panel__grid" data-2lenet--crudit-ui-bundle--filters-target="grid">
+            {%- for item in others %}
+                <twig:LleCruditUi:Filter:Item :item="item" id="{{ barId }}-{{ item.id }}" />
+            {%- endfor %}
+        </div>
+        <twig:block name="footer">
+            {%- if resetUrl %}<twig:LleCruditUi:Button variant="ghost" href="{{ resetUrl }}">{{ 'crudit_ui.filter.reset'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>{% endif %}
+            <twig:LleCruditUi:Button variant="primary" type="submit" data-2lenet--crudit-ui-bundle--filters-target="apply">{{ 'crudit_ui.filter.apply'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
+        </twig:block>
+    </twig:LleCruditUi:Dialog>
+</form>

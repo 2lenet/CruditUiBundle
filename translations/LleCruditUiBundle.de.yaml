@@ -9,12 +9,44 @@ crudit_ui:
     avatar:
         impersonated: "(Identitätswechsel)"
     boolean:
-        yes: "Ja"
-        no: "Nein"
+        "yes": "Ja"
+        "no": "Nein"
     breadcrumb:
         label: "Brotkrümelnavigation"
     chip:
         remove: "Filter %label% entfernen"
+    filter:
+        operator_for: "Bedingung für %label%: %operator%"
+        operator_legend: "Bedingung für %label%"
+        minimum: "%label%, Minimum"
+        maximum: "%label%, Maximum"
+        min: "Min."
+        max: "Max."
+        all: "Alle"
+        "yes": "Ja"
+        "no": "Nein"
+        filters: "Filter"
+        active_filters: "Aktive Filter"
+        clear_all: "Alle löschen"
+        apply: "Anwenden"
+        reset: "Zurücksetzen"
+        remove: "Filter %label% entfernen: %value%"
+        separator: ": "
+        period:
+            today: "Heute"
+            last_7_days: "Letzte 7 Tage"
+            last_30_days: "Letzte 30 Tage"
+            this_month: "Dieser Monat"
+            last_month: "Letzter Monat"
+            next_month: "Nächster Monat"
+            this_year: "Dieses Jahr"
+            range: "%from% → %to%"
+            since: "Ab %date%"
+            until: "Bis %date%"
+            all: "Alle Daten"
+            from: "Von"
+            to: "Bis"
+            ready_made: "Vordefinierte Zeiträume für %label%"
     language:
         label: Sprache
     selection:

@@ -1,0 +1,15 @@
+{#
+ # Filter:Item: one filter of the bar or of the panel, from its data (see Filter:Bar): a Filter:Field, or the template
+ # of the filter when it has one (`template`, with the variables `context`): a filter of a project that brings its own
+ # markup. That one is wrapped so that a chip can still find and empty it (data-filter-id); its inputs keep their names.
+ #
+ # Props: item (required), id (required: base of the ids), inline (false: passed to the field, for a main filter of the bar). Contract: docs/components.md (Filter:Bar).
+ #}
+{% props item, id, inline = false %}
+{%- if item.template|default(null) -%}
+    <div class="crudit-ui-filter-field crudit-ui-filter-field--custom" data-filter-id="{{ item.id }}">
+        {{- include(item.template, item.context|default({})) -}}
+    </div>
+{%- else -%}
+    <twig:LleCruditUi:Filter:Field id="{{ id }}" data-filter-id="{{ item.id }}" :name="item.name" :label="item.label" :type="item.type|default('text')" :operators="item.operators|default([])" :operator="item.operator|default(null)" :value="item.value|default(null)" :to="item.to|default(null)" :choices="item.choices|default([])" :unit="item.unit|default(null)" :placeholder="item.placeholder|default(null)" :inline="inline" />
+{%- endif -%}
