@@ -59,6 +59,7 @@ export default class extends Controller {
             }
         }
         this.restoreFocus();
+        this.restoreDraft();
     }
 
     disconnect() {
@@ -204,9 +205,17 @@ export default class extends Controller {
     // Sends the form. Without `apply`, the filters of the panel that changed since the page was drawn (the draft) are
     // disabled for the time of the send, so they are left out; `keep` is a filter that goes anyway (the one a chip
     // just emptied).
+    //
+    // The fields are disabled and enabled again in the same task: the browser and Turbo (FormSubmission) read the data of
+    // the form synchronously, while the submit event runs. Do not move this into a promise or a timer, nor "simplify" it
+    // to one that runs after requestSubmit(): a listener of the project that reads the form later sees them enabled.
+    // The changes of the draft are kept for the page that replaces this one (see restoreDraft()).
     send({apply = false, keep = null} = {}) {
         clearTimeout(this.timer);
         const draft = apply ? [] : this.draftInputs(keep);
+        if (draft.length) {
+            this.saveDraft(draft);
+        }
         draft.forEach((input) => {
             input.disabled = true;
         });
@@ -237,6 +246,51 @@ export default class extends Controller {
         });
 
         return inputs;
+    }
+
+    // The changes left out of a send would vanish with the page: they are kept once for the next one, which puts them
+    // back in the panel (still a draft: the server has not seen them).
+    saveDraft(inputs) {
+        const changes = inputs.filter((input) => input.name && this.modified(input)).map((input) => ({
+            name: input.name,
+            value: input.value,
+            type: input instanceof HTMLSelectElement ? 'select' : input.type,
+            checked: input.checked,
+        }));
+        this.store('draft', JSON.stringify({time: Date.now(), changes}));
+    }
+
+    restoreDraft() {
+        let saved = null;
+        try {
+            saved = JSON.parse(this.stored('draft') ?? 'null');
+        } catch {
+            saved = null;
+        }
+        this.store('draft', null);
+        if (!saved || !this.hasPanelTarget || Date.now() - saved.time > FOCUS_MAX_AGE) {
+            return;
+        }
+        saved.changes.forEach(({name, value, type, checked}) => {
+            const inputs = Array.from(this.panelTarget.querySelectorAll('input, select, textarea')).filter((input) => input.name === name);
+            const input = type === 'checkbox' || type === 'radio' ? inputs.find((candidate) => candidate.value === value) : inputs[0];
+            if (!input) {
+                return;
+            }
+            if (type === 'checkbox') {
+                input.checked = checked;
+            } else if (type === 'radio') {
+                // The one that became checked is enough: checking it unchecks the others.
+                if (!checked) {
+                    return;
+                }
+                input.checked = true;
+            } else {
+                input.value = value;
+            }
+            // The scripts of the fields (condition, summary of a period) follow, as for a change by the user.
+            input.dispatchEvent(new Event('input', {bubbles: true}));
+        });
     }
 
     modified(input) {

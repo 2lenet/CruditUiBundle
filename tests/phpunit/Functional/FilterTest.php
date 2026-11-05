@@ -135,12 +135,30 @@ class FilterTest extends TestCase
         self::assertFalse($enabled->querySelector('input[type=date]')?->hasAttribute('disabled'));
     }
 
+    public function testTheActionsOfTheProjectAreAddedToThoseOfTheBar(): void
+    {
+        $form = $this->bar('data-action="submit->analytics#track"');
+
+        $actions = (string) $form->getAttribute('data-action');
+        self::assertStringContainsString('change->2lenet--crudit-ui-bundle--filters#changed', $actions);
+        self::assertStringContainsString('submit->analytics#track', $actions);
+    }
+
+    public function testAnOperatorWithoutIconRendersWithoutIt(): void
+    {
+        $field = $this->element("<twig:LleCruditUi:Filter:Field id=\"f\" name=\"n\" label=\"Name\" :operators=\"[{value: 'a', label: 'A'}, {value: 'b', label: 'B'}]\" />", '.crudit-ui-filter-field');
+
+        self::assertNull($field->querySelector('.crudit-ui-operator__option-icon'));
+        self::assertCount(2, $field->querySelectorAll('input[type=radio]'));
+    }
+
     public function testAMainPeriodIsInlineInItsDropdown(): void
     {
         $form = $this->element("<twig:LleCruditUi:Filter:Bar id=\"b\" label=\"Filter\" :filters=\"[{id: 'date', label: 'Date', name: 'f_date', type: 'period', primary: true}, {id: 'since', label: 'Since', name: 'f_since', type: 'period'}]\" />", 'form');
 
         $main = $form->querySelector('.crudit-ui-filter-bar__quick .crudit-ui-period');
-        self::assertStringContainsString('crudit-ui-period--inline', (string) $main?->getAttribute('class'));
+        self::assertNotNull($main);
+        self::assertStringContainsString('crudit-ui-period--inline', (string) $main->getAttribute('class'));
         self::assertNull($main->querySelector('.crudit-ui-dropdown'), 'no dropdown in the dropdown');
 
         $other = $form->querySelector('.crudit-ui-filter-panel .crudit-ui-period');

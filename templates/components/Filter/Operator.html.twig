@@ -5,7 +5,7 @@
  # <condition>". The controller filter-field keeps the pictogram and the name of the button in step with the choice.
  #
  # Props: name (required: name of the radios, `<name>_op`), label (required: the label of the filter), operators
- # (required: list of {value, label, icon, noValue}), current (value of the chosen one, the first by default),
+ # (required: list of {value, label, icon, noValue}; icon is optional), current (value of the chosen one, the first by default),
  # id (base of the ids, random otherwise). Contract: docs/components.md.
  #}
 {% props name, label, operators, current = null, id = null %}
@@ -16,7 +16,7 @@
 <div {{ attributes.defaults({class: 'crudit-ui-operator'}) }}>
     <twig:LleCruditUi:Dropdown id="{{ base }}" label="{{ 'crudit_ui.filter.operator_for'|trans({'%label%': filterLabel, '%operator%': selected.label}, 'LleCruditUiBundle') }}" size="small" align="start" floating>
         <twig:block name="trigger">
-            <span class="crudit-ui-operator__icon" data-2lenet--crudit-ui-bundle--filter-field-target="operatorIcon">{{ ui_icon(selected.icon|default('')) }}</span>
+            <span class="crudit-ui-operator__icon" data-2lenet--crudit-ui-bundle--filter-field-target="operatorIcon">{% if selected.icon|default(null) %}{{ ui_icon(selected.icon) }}{% endif %}</span>
             {{- ui_icon('dropdown', 'crudit-ui-operator__chevron') -}}
             <span class="crudit-ui-visually-hidden" data-2lenet--crudit-ui-bundle--filter-field-target="operatorName">{{ 'crudit_ui.filter.operator_for'|trans({'%label%': filterLabel, '%operator%': selected.label}, 'LleCruditUiBundle') }}</span>
         </twig:block>
@@ -29,7 +29,7 @@
                         data-no-value="{{ operator.noValue|default(false) ? 'true' : 'false' }}"
                         data-name="{{ 'crudit_ui.filter.operator_for'|trans({'%label%': filterLabel, '%operator%': operator.label}, 'LleCruditUiBundle') }}"
                         data-action="2lenet--crudit-ui-bundle--filter-field#choose">
-                    {{- ui_icon(operator.icon|default(''), 'crudit-ui-operator__option-icon') -}}
+                    {%- if operator.icon|default(null) %}{{ ui_icon(operator.icon, 'crudit-ui-operator__option-icon') }}{% endif -%}
                     <span>{{ operator.label }}</span>
                 </label>
             {% endfor %}

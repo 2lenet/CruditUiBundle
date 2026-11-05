@@ -1362,6 +1362,59 @@ try {
     await page.reload({waitUntil: 'networkidle0'});
     assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), false, 'filter bar: closed stays closed');
 
+    // Closed with the button of the dialog (not the one of the bar): remembered too.
+    await page.click(barToggle);
+    await page.evaluate(() => document.querySelector('#kit-bar-panel .crudit-ui-dialog__close').click());
+    await page.reload({waitUntil: 'networkidle0'});
+    assert.equal(await page.evaluate(() => document.querySelector('#kit-bar-panel').open), false, 'filter bar: closed with its own button stays closed');
+
+    // The panel is a draft: a send from the bar leaves out what changed in the panel, and the change is put back.
+    const setField = (selector, value) => page.evaluate((selector, value) => {
+        const input = document.querySelector(selector);
+        input.value = value;
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+        input.dispatchEvent(new Event('change', {bubbles: true}));
+    }, selector, value);
+    const titleInput = '#kit-bar-panel input[name="filter_visit_title_value"]';
+    await openBarPage(1280, 900);
+    await page.click(barToggle);
+    await setField(titleInput, 'zz');
+    await page.type(`${barForm} input[type="search"]`, 'x');
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.deepEqual((await barSent())[0].filter((entry) => entry.startsWith('filter_visit_title')), [], 'filter bar: a send from the search leaves out the draft of the panel');
+    assert.ok((await barSent())[0].some((entry) => entry.startsWith('visit_search=')), 'filter bar: and sends the search');
+    await openBarPage(1280, 900);
+    assert.equal(await page.$eval(titleInput, (input) => input.value), 'zz', 'filter bar: the draft is put back in the next page');
+    await page.click('#kit-bar-panel [data-2lenet--crudit-ui-bundle--filters-target="apply"]');
+    assert.ok((await barSent())[0].includes('filter_visit_title_value=zz'), 'filter bar: "Apply" sends the draft');
+    await openBarPage(1280, 900);
+    assert.equal(await page.$eval(titleInput, (input) => input.value), 'boiler', 'filter bar: the draft is put back once only');
+
+    // The dates of a main period wait for the dropdown to close; a ready-made period sends at once.
+    const periodQuick = `${barForm} [data-filter-quick="period"]`;
+    await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
+    assert.equal(await page.$(`${periodQuick} .crudit-ui-period .crudit-ui-dropdown`), null, 'filter bar: a main period has no dropdown in the dropdown');
+    await setField(`${periodQuick} input[name="filter_visit_period_value"]`, '2026-10-01');
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    assert.deepEqual(await barSent(), [], 'filter bar: a date typed in a main period is not sent yet');
+    await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+    assert.ok((await barSent())[0].includes('filter_visit_period_value=2026-10-01'), 'filter bar: the period is sent when its dropdown closes');
+    await page.evaluate(() => { window.__sent = []; });
+    await page.click(`${periodQuick} .crudit-ui-filter-bar__quick-button`);
+    await page.click(`${periodQuick} .crudit-ui-period__period`);
+    await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
+
+    // A chip of an "is empty" filter takes the condition back to one that has a value.
+    await openBarPage(1280, 900);
+    await page.evaluate(() => {
+        const radio = document.querySelector('#kit-bar-panel input[name="filter_visit_title_op"][value="isnull"]');
+        radio.checked = true;
+        radio.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    await page.click(`${barForm} ul.crudit-ui-chips button.crudit-ui-chip__remove`);
+    assert.deepEqual((await barSent())[0]?.filter((entry) => entry.startsWith('filter_visit_title')), ['filter_visit_title_op=contains', 'filter_visit_title_value='], 'filter bar: the chip of an "is empty" filter gives back a condition with a value');
+
     await openBarPage(360, 800);
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#kit-bar-panel [data-filter-id]')].map((field) => field.dataset.filterId).slice(0, 2)), ['status', 'period'], 'filter bar: on a phone the main filters are in the panel');
     await page.click(barToggle);

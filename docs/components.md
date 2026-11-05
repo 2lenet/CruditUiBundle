@@ -770,6 +770,10 @@ nothing of Crudit: the project (the `FilterBrick`) gives the filters as data, th
   types). The dates of a main period are sent when its dropdown closes (a ready-made period sends at once). **What is in the panel
   is a draft**: a filter of the panel changed since the page was drawn is left out of a send that does not come from the panel (the
   search, the bar, a chip), so the server keeps its previous value; "Apply" (or Enter in a field of the panel) sends them all.
+  The changes left out are kept once in `sessionStorage` and put back in the panel of the page that replaces this one, so they are
+  not lost. **The server must keep the value of a filter that is absent from the request** (CruditBundle: `FilterState`, in the
+  session); with a state read from the address, the filter would be reset. The fields are disabled for the time of the send, in the
+  same task: the form data is read synchronously (browser, Turbo), a listener that reads it later sees them enabled.
   The panel closed by its button or Escape stays closed after a reload.
 - **The panel** is a `Dialog` (`variant="drawer"`): shown **in the page from 768 px** (not modal, between the bar and the list; it
   stays open after "Apply", and is open again after a reload if the user left it so: `sessionStorage`), a **modal side panel below**.
@@ -787,7 +791,7 @@ Props: `id` (required: base of the ids; the panel is `<id>-panel`), `label` (req
 `filters` (required, see below), `action` (the address of the form; the current page), `resetUrl` ("Reset" and "Clear all"),
 `applyName` (a hidden field sent with every submit, `<set>_filter` in Crudit: it takes the list back to page 1), `search`
 (`{name, value, label}`; none, no search), `title` (title of the panel; "Filters"). Block: `tools` (the tools of the list, kept
-on the line of the button "Filters"). Controller `filters`.
+on the line of the button "Filters"). Controller `filters`. A `data-action` given to the component is added after those of the bar.
 
 Each filter of `filters`: the keys of `Filter:Field` (`name`, `label`, `type`, `operators`, `operator`, `value`, `to`, `choices`,
 `unit`, `placeholder`) and `id` (names the filter for a chip), `primary` (in the bar; **none primary, no main filter**), `hidden`,

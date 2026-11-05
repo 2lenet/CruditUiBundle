@@ -25,7 +25,10 @@
 {%- set activeFilters = visible|filter(item => item.active|default(false)) -%}
 {%- set chips = activeFilters|filter(item => not (item.primary|default(false))) -%}
 {%- set panelTitle = title ?? ('crudit_ui.filter.filters'|trans({}, 'LleCruditUiBundle')) -%}
-<form {{ attributes.defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController, ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': 'change->' ~ filtersController ~ '#changed input->' ~ filtersController ~ '#typed 2lenet--crudit-ui-bundle--filter-period:change->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--filter-field:operator->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--dropdown:close->' ~ filtersController ~ '#closed keydown->' ~ filtersController ~ '#keydown submit->' ~ filtersController ~ '#submitted'}) }}{% if action is not null %} action="{{ action }}"{% endif %}>
+{#- The actions of the bar, then those of the project (data-action it passes): the two work. -#}
+{%- set barActions = 'change->' ~ filtersController ~ '#changed input->' ~ filtersController ~ '#typed 2lenet--crudit-ui-bundle--filter-period:change->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--filter-field:operator->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--dropdown:close->' ~ filtersController ~ '#closed keydown->' ~ filtersController ~ '#keydown submit->' ~ filtersController ~ '#submitted' -%}
+{%- set projectActions = attributes.all['data-action']|default(null) -%}
+<form {{ attributes.without('data-action').defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController, ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': barActions ~ (projectActions ? ' ' ~ projectActions : '')}) }}{% if action is not null %} action="{{ action }}"{% endif %}>
     {%- if applyName %}<input type="hidden" name="{{ applyName }}" value="filter">{% endif %}
     <div class="crudit-ui-filter-bar__toolbar">
         {%- if search %}
