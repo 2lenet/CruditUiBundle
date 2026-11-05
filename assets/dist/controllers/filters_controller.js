@@ -160,7 +160,7 @@ export default class extends Controller {
     // The dates of a period wait for its dropdown to close (see closed()): "From" is typed before "To". A ready-made
     // period is complete, and sends at once.
     changed(event) {
-        if (this.inPanel(event.target) || this.isTyped(event.target)) {
+        if (this.restoring || this.inPanel(event.target) || this.isTyped(event.target)) {
             return;
         }
         const period = event.target.closest?.(PERIOD);
@@ -184,7 +184,7 @@ export default class extends Controller {
     // Typing in a field of the bar (the search, the text or number of a main filter) sends after a pause. The boxes,
     // the radios and the dates send when they change.
     typed(event) {
-        if (!this.inPanel(event.target) && this.isTyped(event.target)) {
+        if (!this.restoring && !this.inPanel(event.target) && this.isTyped(event.target)) {
             this.schedule(SEARCH_DELAY);
         }
     }
@@ -277,7 +277,18 @@ export default class extends Controller {
         if (!saved || !this.element.isConnected || Date.now() - saved.time > DRAFT_MAX_AGE) {
             return;
         }
-        saved.changes.forEach(({name, value, type, checked, values}) => {
+        // The events below make the fields follow (condition, summary), not send the form: a field that is back in the
+        // bar (wider window) would otherwise send the page by itself.
+        this.restoring = true;
+        try {
+            this.applyDraft(saved.changes);
+        } finally {
+            this.restoring = false;
+        }
+    }
+
+    applyDraft(changes) {
+        changes.forEach(({name, value, type, checked, values}) => {
             // In the whole form: a main filter that was in the panel (narrow window) may be back in the bar.
             const inputs = Array.from(this.element.querySelectorAll('input, select, textarea')).filter((input) => input.name === name);
             const input = type === 'checkbox' || type === 'radio' ? inputs.find((candidate) => candidate.value === value) : inputs[0];
