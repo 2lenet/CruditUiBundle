@@ -301,6 +301,32 @@ Accessibility (WCAG 1.4.13, RGAA 10.13): it can be hovered without closing; Esca
 move of the pointer or of the focus (the class `crudit-ui-tooltips-dismissed` on `<html>`); it goes while the menu of
 its button is open.
 
+#### LleCruditUi:Toggletip
+
+A button ⓘ that opens a short help: the help of a field next to its label, the meaning of a column. Unlike a
+[Tooltip](#llecrudituitooltip), it is **reachable on a touch screen** and may hold rich content (bold text, a link, a
+list). The panel is a native popover opened by the button (`popovertarget`): a click or a touch opens and closes it,
+Escape and a click outside close it, the browser tells whether it is open (`aria-expanded`). Under its button where CSS
+anchor positioning exists, in the middle of the screen elsewhere.
+
+The controller `toggletip` (to enable in `assets/controllers.json`) also opens it **on the hover** of a mouse and on
+the **keyboard focus**, and closes it when they leave the button and the panel (the panel can be hovered, WCAG
+1.4.13); a click on a panel opened that way keeps it open. A touch fires no hover. Without the controller, the click
+alone.
+
+```twig
+<twig:LleCruditUi:Toggletip label="{{ 'Help on the field %label%'|trans({'%label%': 'Phone'}) }}" id="phone-help">
+    With the <b>country code</b>, for example +33 6 12 34 56 78.
+</twig:LleCruditUi:Toggletip>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `label` | string | required | name of the button, which names the field or the column |
+| `id` | string | required | id of the panel, unique in the page: never inside a cell of a `Table` (rendered twice) |
+
+Block: `content`, the help. Attributes: on the button.
+
 ### Dialogs and drawer
 
 #### LleCruditUi:Dialog

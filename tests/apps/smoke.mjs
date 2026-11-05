@@ -127,6 +127,49 @@ try {
     assert.equal(counter.text, 'In progress 12');
     assert.notEqual(counter.color, counter.neutral, 'the status of the counter has no colour of its tone');
 
+    // Form inputs: the switch writes its state, the toggletip opens its help (a popover), Escape closes it.
+    await page.setViewport({width: 1440, height: 900});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const switchState = () => page.$eval('#kit-forms .crudit-ui-switch', (label) => [...label.querySelectorAll('.crudit-ui-switch__state')]
+        .filter((state) => getComputedStyle(state).display !== 'none').map((state) => state.textContent));
+    assert.deepEqual(await switchState(), ['Yes'], 'the switch does not write its state');
+    await page.click('#kit-form-active');
+    assert.deepEqual(await switchState(), ['No'], 'the state of the switch does not follow it');
+    await page.click('#kit-forms .crudit-ui-toggletip');
+    assert.ok(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open')), 'the toggletip does not open its help');
+    await page.keyboard.press('Escape');
+    assert.ok(!(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'))), 'Escape does not close the toggletip');
+    // The hover opens it for a look, leaving closes it; a click keeps it open; the keyboard focus opens it too.
+    const tipOpen = () => page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'));
+    const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // (after Escape the button still has the focus, shown since a key was pressed: it would keep the panel open)
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
+    await page.mouse.move(5, 5);
+    await page.hover('#kit-forms .crudit-ui-toggletip');
+    await pause(250);
+    assert.ok(await tipOpen(), 'the hover does not open the toggletip');
+    await page.mouse.move(5, 5);
+    await pause(400);
+    assert.ok(!(await tipOpen()), 'leaving the toggletip does not close it');
+    await page.hover('#kit-forms .crudit-ui-toggletip');
+    await pause(250);
+    await page.click('#kit-forms .crudit-ui-toggletip');
+    await page.mouse.move(5, 5);
+    await pause(400);
+    assert.ok(await tipOpen(), 'a click on a toggletip opened by the hover does not keep it open');
+    await page.keyboard.press('Escape');
+    assert.ok(!(await tipOpen()), 'Escape does not close a toggletip kept open');
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
+    assert.ok(!(await tipOpen()), 'leaving the toggletip with the keyboard does not close it');
+    const unitFocus = await page.$eval('#kit-form-amount', (input) => {
+        input.focus({focusVisible: true});
+        return getComputedStyle(input.closest('.crudit-ui-input-group')).outlineStyle;
+    });
+    assert.equal(unitFocus, 'solid', 'the focus does not surround the input and its unit');
+
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});
     const widths = await page.evaluate(() => ({client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth}));
