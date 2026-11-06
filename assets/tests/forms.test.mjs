@@ -30,6 +30,7 @@ test('the panel of a toggletip is placed under its button only where anchor posi
 });
 
 test('the button of a toggletip stays active while its panel is open (popovertarget sets no aria-expanded in the DOM)', () => {
-    assert.match(css, /\.crudit-ui-toggletip:has\(\+ ?\.crudit-ui-toggletip__panel:popover-open\)/);
+    // In :is(), forgiving: a browser without :has() or :popover-open keeps the hover.
+    assert.match(css, /\.crudit-ui-toggletip:is\(:hover, ?:has\(\+ ?\.crudit-ui-toggletip__panel:popover-open\)\)\{/);
     assert.ok(!css.includes('.crudit-ui-toggletip[aria-expanded'));
 });
