@@ -37,10 +37,10 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 |---|---|
 | Row | `div.crudit-ui-field` (`--invalid` with an error), `row_attr` merged on it |
 | Label | above the input, `label.crudit-ui-label` pointing to it (`for`), in `div.crudit-ui-field__label-row` |
-| Required | the attribute `required`, and a star `span.crudit-ui-required` hidden from assistive technologies: **explain it** above the form ("The fields marked with a star (*) are required") |
+| Required | the attribute `required`, and a star `span.crudit-ui-required` hidden from assistive technologies: **explain it** above the form ("The fields marked with a star (*) are required"). A compound field has the star only when it is one field (choices as boxes, a date or a time in lists), not a sub-form, a collection or a repeated field |
 | Help | `p.crudit-ui-help#<id>_help` |
 | Error | `p.crudit-ui-error#<id>_error`, with an icon; the input has `aria-invalid="true"` |
-| `aria-describedby` | the help, then the error, after the ids given by the project in `attr` |
+| `aria-describedby` | the help, then the error, after the ids given by the project in `attr`; each list of a date or a time in lists is also attached to the help and the error of its field |
 | Errors of the whole form | `div.crudit-ui-form-errors` with `role="alert"` |
 | Compound field, choices as boxes | `fieldset.crudit-ui-field.crudit-ui-field__group` named by its `legend` |
 | Text, number, date… | `input.crudit-ui-input` |
@@ -52,8 +52,15 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Amount, percentage | `div.crudit-ui-input-group` with the unit (`__unit`, hidden from assistive technologies): the focus surrounds the input and its unit |
 | File | the native `input[type=file]`, restyled |
 
-No floating label, no `placeholder` used as a label. The browser validation is the business of the form
-(`novalidate`): the messages are those of the server.
+No floating label, no `placeholder` used as a label.
+
+The theme does not change the `<form>` tag. Without `novalidate` on it, the browser checks the required fields itself
+before sending the form and shows its own bubbles instead of the errors of the theme. To show only the messages of the
+server, add it to the form:
+
+```twig
+{{ form_start(form, {attr: {novalidate: 'novalidate'}}) }}
+```
 
 ## Classes
 

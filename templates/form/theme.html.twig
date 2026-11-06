@@ -75,8 +75,14 @@
     {%- endif -%}
 {%- endblock form_label -%}
 
+{#
+ # The star of a required field. A compound field has it only when it is one field made of several inputs (choices
+ # shown as boxes, a date or a time in lists): Symfony sets required on every compound form, so a sub-form, a
+ # collection or a repeated field (whose two inputs have their own star) has none.
+ #}
 {%- block crudit_ui_required -%}
-    {%- if required %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif -%}
+    {%- set crudit_ui_star = required and (not compound or expanded|default(false) or block_prefixes|filter(p => p in ['date', 'time', 'datetime', 'dateinterval'])|length > 0) -%}
+    {%- if crudit_ui_star %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif -%}
 {%- endblock -%}
 
 {%- block form_help -%}
@@ -110,17 +116,33 @@
     {%- endif -%}
 {%- endblock form_errors -%}
 
-{# Attributes of an input: the help and the error attached, the invalid state #}
+{#
+ # Attributes of an input: the help and the error attached, the invalid state. An input of a date or a time in lists
+ # (day, month, year…) is also attached to the help and the error of its field, shown in the fieldset, like the boxes
+ # of choices; a date and a time in a datetime go up two levels.
+ #}
 
 {%- block widget_attributes -%}
     {%- set described = (attr['aria-describedby'] ?? '')|split(' ')|filter(v => v != '') -%}
-    {%- if help is not empty and (id ~ '_help') not in described -%}
-        {%- set described = described|merge([id ~ '_help']) -%}
-    {%- endif -%}
-    {%- if errors|length > 0 -%}
-        {%- set described = described|merge([id ~ '_error']) -%}
-        {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}
-    {%- endif -%}
+    {%- set crudit_ui_fields = [form] -%}
+    {%- set crudit_ui_ancestor = form.parent -%}
+    {%- for level in 1..2 -%}
+        {%- if crudit_ui_ancestor is not null and crudit_ui_ancestor.vars.compound and crudit_ui_ancestor.vars.block_prefixes|filter(p => p in ['date', 'time', 'datetime', 'dateinterval'])|length > 0 -%}
+            {%- set crudit_ui_fields = [crudit_ui_ancestor]|merge(crudit_ui_fields) -%}
+            {%- set crudit_ui_ancestor = crudit_ui_ancestor.parent -%}
+        {%- else -%}
+            {%- set crudit_ui_ancestor = null -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- for field in crudit_ui_fields -%}
+        {%- if field.vars.help is not empty and (field.vars.id ~ '_help') not in described -%}
+            {%- set described = described|merge([field.vars.id ~ '_help']) -%}
+        {%- endif -%}
+        {%- if field.vars.errors|length > 0 and (field.vars.id ~ '_error') not in described -%}
+            {%- set described = described|merge([field.vars.id ~ '_error']) -%}
+            {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}
+        {%- endif -%}
+    {%- endfor -%}
     {%- if described is not empty -%}
         {%- set attr = attr|merge({'aria-describedby': described|join(' ')}) -%}
     {%- endif -%}
@@ -216,7 +238,7 @@
     {%- if symbol -%}
         <div class="crudit-ui-input-group">
             {{- block('form_widget_simple') -}}
-            <span class="crudit-ui-input-group__unit" aria-hidden="true">{{ symbol|default('%') }}</span>
+            <span class="crudit-ui-input-group__unit" aria-hidden="true">{{ symbol }}</span>
         </div>
     {%- else -%}
         {{- block('form_widget_simple') -}}

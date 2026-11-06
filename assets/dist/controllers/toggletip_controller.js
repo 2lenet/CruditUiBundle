@@ -6,7 +6,8 @@ import { Controller } from '@hotwired/stimulus';
  * adds the hover and the keyboard focus:
  * - the pointer of a mouse or a pen on the button opens the panel, "for a look"; it closes once the pointer has left
  *   both the button and the panel (the panel can be hovered: WCAG 1.4.13);
- * - the keyboard focus (focus-visible) opens it the same way, leaving the button closes it;
+ * - the keyboard focus (focus-visible) opens it the same way; it closes once the focus has left both the button and
+ *   the panel (a link in the panel can be reached with Tab);
  * - a click on a panel opened for a look keeps it open (instead of the native toggle that would close it): it then
  *   closes like a panel opened by a click.
  * A touch fires no hover: it is the native click.
@@ -47,6 +48,12 @@ export default class extends Controller {
                 this.closeLook();
             }
         };
+        // The focus leaves the panel: back to its button, it stays open.
+        this.onPanelFocusOut = (event) => {
+            if (event.relatedTarget !== this.element && !this.panel.contains(event.relatedTarget)) {
+                this.closeLook();
+            }
+        };
         this.onClick = (event) => {
             this.cancel();
             if (this.look && this.isOpen()) {
@@ -69,6 +76,7 @@ export default class extends Controller {
         this.element.addEventListener('click', this.onClick);
         this.panel.addEventListener('pointerenter', this.onEnter);
         this.panel.addEventListener('pointerleave', this.onLeave);
+        this.panel.addEventListener('focusout', this.onPanelFocusOut);
         this.panel.addEventListener('toggle', this.onToggle);
     }
 
@@ -84,6 +92,7 @@ export default class extends Controller {
         this.element.removeEventListener('click', this.onClick);
         this.panel.removeEventListener('pointerenter', this.onEnter);
         this.panel.removeEventListener('pointerleave', this.onLeave);
+        this.panel.removeEventListener('focusout', this.onPanelFocusOut);
         this.panel.removeEventListener('toggle', this.onToggle);
     }
 

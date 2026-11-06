@@ -164,6 +164,19 @@ try {
     assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
     await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
     assert.ok(!(await tipOpen()), 'leaving the toggletip with the keyboard does not close it');
+    // With the keyboard into the panel (a link in the help), then out of it: the panel closes. Its button stays active
+    // while it is open (popovertarget sets no aria-expanded in the DOM).
+    const tipButtonColor = () => page.$eval('#kit-forms .crudit-ui-toggletip', (button) => getComputedStyle(button).backgroundColor);
+    const closedColor = await tipButtonColor();
+    await page.$eval('#kit-form-name-tip', (panel) => panel.insertAdjacentHTML('beforeend', ' <a href="#kit-forms" id="kit-form-name-tip-link">More</a>'));
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
+    assert.notEqual(await tipButtonColor(), closedColor, 'the button of an open toggletip is not active');
+    await page.$eval('#kit-form-name-tip-link', (link) => link.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), 'going into the panel with the keyboard closes the toggletip');
+    await page.$eval('#kit-form-amount', (input) => input.focus({focusVisible: true}));
+    assert.ok(!(await tipOpen()), 'leaving the panel with the keyboard does not close the toggletip');
+    await page.$eval('#kit-form-name-tip-link', (link) => link.remove());
     const unitFocus = await page.$eval('#kit-form-amount', (input) => {
         input.focus({focusVisible: true});
         return getComputedStyle(input.closest('.crudit-ui-input-group')).outlineStyle;

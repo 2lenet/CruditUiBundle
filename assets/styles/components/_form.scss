@@ -367,8 +367,9 @@
     color: var(--c-text-muted);
     cursor: pointer;
 
+    // Active while its panel is open: popovertarget sets no aria-expanded in the DOM (only in the accessibility tree)
     &:hover,
-    &[aria-expanded='true'] {
+    &:has(+ .crudit-ui-toggletip__panel:popover-open) {
         background-color: var(--c-surface-active);
         color: var(--c-text);
     }
