@@ -1,0 +1,17 @@
+{#
+ # Toggletip: a button ⓘ that opens a short help, a native popover (popovertarget). Unlike a Tooltip, it is reachable
+ # on a touch screen and may hold rich content (a link, a list). A click or a touch opens and closes it, Escape and a
+ # click outside close it. The controller toggletip also opens it on the hover and the keyboard focus, and closes it
+ # when they leave; a click then keeps it open. Without the controller, the click alone.
+ #
+ # Props: label (required, name of the button: "Help on the field Phone"), id (required, id of the panel, unique in
+ # the page). Block: content (the help). Contract: docs/components.md.
+ #}
+{% props label, id %}
+<button {{ attributes.defaults({type: 'button', class: 'crudit-ui-toggletip', popovertarget: id, 'data-controller': '2lenet--crudit-ui-bundle--toggletip'}) }}>
+    {{- ui_icon('info') -}}
+    <span class="crudit-ui-visually-hidden">{{ label }}</span>
+</button>
+<div id="{{ id }}" class="crudit-ui-toggletip__panel" popover>
+    {%- block content %}{% endblock -%}
+</div>

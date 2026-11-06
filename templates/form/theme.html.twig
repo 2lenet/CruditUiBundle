@@ -1,0 +1,246 @@
+{#
+ # Symfony form theme of CruditUiBundle (docs/forms.md): the inputs of the design system, built on form_div_layout
+ # (no Bootstrap). The label is above the input and points to it (for), the help and the error are attached to it
+ # (aria-describedby, in this order), the error sets aria-invalid and has an icon, a required field has a star hidden
+ # from assistive technologies (the form explains it) and the attribute required. A compound field (choices shown as
+ # boxes, repeated, date in three lists…) is a fieldset named by its legend.
+ #
+ # Use it alone (twig.form_themes) or under the theme of an application, which keeps its layout (sections, grid):
+ # {% use '@LleCruditUi/form/theme.html.twig' %}. The block crudit_ui_label_after (empty) is what comes after the
+ # label, on its line (a Toggletip).
+ #
+ # Ids: the help is `<id>_help` (as Symfony), the error `<id>_error`.
+ #}
+{% use 'form_div_layout.html.twig' %}
+
+{# Rows #}
+
+{%- block form_row -%}
+    {%- set row_class = ('crudit-ui-field' ~ (errors|length > 0 ? ' crudit-ui-field--invalid' : '') ~ ' ' ~ row_attr.class|default(''))|trim -%}
+    {%- if compound -%}
+        <fieldset{% with {attr: row_attr|merge({class: row_class ~ ' crudit-ui-field__group'})} %}{{ block('attributes') }}{% endwith %}>
+            {{- form_label(form, null, {element: 'legend'}) -}}
+            {{- block('crudit_ui_label_after') -}}
+            {{- form_widget(form) -}}
+            {{- form_help(form) -}}
+            {{- form_errors(form) -}}
+        </fieldset>
+    {%- else -%}
+        <div{% with {attr: row_attr|merge({class: row_class})} %}{{ block('attributes') }}{% endwith %}>
+            {%- if label is not same as(false) -%}
+                <div class="crudit-ui-field__label-row">
+                    {{- form_label(form) -}}
+                    {{- block('crudit_ui_label_after') -}}
+                </div>
+            {%- endif -%}
+            {{- form_widget(form) -}}
+            {{- form_help(form) -}}
+            {{- form_errors(form) -}}
+        </div>
+    {%- endif -%}
+{%- endblock form_row -%}
+
+{# A checkbox or a radio alone: its label is next to it, inside the widget. A switch keeps its label above. #}
+{%- block checkbox_row -%}
+    {%- if (attr.role ?? null) == 'switch' -%}
+        {{- block('form_row') -}}
+    {%- else -%}
+        {%- set row_class = ('crudit-ui-field' ~ (errors|length > 0 ? ' crudit-ui-field--invalid' : '') ~ ' ' ~ row_attr.class|default(''))|trim -%}
+        <div{% with {attr: row_attr|merge({class: row_class})} %}{{ block('attributes') }}{% endwith %}>
+            {{- form_widget(form) -}}
+            {{- form_help(form) -}}
+            {{- form_errors(form) -}}
+        </div>
+    {%- endif -%}
+{%- endblock checkbox_row -%}
+
+{%- block radio_row -%}
+    {{- block('checkbox_row') -}}
+{%- endblock radio_row -%}
+
+{%- block crudit_ui_label_after -%}{%- endblock -%}
+
+{# Label, help, errors #}
+
+{%- block form_label -%}
+    {%- if label is not same as(false) -%}
+        {%- if not compound -%}
+            {%- set label_attr = label_attr|merge({for: id}) -%}
+        {%- endif -%}
+        {%- set label_attr = label_attr|merge({class: ('crudit-ui-label ' ~ label_attr.class|default(''))|trim}) -%}
+        <{{ element|default('label') }}{% with {attr: label_attr} %}{{ block('attributes') }}{% endwith %}>
+            {{- block('form_label_content') -}}
+            {{- block('crudit_ui_required') -}}
+        </{{ element|default('label') }}>
+    {%- endif -%}
+{%- endblock form_label -%}
+
+{#
+ # The star of a required field. A compound field has it only when it is one field made of several inputs (choices
+ # shown as boxes, a date or a time in lists): Symfony sets required on every compound form, so a sub-form, a
+ # collection or a repeated field (whose two inputs have their own star) has none.
+ #}
+{%- block crudit_ui_required -%}
+    {%- set crudit_ui_star = required and (not compound or expanded|default(false) or block_prefixes|filter(p => p in ['date', 'time', 'datetime', 'dateinterval'])|length > 0) -%}
+    {%- if crudit_ui_star %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif -%}
+{%- endblock -%}
+
+{%- block form_help -%}
+    {%- if help is not empty -%}
+        {%- set help_attr = help_attr|merge({class: ('crudit-ui-help ' ~ help_attr.class|default(''))|trim}) -%}
+        <p id="{{ id }}_help"{% with {attr: help_attr} %}{{ block('attributes') }}{% endwith %}>
+            {{- block('form_help_content') -}}
+        </p>
+    {%- endif -%}
+{%- endblock form_help -%}
+
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        {%- if form.parent is null -%}
+            {# Errors of the whole form, not attached to a field #}
+            <div class="crudit-ui-form-errors" role="alert">
+                {%- for error in errors -%}
+                    <p class="crudit-ui-error">{{ ui_icon('error') }}<span>{{ error.message }}</span></p>
+                {%- endfor -%}
+            </div>
+        {%- else -%}
+            <p id="{{ id }}_error" class="crudit-ui-error">
+                {{- ui_icon('error') -}}
+                <span>
+                    {%- for error in errors -%}
+                        {{ loop.first ? '' : ' ' }}{{ error.message }}
+                    {%- endfor -%}
+                </span>
+            </p>
+        {%- endif -%}
+    {%- endif -%}
+{%- endblock form_errors -%}
+
+{#
+ # Attributes of an input: the help and the error attached, the invalid state. An input of a date or a time in lists
+ # (day, month, year…) is also attached to the help and the error of its field, shown in the fieldset, like the boxes
+ # of choices; a date and a time in a datetime go up two levels.
+ #}
+
+{%- block widget_attributes -%}
+    {%- set described = (attr['aria-describedby'] ?? '')|split(' ')|filter(v => v != '') -%}
+    {%- set crudit_ui_fields = [form] -%}
+    {%- set crudit_ui_ancestor = form.parent -%}
+    {%- for level in 1..2 -%}
+        {%- if crudit_ui_ancestor is not null and crudit_ui_ancestor.vars.compound and crudit_ui_ancestor.vars.block_prefixes|filter(p => p in ['date', 'time', 'datetime', 'dateinterval'])|length > 0 -%}
+            {%- set crudit_ui_fields = [crudit_ui_ancestor]|merge(crudit_ui_fields) -%}
+            {%- set crudit_ui_ancestor = crudit_ui_ancestor.parent -%}
+        {%- else -%}
+            {%- set crudit_ui_ancestor = null -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- for field in crudit_ui_fields -%}
+        {%- if field.vars.help is not empty and (field.vars.id ~ '_help') not in described -%}
+            {%- set described = described|merge([field.vars.id ~ '_help']) -%}
+        {%- endif -%}
+        {%- if field.vars.errors|length > 0 and (field.vars.id ~ '_error') not in described -%}
+            {%- set described = described|merge([field.vars.id ~ '_error']) -%}
+            {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if described is not empty -%}
+        {%- set attr = attr|merge({'aria-describedby': described|join(' ')}) -%}
+    {%- endif -%}
+    {{- parent() -}}
+{%- endblock widget_attributes -%}
+
+{# Inputs #}
+
+{%- block form_widget_simple -%}
+    {%- if type|default('text') not in ['hidden', 'checkbox', 'radio', 'range'] -%}
+        {%- set attr = attr|merge({class: ('crudit-ui-input ' ~ attr.class|default(''))|trim}) -%}
+    {%- endif -%}
+    {{- parent() -}}
+{%- endblock form_widget_simple -%}
+
+{%- block textarea_widget -%}
+    {%- set attr = attr|merge({class: ('crudit-ui-input crudit-ui-textarea ' ~ attr.class|default(''))|trim}) -%}
+    {{- parent() -}}
+{%- endblock textarea_widget -%}
+
+{# A required list: its empty option cannot be chosen again #}
+{%- block choice_widget_collapsed -%}
+    {%- set attr = attr|merge({class: ('crudit-ui-select ' ~ attr.class|default(''))|trim}) -%}
+    {%- if required and placeholder is not none -%}
+        {%- set placeholder_attr = placeholder_attr|default({})|merge({disabled: 'disabled'}) -%}
+    {%- endif -%}
+    {{- parent() -}}
+{%- endblock choice_widget_collapsed -%}
+
+{# Choices shown as boxes: a list, each input attached to the help and the error of the field #}
+{%- block choice_widget_expanded -%}
+    {%- set group_attr = {} -%}
+    {%- set described = [] -%}
+    {%- if help is not empty %}{% set described = described|merge([id ~ '_help']) %}{% endif -%}
+    {%- if errors|length > 0 %}{% set described = described|merge([id ~ '_error']) %}{% endif -%}
+    {%- if described is not empty %}{% set group_attr = group_attr|merge({'aria-describedby': described|join(' ')}) %}{% endif -%}
+    {%- if errors|length > 0 %}{% set group_attr = group_attr|merge({'aria-invalid': 'true'}) %}{% endif -%}
+    {%- set attr = attr|merge({class: ('crudit-ui-check-list ' ~ attr.class|default(''))|trim}) -%}
+    <ul {{ block('widget_container_attributes') }}>
+        {%- for child in form -%}
+            <li>
+                {{- form_widget(child, {
+                    translation_domain: choice_translation_domain,
+                    crudit_ui_in_group: true,
+                    attr: child.vars.attr|merge(group_attr),
+                }) -}}
+            </li>
+        {%- endfor -%}
+    </ul>
+{%- endblock choice_widget_expanded -%}
+
+{# A checkbox (or a radio) and its label; with attr.role "switch", a switch whose state is written (Yes / No) #}
+{%- block checkbox_widget -%}
+    {%- set switch = (attr.role ?? null) == 'switch' -%}
+    {%- set base = switch ? 'crudit-ui-switch' : 'crudit-ui-check' -%}
+    {%- set attr = attr|merge({class: (base ~ '__input ' ~ attr.class|default(''))|trim}) -%}
+    <label class="{{ base }}">
+        <input type="{{ type|default('checkbox') }}" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %}>
+        {%- if switch -%}
+            <span class="crudit-ui-switch__state crudit-ui-switch__state--on" aria-hidden="true">{{ 'crudit_ui.boolean.yes'|trans({}, 'LleCruditUiBundle') }}</span>
+            <span class="crudit-ui-switch__state crudit-ui-switch__state--off" aria-hidden="true">{{ 'crudit_ui.boolean.no'|trans({}, 'LleCruditUiBundle') }}</span>
+        {%- elseif label is not same as(false) -%}
+            <span class="crudit-ui-check__label">
+                {{- block('form_label_content') -}}
+                {%- if not crudit_ui_in_group|default(false) %}{{ block('crudit_ui_required') }}{% endif -%}
+            </span>
+        {%- endif -%}
+    </label>
+{%- endblock checkbox_widget -%}
+
+{%- block radio_widget -%}
+    {%- set type = 'radio' -%}
+    {%- set attr = attr|filter((v, k) => k != 'role') -%}
+    {{- block('checkbox_widget') -}}
+{%- endblock radio_widget -%}
+
+{# Amounts and percentages: the unit next to the input; the focus surrounds both #}
+{%- block money_widget -%}
+    {%- set prepend = not (money_pattern starts with '{{') -%}
+    {%- set append = not (money_pattern ends with '}}') -%}
+    {%- if prepend or append -%}
+        <div class="crudit-ui-input-group">
+            {%- if prepend %}<span class="crudit-ui-input-group__unit" aria-hidden="true">{{ money_pattern|form_encode_currency }}</span>{% endif -%}
+            {{- block('form_widget_simple') -}}
+            {%- if append %}<span class="crudit-ui-input-group__unit" aria-hidden="true">{{ money_pattern|form_encode_currency }}</span>{% endif -%}
+        </div>
+    {%- else -%}
+        {{- block('form_widget_simple') -}}
+    {%- endif -%}
+{%- endblock money_widget -%}
+
+{%- block percent_widget -%}
+    {%- if symbol -%}
+        <div class="crudit-ui-input-group">
+            {{- block('form_widget_simple') -}}
+            <span class="crudit-ui-input-group__unit" aria-hidden="true">{{ symbol }}</span>
+        </div>
+    {%- else -%}
+        {{- block('form_widget_simple') -}}
+    {%- endif -%}
+{%- endblock percent_widget -%}
