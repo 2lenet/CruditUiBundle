@@ -47,6 +47,20 @@ crudit_ui:
             from: "From"
             to: "To"
             ready_made: "Ready-made periods for %label%"
+    form:
+        date:
+            day: "Day"
+            month: "Month"
+            year: "Year"
+            hour: "Hour"
+            minute: "Minute"
+            second: "Second"
+        count:
+            one: "%length% / %count% character"
+            many: "%length% / %count% characters"
+            left_one: "%count% character left"
+            left_many: "%count% characters left"
+            full: "Maximum number of characters reached"
     language:
         label: Language
     selection:

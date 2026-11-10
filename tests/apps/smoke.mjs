@@ -135,6 +135,34 @@ try {
     assert.deepEqual(await switchState(), ['Yes'], 'the switch does not write its state');
     await page.click('#kit-form-active');
     assert.deepEqual(await switchState(), ['No'], 'the state of the switch does not follow it');
+    // Counter of characters: it follows the typing, and tells the characters left near the limit, once the typing pauses
+    const charCount = () => page.$eval('#kit-form-notes_count [data-crudit-ui-count]', (span) => span.textContent);
+    const countLive = () => page.$eval('#kit-form-notes_count [data-crudit-ui-count-live]', (span) => span.textContent);
+    assert.equal(await charCount(), '9 / 80 characters');
+    await page.focus('#kit-form-notes');
+    await page.keyboard.press('End');
+    await page.keyboard.type(' 2');
+    assert.equal(await charCount(), '11 / 80 characters', 'the counter does not follow the typing');
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    assert.equal(await countLive(), '', 'the characters left are told far from the limit');
+    await page.$eval('#kit-form-notes', (area) => {
+        area.value = 'x'.repeat(77);
+        area.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    assert.equal(await charCount(), '77 / 80 characters');
+    assert.equal(await countLive(), '', 'the characters left are told before the typing pauses');
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    assert.equal(await countLive(), '3 characters left', 'the characters left are not told near the limit');
+    // Segmented control: the arrows of the keyboard move the choice (native radios)
+    await page.focus('#kit-form-size input:checked');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.$eval('#kit-form-size input:checked', (radio) => radio.value), 'l', 'the arrows do not move the segmented control');
+    // Colour: its code follows the colour chosen
+    await page.$eval('#kit-form-tint', (input) => {
+        input.value = '#ff0000';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    assert.equal(await page.$eval('#kit-forms [data-color-code]', (code) => code.textContent), '#ff0000', 'the code of the colour does not follow it');
     await page.click('#kit-forms .crudit-ui-toggletip');
     assert.ok(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open')), 'the toggletip does not open its help');
     await page.keyboard.press('Escape');

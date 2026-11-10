@@ -10,14 +10,20 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\ColorType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\PercentType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
+use Symfony\Component\Form\Extension\Core\Type\TelType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\Forms;
@@ -25,7 +31,8 @@ use Twig\Environment;
 
 /**
  * The form theme `@LleCruditUi/form/theme.html.twig`: labels above and attached, help and errors attached to the
- * input, required fields, boxes, switch and units.
+ * input, required fields, boxes, switch and units, keyboards of a phone, counter of characters, segmented control,
+ * colour, dates in lists.
  */
 class FormThemeTest extends TestCase
 {
@@ -243,6 +250,122 @@ class FormThemeTest extends TestCase
         self::assertFalse($input->hasAttribute('aria-invalid'));
     }
 
+    public function testTheKeyboardOfAPhoneFollowsTheKindOfTheValue(): void
+    {
+        $form = $this->form()
+            ->add('quantity', IntegerType::class)
+            ->add('weight', NumberType::class)
+            ->add('price', MoneyType::class)
+            ->add('rate', PercentType::class)
+            ->add('email', EmailType::class)
+            ->add('phone', TelType::class)
+            ->add('site', UrlType::class, ['default_protocol' => null])
+            ->add('native', NumberType::class, ['html5' => true])
+            ->add('count', NumberType::class, ['scale' => 0])
+            ->add('code', TelType::class, ['attr' => ['inputmode' => 'numeric']])
+            ->add('name', TextType::class)
+            ->getForm();
+        $html = $this->renderForm($form);
+
+        $modes = ['quantity' => 'numeric', 'weight' => 'decimal', 'price' => 'decimal', 'rate' => 'decimal', 'email' => 'email', 'phone' => 'tel', 'site' => 'url', 'count' => 'numeric', 'code' => 'numeric'];
+        foreach ($modes as $name => $mode) {
+            self::assertSame($mode, $html->getElementById('form_' . $name)?->getAttribute('inputmode'), $name);
+        }
+        self::assertSame('text', $html->getElementById('form_weight')?->getAttribute('type'), 'a number is typed as text (decimal comma)');
+        self::assertFalse((bool) $html->getElementById('form_native')?->hasAttribute('inputmode'), 'type="number" has the keyboard of the browser');
+        self::assertFalse((bool) $html->getElementById('form_name')?->hasAttribute('inputmode'));
+        self::assertSame('false', $html->getElementById('form_email')?->getAttribute('spellcheck'));
+        self::assertFalse((bool) $html->getElementById('form_name')?->hasAttribute('spellcheck'));
+    }
+
+    public function testALongTextWithAMaximumLengthHasACounterAttachedAfterItsHelp(): void
+    {
+        $form = $this->form()
+            ->add('notes', TextareaType::class, ['help' => 'For the driver', 'attr' => ['maxlength' => 80], 'data' => 'Back door'])
+            ->add('email', EmailType::class, ['attr' => ['maxlength' => 80]])
+            ->add('name', TextType::class, ['attr' => ['maxlength' => 120]])
+            ->add('code', TextType::class, ['attr' => ['maxlength' => 8]])
+            ->add('memo', TextareaType::class, ['attr' => ['maxlength' => 50]])
+            ->getForm();
+        $form->submit(['notes' => 'Back door', 'email' => 'a@b.c', 'name' => 'Bob', 'code' => 'AB', 'memo' => '']);
+        $form->get('notes')->addError(new FormError('Too long.'));
+        $html = $this->renderTemplate($form, "{{ form_row(form.notes) }}{{ form_row(form.email) }}{{ form_row(form.name) }}{{ form_row(form.code, {counter: true}) }}{{ form_row(form.memo, {counter: false}) }}");
+
+        $notes = $html->getElementById('form_notes');
+        self::assertSame('form_notes_help form_notes_count form_notes_error', $notes?->getAttribute('aria-describedby'));
+        self::assertSame('2lenet--crudit-ui-bundle--char-count', $notes->getAttribute('data-controller'));
+        self::assertSame('%length% / 80 characters', $notes->getAttribute('data-2lenet--crudit-ui-bundle--char-count-many-value'));
+        self::assertSame('%count% characters left', $notes->getAttribute('data-2lenet--crudit-ui-bundle--char-count-left-many-value'));
+
+        $counter = $html->getElementById('form_notes_count');
+        self::assertSame('crudit-ui-field__count', $counter?->getAttribute('class'));
+        self::assertSame('9 / 80 characters', $counter->querySelector('[data-crudit-ui-count]')?->textContent);
+        self::assertSame('polite', $counter->querySelector('[data-crudit-ui-count-live]')?->getAttribute('aria-live'));
+        $help = $html->getElementById('form_notes_help');
+        self::assertSame($counter, $help?->nextElementSibling, 'the counter is under the help, above the error');
+
+        self::assertNull($html->getElementById('form_email_count'), 'a text on one line has none by default');
+        self::assertNull($html->getElementById('form_name_count'), 'a text on one line has none (Symfony puts the length of the column in maxlength)');
+        self::assertFalse((bool) $html->getElementById('form_name')?->hasAttribute('data-controller'));
+        self::assertSame('2 / 8 characters', $html->getElementById('form_code_count')?->querySelector('[data-crudit-ui-count]')?->textContent, 'asked with counter: true');
+        self::assertNull($html->getElementById('form_memo_count'), 'taken away with counter: false');
+        self::assertFalse((bool) $html->getElementById('form_memo')?->hasAttribute('aria-describedby'));
+    }
+
+    public function testShortChoicesWithOneAnswerCanBeASegmentedControl(): void
+    {
+        $form = $this->form()
+            ->add('size', ChoiceType::class, ['label' => 'Size', 'choices' => ['Small' => 's', 'Large' => 'l'], 'expanded' => true, 'help' => 'Of the box', 'data' => 'l'])
+            ->add('channels', ChoiceType::class, ['choices' => ['Mail' => 'mail'], 'expanded' => true, 'multiple' => true])
+            ->getForm();
+        $html = $this->renderTemplate($form, "{{ form_row(form.size, {segmented: true}) }}{{ form_row(form.channels, {segmented: true}) }}");
+
+        $fieldset = $html->querySelector('fieldset.crudit-ui-field__group:has(#form_size)');
+        self::assertSame('Size', trim(str_replace(["\u{a0}", '*'], '', (string) $fieldset?->querySelector('legend')?->textContent)));
+        $control = $html->getElementById('form_size');
+        self::assertNotNull($control);
+        self::assertSame('div', strtolower($control->tagName));
+        self::assertSame('crudit-ui-segmented', $control->getAttribute('class'));
+        $options = $control->querySelectorAll('label.crudit-ui-segmented__option');
+        self::assertCount(2, $options);
+        $large = $options->item(1);
+        self::assertNotNull($large);
+        $radio = $large->querySelector('input.crudit-ui-segmented__input');
+        self::assertSame('radio', $radio?->getAttribute('type'));
+        self::assertTrue($radio->hasAttribute('checked'));
+        self::assertSame('form_size_help', $radio->getAttribute('aria-describedby'));
+        self::assertSame('Large', $large->querySelector('.crudit-ui-segmented__label')?->textContent);
+        self::assertNull($control->querySelector('.crudit-ui-check'));
+
+        self::assertNotNull($html->querySelector('ul#form_channels.crudit-ui-check-list'), 'several answers stay boxes');
+    }
+
+    public function testAColourShowsItsCode(): void
+    {
+        $html = $this->renderForm($this->form()->add('tint', ColorType::class, ['data' => '#1e40af'])->getForm());
+
+        $input = $html->querySelector('.crudit-ui-input-group--color > input#form_tint');
+        self::assertSame('color', $input?->getAttribute('type'));
+        self::assertSame('2lenet--crudit-ui-bundle--color-code', $input->getAttribute('data-controller'));
+        self::assertSame('#1e40af', $html->querySelector('.crudit-ui-input-group--color > [data-color-code]')?->textContent);
+    }
+
+    public function testTheListsOfADateAreOnOneLineEachNamed(): void
+    {
+        $form = $this->form()
+            ->add('birth', DateType::class, ['widget' => 'choice'])
+            ->add('day', DateType::class, ['widget' => 'single_text'])
+            ->getForm();
+        $html = $this->renderForm($form);
+
+        self::assertStringContainsString('crudit-ui-date-lists', (string) $html->getElementById('form_birth')?->getAttribute('class'));
+        foreach (['day' => 'Day', 'month' => 'Month', 'year' => 'Year'] as $part => $name) {
+            self::assertSame($name, $html->getElementById('form_birth_' . $part)?->getAttribute('aria-label'), 'each list is named, the legend names the date');
+        }
+        self::assertFalse((bool) $html->getElementById('form_day')?->hasAttribute('aria-label'), 'a date in one input is named by its label');
+        self::assertStringNotContainsString('crudit-ui-date-lists', (string) $html->getElementById('form_day')?->getAttribute('class'));
+    }
+
     public function testToggletipOpensItsPanel(): void
     {
         $html = $this->html($this->render($this->kernel, '<twig:LleCruditUi:Toggletip label="Help on the field Phone" id="phone-help">With the <b>country code</b>.</twig:LleCruditUi:Toggletip>'));
@@ -275,6 +398,17 @@ class FormThemeTest extends TestCase
         $template = $twig->createTemplate("{% form_theme form with ['@LleCruditUi/form/theme.html.twig'] only %}{{ form(form) }}");
 
         return $this->html($template->render(['form' => $form->createView()]));
+    }
+
+    /**
+     * @param FormInterface<mixed> $form
+     */
+    private function renderTemplate(FormInterface $form, string $template): \Dom\HTMLDocument
+    {
+        /** @var Environment $twig */
+        $twig = $this->container()->get('twig');
+
+        return $this->html($twig->createTemplate("{% form_theme form with ['@LleCruditUi/form/theme.html.twig'] only %}" . $template)->render(['form' => $form->createView()]));
     }
 
     private function container(): ContainerInterface

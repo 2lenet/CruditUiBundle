@@ -40,19 +40,28 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Required | the attribute `required`, and a star `span.crudit-ui-required` hidden from assistive technologies: **explain it** above the form ("The fields marked with a star (*) are required"). A compound field has the star only when it is one field (choices as boxes, a date or a time in lists), not a sub-form, a collection or a repeated field |
 | Help | `p.crudit-ui-help#<id>_help` |
 | Error | `p.crudit-ui-error#<id>_error`, with an icon; the input has `aria-invalid="true"` |
-| `aria-describedby` | the help, then the error, after the ids given by the project in `attr`; each list of a date or a time in lists is also attached to the help and the error of its field |
+| `aria-describedby` | the help, the counter of characters, then the error, after the ids given by the project in `attr`; each list of a date or a time in lists is also attached to the help and the error of its field |
 | Errors of the whole form | `div.crudit-ui-form-errors` with `role="alert"` |
 | Compound field, choices as boxes | `fieldset.crudit-ui-field.crudit-ui-field__group` named by its `legend` |
 | Text, number, date… | `input.crudit-ui-input` |
+| Keyboard of a phone | `inputmode` for the kind of the value, unless `attr` gives one: `numeric` for an integer, `decimal` for a number, an amount or a percentage typed as text (Symfony sets it for a number and an amount, `numeric` with `scale: 0`), `email`, `tel`, `url`; `spellcheck="false"` on an e-mail address. A number stays typed as text (Symfony reads the point and the comma); with `html5: true`, `type="number"` has the keyboard of the browser |
+| Counter of characters | a long text with `attr.maxlength`: `p.crudit-ui-field__count#<id>_count` under the help ("27 / 80 characters"), attached to the input; the controller `char-count` (on the input) updates it while typing and tells the characters left to assistive technologies near the limit (the last tenth, 5 at least; `data-2lenet--crudit-ui-bundle--char-count-threshold-value` on the input to change it), once the typing pauses. A text on one line has it with the variable `counter`, `{{ form_row(form.code, {counter: true}) }}` (Symfony puts the length of the column of a string in `maxlength`: every text would have one); `counter: false` takes it away from a long text |
+| Date or time in lists | `widget: 'choice'`: the lists on one line (`.crudit-ui-date-lists`), wrapped when the room is short; the legend names the field, each list (or input of `widget: 'text'`) its part, `aria-label` *Day*, *Month*, *Year*, *Hour*, *Minute*, *Second* |
 | List | `select.crudit-ui-select`; the empty option of a required list is disabled: once a value is chosen, it cannot be chosen again |
 | Long text | `textarea.crudit-ui-input.crudit-ui-textarea` |
 | Checkboxes, radios | `ul.crudit-ui-check-list > li > label.crudit-ui-check` (input and label); each input is attached to the help and the error of the field |
+| Segmented control | short choices, one answer (`expanded`, not `multiple`), asked with the variable `segmented`: `{{ form_row(form.size, {segmented: true}) }}` (CruditBundle: the option `segmented` of a choice). `div.crudit-ui-segmented > label.crudit-ui-segmented__option` with the native radio (`__input`, invisible over its label: the arrows of the keyboard, sent with the form) and its label (`__label`); each radio is attached to the help and the error |
 | A checkbox alone | its label next to it, inside the widget |
 | Switch | a checkbox with `attr: {role: 'switch'}`: `label.crudit-ui-switch`, a native `input[type=checkbox][role=switch]` (sent with the form) and its state written, *Yes* / *No* (hidden from assistive technologies, which read the state of the switch); its label stays above |
 | Amount, percentage | `div.crudit-ui-input-group` with the unit (`__unit`, hidden from assistive technologies): the focus surrounds the input and its unit |
+| Colour | `div.crudit-ui-input-group.crudit-ui-input-group--color`: the native picker and its code next to it, kept up to date by the controller `color-code` |
 | File | the native `input[type=file]`, restyled |
 
 No floating label, no `placeholder` used as a label.
+
+The controllers `char-count` and `color-code` are enabled by Flex (`assets/controllers.json`, see
+[Installation](installation.md)); without them the counter shows the length of the value when the page is loaded and
+the code of a colour its value then.
 
 The theme does not change the `<form>` tag. Without `novalidate` on it, the browser checks the required fields itself
 before sending the form and shows its own bubbles instead of the errors of the theme. To show only the messages of the
@@ -67,8 +76,10 @@ server, add it to the form:
 `crudit-ui-field`, `crudit-ui-field--invalid`, `crudit-ui-field__group`, `crudit-ui-field__label-row`,
 `crudit-ui-label`, `crudit-ui-required`, `crudit-ui-help`, `crudit-ui-error`, `crudit-ui-form-errors`,
 `crudit-ui-input`, `crudit-ui-select`, `crudit-ui-textarea`, `crudit-ui-input-group`, `crudit-ui-input-group__unit`,
-`crudit-ui-input-group--color`, `crudit-ui-check-list`, `crudit-ui-check`, `crudit-ui-check__input`,
-`crudit-ui-check__label`, `crudit-ui-switch`, `crudit-ui-switch__input`, `crudit-ui-switch__state` (`--on`, `--off`).
+`crudit-ui-input-group--color`, `crudit-ui-field__count`, `crudit-ui-date-lists`, `crudit-ui-check-list`,
+`crudit-ui-check`, `crudit-ui-check__input`, `crudit-ui-check__label`, `crudit-ui-segmented`,
+`crudit-ui-segmented__option`, `crudit-ui-segmented__input`, `crudit-ui-segmented__label`, `crudit-ui-switch`,
+`crudit-ui-switch__input`, `crudit-ui-switch__state` (`--on`, `--off`).
 They can be used without the theme, in a form written by hand.
 
 The help opened by a button next to a label is the component [Toggletip](components.md#llecrudituitoggletip).

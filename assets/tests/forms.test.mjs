@@ -34,3 +34,15 @@ test('the button of a toggletip stays active while its panel is open (popovertar
     assert.match(css, /\.crudit-ui-toggletip:is\(:hover, ?:has\(\+ ?\.crudit-ui-toggletip__panel:popover-open\)\)\{/);
     assert.ok(!css.includes('.crudit-ui-toggletip[aria-expanded'));
 });
+
+test('a segmented control keeps the native radio, draws the focus on its label and tells the checked one by more than the colour', () => {
+    assert.match(css, /\.crudit-ui-segmented__input\{position:absolute;inset:0;margin:0;opacity:0;/);
+    assert.ok(css.includes('.crudit-ui-segmented__input:focus-visible+.crudit-ui-segmented__label{outline:var(--focus-ring-width) solid var(--c-focus)'));
+    assert.match(css, /\.crudit-ui-segmented__input:checked\+\.crudit-ui-segmented__label\{border-color:var\(--c-border-strong\);[^}]*box-shadow:var\(--shadow-sm\);[^}]*font-weight:var\(--font-weight-semibold\)\}/);
+    assert.match(css, /@media\(forced-colors: active\)\{\.crudit-ui-segmented__input:checked\+\.crudit-ui-segmented__label\{border-color:Highlight\}/);
+});
+
+test('the counter of characters keeps its width while the digits change, the lists of a date are on one line', () => {
+    assert.match(css, /\.crudit-ui-field__count\{[^}]*font-variant-numeric:tabular-nums\}/);
+    assert.match(css, /\.crudit-ui-date-lists\{display:flex;flex-wrap:wrap;/);
+});

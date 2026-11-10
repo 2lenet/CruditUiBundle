@@ -51,7 +51,36 @@
             <div class="crudit-ui-field__label-row">
                 <label for="kit-form-notes" class="crudit-ui-label">Notes</label>
             </div>
-            <textarea id="kit-form-notes" class="crudit-ui-input crudit-ui-textarea"></textarea>
+            <textarea id="kit-form-notes" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-notes_count"
+                data-controller="2lenet--crudit-ui-bundle--char-count"
+                data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-many-value="{{ 'crudit_ui.form.count.left_many'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-full-value="{{ 'crudit_ui.form.count.full'|trans({}, 'LleCruditUiBundle') }}">Back door</textarea>
+            <p id="kit-form-notes_count" class="crudit-ui-field__count">
+                <span data-crudit-ui-count>{{ 'crudit_ui.form.count.many'|trans({'%length%': 9, '%count%': 80}, 'LleCruditUiBundle') }}</span>
+                <span class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
+            </p>
+        </div>
+
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Size</legend>
+            <div id="kit-form-size" class="crudit-ui-segmented">
+                <label class="crudit-ui-segmented__option"><input type="radio" name="kit-form-size" class="crudit-ui-segmented__input" value="s"><span class="crudit-ui-segmented__label">Small</span></label>
+                <label class="crudit-ui-segmented__option"><input type="radio" name="kit-form-size" class="crudit-ui-segmented__input" value="m" checked><span class="crudit-ui-segmented__label">Medium</span></label>
+                <label class="crudit-ui-segmented__option"><input type="radio" name="kit-form-size" class="crudit-ui-segmented__input" value="l"><span class="crudit-ui-segmented__label">Large</span></label>
+            </div>
+        </fieldset>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-tint" class="crudit-ui-label">Colour</label>
+            </div>
+            <div class="crudit-ui-input-group crudit-ui-input-group--color">
+                <input type="color" id="kit-form-tint" class="crudit-ui-input" value="#1e40af" data-controller="2lenet--crudit-ui-bundle--color-code">
+                <span class="crudit-ui-input-group__unit" data-color-code>#1e40af</span>
+            </div>
         </div>
 
         <fieldset class="crudit-ui-field crudit-ui-field__group">

@@ -19,6 +19,18 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "char-count": {
+                "main": "dist/controllers/char_count_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
+            "color-code": {
+                "main": "dist/controllers/color_code_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "command-palette": {
                 "main": "dist/controllers/command_palette_controller.js",
                 "webpackMode": "eager",

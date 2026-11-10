@@ -9,6 +9,14 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "char-count": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "color-code": {
+                "enabled": true,
+                "fetch": "eager"
+            },
             "command-palette": {
                 "enabled": true,
                 "fetch": "eager"
