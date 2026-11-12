@@ -127,6 +127,111 @@ try {
     assert.equal(counter.text, 'In progress 12');
     assert.notEqual(counter.color, counter.neutral, 'the status of the counter has no colour of its tone');
 
+    // Form inputs: the switch writes its state, the toggletip opens its help (a popover), Escape closes it.
+    await page.setViewport({width: 1440, height: 900});
+    await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+    const switchState = () => page.$eval('#kit-forms .crudit-ui-switch', (label) => [...label.querySelectorAll('.crudit-ui-switch__state')]
+        .filter((state) => getComputedStyle(state).display !== 'none').map((state) => state.textContent));
+    assert.deepEqual(await switchState(), ['Yes'], 'the switch does not write its state');
+    await page.click('#kit-form-active');
+    assert.deepEqual(await switchState(), ['No'], 'the state of the switch does not follow it');
+    // Counter of characters: it follows the typing, and tells the characters left near the limit, once the typing pauses
+    const charCount = () => page.$eval('#kit-form-notes_count [data-crudit-ui-count]', (span) => span.textContent);
+    const countLive = () => page.$eval('#kit-form-notes_count_live', (span) => span.textContent);
+    // An absence of message cannot be awaited: the pause of char-count (600 ms), and a margin
+    const announcePause = () => new Promise((resolve) => setTimeout(resolve, 600 + 200));
+    assert.equal(await page.$eval('#kit-form-notes_count', (counter) => counter.textContent.trim()), '9 / 80 characters', 'the message told is in the description of the input');
+    assert.equal(await charCount(), '9 / 80 characters');
+    await page.focus('#kit-form-notes');
+    await page.keyboard.press('End');
+    await page.keyboard.type(' 2');
+    assert.equal(await charCount(), '11 / 80 characters', 'the counter does not follow the typing');
+    await announcePause();
+    assert.equal(await countLive(), '', 'the characters left are told far from the limit');
+    await page.$eval('#kit-form-notes', (area) => {
+        area.value = 'x'.repeat(77);
+        area.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    assert.equal(await charCount(), '77 / 80 characters');
+    assert.equal(await countLive(), '', 'the characters left are told before the typing pauses');
+    await page.waitForFunction(() => document.getElementById('kit-form-notes_count_live').textContent === '3 characters left', {timeout: 2000}).catch(() => null);
+    assert.equal(await countLive(), '3 characters left', 'the characters left are not told near the limit');
+    // Segmented control: the arrows of the keyboard move the choice (native radios)
+    await page.focus('#kit-form-size input:checked');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.$eval('#kit-form-size input:checked', (radio) => radio.value), 'l', 'the arrows do not move the segmented control');
+    // Colour: its code follows the colour chosen
+    await page.$eval('#kit-form-tint', (input) => {
+        input.value = '#ff0000';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    assert.equal(await page.$eval('#kit-forms [data-color-code]', (code) => code.textContent), '#ff0000', 'the code of the colour does not follow it');
+    // A value already near the limit when the page is loaded: shown, not told (nothing typed yet)
+    assert.equal(await page.$eval('#kit-form-memo_count [data-crudit-ui-count]', (span) => span.textContent), '78 / 80 characters');
+    await announcePause();
+    assert.equal(await page.$eval('#kit-form-memo_count_live', (span) => span.textContent), '', 'the characters left are told when the page is loaded');
+    // A reset of the form: the counter and the code of the colour show the values put back
+    await page.$eval('#kit-form-notes', (area) => area.form.reset());
+    await page.waitForFunction(() => document.querySelector('#kit-form-notes_count [data-crudit-ui-count]').textContent === '9 / 80 characters', {timeout: 1000}).catch(() => null);
+    assert.equal(await charCount(), '9 / 80 characters', 'the counter keeps the value before the reset');
+    assert.equal(await countLive(), '', 'the characters left before the reset are still told');
+    assert.equal(await page.$eval('#kit-forms [data-color-code]', (code) => code.textContent), '#1e40af', 'the code of the colour keeps the colour before the reset');
+    // A date in inputs (widget text): the day, the month and the year on one line, narrow
+    const dateParts = await page.$$eval('#kit-form-delivery > .crudit-ui-input', (inputs) => inputs.map((input) => {
+        const box = input.getBoundingClientRect();
+
+        return {top: Math.round(box.top), width: box.width, room: input.parentElement.getBoundingClientRect().width};
+    }));
+    assert.equal(new Set(dateParts.map((part) => part.top)).size, 1, 'the inputs of a date take one line each');
+    assert.ok(dateParts[0].width < dateParts[2].width && dateParts[2].width < dateParts[0].room / 3, 'the inputs of a date are wider than their digits');
+    await page.click('#kit-forms .crudit-ui-toggletip');
+    assert.ok(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open')), 'the toggletip does not open its help');
+    await page.keyboard.press('Escape');
+    assert.ok(!(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'))), 'Escape does not close the toggletip');
+    // The hover opens it for a look, leaving closes it; a click keeps it open; the keyboard focus opens it too.
+    const tipOpen = () => page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'));
+    const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // (after Escape the button still has the focus, shown since a key was pressed: it would keep the panel open)
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
+    await page.mouse.move(5, 5);
+    await page.hover('#kit-forms .crudit-ui-toggletip');
+    await pause(250);
+    assert.ok(await tipOpen(), 'the hover does not open the toggletip');
+    await page.mouse.move(5, 5);
+    await pause(400);
+    assert.ok(!(await tipOpen()), 'leaving the toggletip does not close it');
+    await page.hover('#kit-forms .crudit-ui-toggletip');
+    await pause(250);
+    await page.click('#kit-forms .crudit-ui-toggletip');
+    await page.mouse.move(5, 5);
+    await pause(400);
+    assert.ok(await tipOpen(), 'a click on a toggletip opened by the hover does not keep it open');
+    await page.keyboard.press('Escape');
+    assert.ok(!(await tipOpen()), 'Escape does not close a toggletip kept open');
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
+    assert.ok(!(await tipOpen()), 'leaving the toggletip with the keyboard does not close it');
+    // With the keyboard into the panel (a link in the help), then out of it: the panel closes. Its button stays active
+    // while it is open (popovertarget sets no aria-expanded in the DOM).
+    const tipButtonColor = () => page.$eval('#kit-forms .crudit-ui-toggletip', (button) => getComputedStyle(button).backgroundColor);
+    const closedColor = await tipButtonColor();
+    await page.$eval('#kit-form-name-tip', (panel) => panel.insertAdjacentHTML('beforeend', ' <a href="#kit-forms" id="kit-form-name-tip-link">More</a>'));
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
+    assert.notEqual(await tipButtonColor(), closedColor, 'the button of an open toggletip is not active');
+    await page.$eval('#kit-form-name-tip-link', (link) => link.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), 'going into the panel with the keyboard closes the toggletip');
+    await page.$eval('#kit-form-amount', (input) => input.focus({focusVisible: true}));
+    assert.ok(!(await tipOpen()), 'leaving the panel with the keyboard does not close the toggletip');
+    await page.$eval('#kit-form-name-tip-link', (link) => link.remove());
+    const unitFocus = await page.$eval('#kit-form-amount', (input) => {
+        input.focus({focusVisible: true});
+        return getComputedStyle(input.closest('.crudit-ui-input-group')).outlineStyle;
+    });
+    assert.equal(unitFocus, 'solid', 'the focus does not surround the input and its unit');
+
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});
     const widths = await page.evaluate(() => ({client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth}));

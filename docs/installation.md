@@ -77,11 +77,14 @@ Flex does not create the Stimulus configuration of a project that did not have t
         "@2lenet/crudit-ui-bundle": {
             "alert": {"enabled": true, "fetch": "eager"},
             "button": {"enabled": true, "fetch": "eager"},
+            "char-count": {"enabled": true, "fetch": "eager"},
+            "color-code": {"enabled": true, "fetch": "eager"},
             "dialog": {"enabled": true, "fetch": "eager"},
             "disclosure": {"enabled": true, "fetch": "eager"},
             "dropdown": {"enabled": true, "fetch": "eager"},
             "tabs": {"enabled": true, "fetch": "eager"},
             "theme": {"enabled": true, "fetch": "eager"},
+            "toggletip": {"enabled": true, "fetch": "eager"},
             "tooltip": {"enabled": true, "fetch": "eager"}
         }
     },

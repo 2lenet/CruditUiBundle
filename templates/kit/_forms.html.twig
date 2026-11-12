@@ -1,0 +1,151 @@
+<form class="crudit-ui-kit__columns" novalidate>
+    <div class="crudit-ui-kit__stack">
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-name" class="crudit-ui-label">Customer<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span></label>
+                <twig:LleCruditUi:Toggletip label="Help on the field Customer" id="kit-form-name-tip">The name <b>on the invoice</b>.</twig:LleCruditUi:Toggletip>
+            </div>
+            <input type="text" id="kit-form-name" class="crudit-ui-input" required aria-describedby="kit-form-name_help" value="Martin SA">
+            <p id="kit-form-name_help" class="crudit-ui-help">As on the purchase order</p>
+        </div>
+
+        <div class="crudit-ui-field crudit-ui-field--invalid">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-phone" class="crudit-ui-label">Phone of the contact<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span></label>
+            </div>
+            <input type="tel" id="kit-form-phone" class="crudit-ui-input" required aria-invalid="true" aria-describedby="kit-form-phone_error" value="06 12">
+            <p id="kit-form-phone_error" class="crudit-ui-error">{{ ui_icon('error') }}<span>Enter a number of 10 digits, for example 06 12 34 56 78.</span></p>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-kind" class="crudit-ui-label">Kind<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span></label>
+            </div>
+            <select id="kit-form-kind" class="crudit-ui-select" required>
+                <option value="" disabled selected>Choose…</option>
+                <option>Maintenance</option>
+                <option>Repair</option>
+            </select>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-amount" class="crudit-ui-label">Amount</label>
+            </div>
+            <div class="crudit-ui-input-group">
+                <input type="text" inputmode="decimal" id="kit-form-amount" class="crudit-ui-input" value="1 250,00">
+                <span class="crudit-ui-input-group__unit" aria-hidden="true">€</span>
+            </div>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-disabled" class="crudit-ui-label">Number</label>
+            </div>
+            <input type="text" id="kit-form-disabled" class="crudit-ui-input" disabled value="INT-2026-0412">
+        </div>
+    </div>
+
+    <div class="crudit-ui-kit__stack">
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-notes" class="crudit-ui-label">Notes</label>
+            </div>
+            <textarea id="kit-form-notes" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-notes_count"
+                data-controller="2lenet--crudit-ui-bundle--char-count"
+                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ app.request.locale ?? '' }}"
+                data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-many-value="{{ 'crudit_ui.form.count.left_many'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-full-value="{{ 'crudit_ui.form.count.full'|trans({}, 'LleCruditUiBundle') }}">Back door</textarea>
+            <p id="kit-form-notes_count" class="crudit-ui-field__count">
+                <span data-crudit-ui-count>{{ 'crudit_ui.form.count.many'|trans({'%length%': 9, '%count%': 80}, 'LleCruditUiBundle') }}</span>
+            </p>
+            <span id="kit-form-notes_count_live" class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-memo" class="crudit-ui-label">Memo (near the limit when loaded)</label>
+            </div>
+            <textarea id="kit-form-memo" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-memo_count"
+                data-controller="2lenet--crudit-ui-bundle--char-count"
+                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ app.request.locale ?? '' }}"
+                data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-many-value="{{ 'crudit_ui.form.count.left_many'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-full-value="{{ 'crudit_ui.form.count.full'|trans({}, 'LleCruditUiBundle') }}">Ring twice at the back door, the bell at the front does not work since last we</textarea>
+            <p id="kit-form-memo_count" class="crudit-ui-field__count">
+                <span data-crudit-ui-count>{{ 'crudit_ui.form.count.many'|trans({'%length%': 78, '%count%': 80}, 'LleCruditUiBundle') }}</span>
+            </p>
+            <span id="kit-form-memo_count_live" class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
+        </div>
+
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Size</legend>
+            <div id="kit-form-size" class="crudit-ui-segmented">
+                <label class="crudit-ui-segmented__option"><input type="radio" name="kit-form-size" class="crudit-ui-segmented__input" value="s"><span class="crudit-ui-segmented__label">Small</span></label>
+                <label class="crudit-ui-segmented__option"><input type="radio" name="kit-form-size" class="crudit-ui-segmented__input" value="m" checked><span class="crudit-ui-segmented__label">Medium</span></label>
+                <label class="crudit-ui-segmented__option"><input type="radio" name="kit-form-size" class="crudit-ui-segmented__input" value="l"><span class="crudit-ui-segmented__label">Large</span></label>
+            </div>
+        </fieldset>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-tint" class="crudit-ui-label">Colour</label>
+            </div>
+            <div class="crudit-ui-input-group crudit-ui-input-group--color">
+                <input type="color" id="kit-form-tint" class="crudit-ui-input" value="#1e40af" data-controller="2lenet--crudit-ui-bundle--color-code">
+                <span class="crudit-ui-input-group__unit" aria-hidden="true" data-color-code>#1e40af</span>
+            </div>
+        </div>
+
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Delivery date (inputs)</legend>
+            <div id="kit-form-delivery" class="crudit-ui-date-lists">
+                <input type="text" id="kit-form-delivery_day" class="crudit-ui-input" inputmode="numeric" aria-label="{{ 'crudit_ui.form.date.day'|trans({}, 'LleCruditUiBundle') }}" value="24">/<input type="text" id="kit-form-delivery_month" class="crudit-ui-input" inputmode="numeric" aria-label="{{ 'crudit_ui.form.date.month'|trans({}, 'LleCruditUiBundle') }}" value="12">/<input type="text" id="kit-form-delivery_year" class="crudit-ui-input crudit-ui-input--year" inputmode="numeric" aria-label="{{ 'crudit_ui.form.date.year'|trans({}, 'LleCruditUiBundle') }}" value="2026">
+            </div>
+        </fieldset>
+
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Channels</legend>
+            <ul class="crudit-ui-check-list">
+                <li><label class="crudit-ui-check"><input type="checkbox" class="crudit-ui-check__input" checked><span class="crudit-ui-check__label">Mail</span></label></li>
+                <li><label class="crudit-ui-check"><input type="checkbox" class="crudit-ui-check__input"><span class="crudit-ui-check__label">Phone</span></label></li>
+                <li><label class="crudit-ui-check"><input type="checkbox" class="crudit-ui-check__input" disabled><span class="crudit-ui-check__label">Fax (disabled)</span></label></li>
+            </ul>
+        </fieldset>
+
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Priority</legend>
+            <ul class="crudit-ui-check-list">
+                <li><label class="crudit-ui-check"><input type="radio" name="kit-form-priority" class="crudit-ui-check__input" checked><span class="crudit-ui-check__label">Normal</span></label></li>
+                <li><label class="crudit-ui-check"><input type="radio" name="kit-form-priority" class="crudit-ui-check__input"><span class="crudit-ui-check__label">Urgent</span></label></li>
+            </ul>
+        </fieldset>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-active" class="crudit-ui-label">Active</label>
+            </div>
+            <label class="crudit-ui-switch">
+                <input type="checkbox" role="switch" id="kit-form-active" class="crudit-ui-switch__input" checked>
+                <span class="crudit-ui-switch__state crudit-ui-switch__state--on" aria-hidden="true">{{ 'crudit_ui.boolean.yes'|trans({}, 'LleCruditUiBundle') }}</span>
+                <span class="crudit-ui-switch__state crudit-ui-switch__state--off" aria-hidden="true">{{ 'crudit_ui.boolean.no'|trans({}, 'LleCruditUiBundle') }}</span>
+            </label>
+        </div>
+
+        <div class="crudit-ui-field">
+            <label class="crudit-ui-check"><input type="checkbox" id="kit-form-terms" class="crudit-ui-check__input"><span class="crudit-ui-check__label">Send a copy to the customer</span></label>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-file" class="crudit-ui-label">Photo</label>
+            </div>
+            <input type="file" id="kit-form-file" class="crudit-ui-input">
+        </div>
+    </div>
+</form>

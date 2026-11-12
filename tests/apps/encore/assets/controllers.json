@@ -9,6 +9,14 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "char-count": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "color-code": {
+                "enabled": true,
+                "fetch": "eager"
+            },
             "command-palette": {
                 "enabled": true,
                 "fetch": "eager"
@@ -58,6 +66,10 @@
                 "fetch": "eager"
             },
             "toasts": {
+                "enabled": true,
+                "fetch": "eager"
+            },
+            "toggletip": {
                 "enabled": true,
                 "fetch": "eager"
             },

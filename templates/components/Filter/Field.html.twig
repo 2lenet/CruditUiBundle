@@ -39,10 +39,10 @@
         <div class="crudit-ui-filter-field__input" data-2lenet--crudit-ui-bundle--filter-field-target="input"{{ noValue ? ' hidden' : '' }}>
             {%- if type == 'range' -%}
                 <label class="crudit-ui-visually-hidden" for="{{ base }}-value">{{ 'crudit_ui.filter.minimum'|trans({'%label%': label}, 'LleCruditUiBundle') }}</label>
-                <input class="crudit-ui-filter-field__text" id="{{ base }}-value" type="number" inputmode="decimal" name="{{ name }}_value" value="{{ value }}" placeholder="{{ 'crudit_ui.filter.min'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
+                <input class="crudit-ui-filter-field__text" id="{{ base }}-value" type="number" name="{{ name }}_value" value="{{ value }}" placeholder="{{ 'crudit_ui.filter.min'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
                 <span class="crudit-ui-filter-field__affix" aria-hidden="true">–</span>
                 <label class="crudit-ui-visually-hidden" for="{{ base }}-to">{{ 'crudit_ui.filter.maximum'|trans({'%label%': label}, 'LleCruditUiBundle') }}</label>
-                <input class="crudit-ui-filter-field__text" id="{{ base }}-to" type="number" inputmode="decimal" name="{{ name }}_to" value="{{ to }}" placeholder="{{ 'crudit_ui.filter.max'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
+                <input class="crudit-ui-filter-field__text" id="{{ base }}-to" type="number" name="{{ name }}_to" value="{{ to }}" placeholder="{{ 'crudit_ui.filter.max'|trans({}, 'LleCruditUiBundle') }}"{{ noValue ? ' disabled' : '' }}>
             {%- elseif type == 'period' -%}
                 <twig:LleCruditUi:Filter:Period id="{{ base }}-period" :name="name" :label="label" :value="value" :to="to" :inline="inline" :disabled="noValue" />
             {%- elseif type == 'choice' -%}
@@ -66,7 +66,7 @@
                     {% endfor %}
                 </div>
             {%- else -%}
-                <input class="crudit-ui-filter-field__text" id="{{ base }}-value" type="{{ inputType }}"{{ type == 'number' ? ' inputmode="decimal"' : '' }}{{ type == 'datetime' and value|length > 16 ? ' step="1"' : '' }} name="{{ name }}_value" value="{{ value }}"{{ placeholder ? ' placeholder="' ~ placeholder|e('html_attr') ~ '"' : '' }}{{ noValue ? ' disabled' : '' }} autocomplete="off">
+                <input class="crudit-ui-filter-field__text" id="{{ base }}-value" type="{{ inputType }}"{{ type == 'datetime' and value|length > 16 ? ' step="1"' : '' }} name="{{ name }}_value" value="{{ value }}"{{ placeholder ? ' placeholder="' ~ placeholder|e('html_attr') ~ '"' : '' }}{{ noValue ? ' disabled' : '' }} autocomplete="off">
             {%- endif -%}
             {%- if unit %}<span class="crudit-ui-filter-field__affix" aria-hidden="true">{{ unit }}</span>{% endif -%}
         </div>
