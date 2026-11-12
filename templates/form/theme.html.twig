@@ -26,6 +26,7 @@
             {{- form_errors(form) -}}
         </fieldset>
     {%- else -%}
+        {%- set crudit_ui_counter = (attr.maxlength ?? null) is not null and 'text' in block_prefixes and (counter ?? ('textarea' in block_prefixes)) -%}
         <div{% with {attr: row_attr|merge({class: row_class})} %}{{ block('attributes') }}{% endwith %}>
             {%- if label is not same as(false) -%}
                 <div class="crudit-ui-field__label-row">
@@ -33,7 +34,7 @@
                     {{- block('crudit_ui_label_after') -}}
                 </div>
             {%- endif -%}
-            {{- form_widget(form) -}}
+            {{- form_widget(form, {crudit_ui_counter: crudit_ui_counter}) -}}
             {{- form_help(form) -}}
             {{- block('crudit_ui_counter') -}}
             {{- form_errors(form) -}}
@@ -99,16 +100,20 @@
  # Counter of the characters of a long text with a maximum length (attr.maxlength): "27 / 80 characters", attached to
  # the input after its help. A text on one line has it with the variable counter (form_row(form.code, {counter:
  # true})): Symfony puts the length of the column of a string in maxlength, every text would have one. counter: false
- # takes it away. The controller char-count updates it while typing, and tells the characters
- # left to assistive technologies only near the limit (a live region, once the typing pauses).
+ # takes it away. The condition is computed once in form_row and given to the widget (crudit_ui_counter), as Symfony
+ # does for the help: form_widget() alone has no counter, and no aria-describedby to a missing element. The controller
+ # char-count updates it while typing, and tells the characters left to assistive technologies only near the limit, once
+ # the typing pauses, in a live region `<id>_count_live` next to the counter: not inside it, the description read with
+ # the input stays "27 / 80 characters". The plural of the characters left follows the locale of the request
+ # (data-…-locale-value; the lang of the page without a request).
  #}
 {%- block crudit_ui_counter -%}
-    {%- if (attr.maxlength ?? null) is not null and 'text' in block_prefixes and (counter ?? ('textarea' in block_prefixes)) -%}
+    {%- if crudit_ui_counter ?? false -%}
         {%- set crudit_ui_max = attr.maxlength|number_format(0, '', '') -%}
         <p id="{{ id }}_count" class="crudit-ui-field__count">
             <span data-crudit-ui-count>{{- (crudit_ui_max > 1 ? 'crudit_ui.form.count.many' : 'crudit_ui.form.count.one')|trans({'%length%': value|default('')|length, '%count%': crudit_ui_max}, 'LleCruditUiBundle') -}}</span>
-            <span class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
         </p>
+        <span id="{{ id }}_count_live" class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
     {%- endif -%}
 {%- endblock crudit_ui_counter -%}
 
@@ -156,7 +161,7 @@
         {%- if field.vars.help is not empty and (field.vars.id ~ '_help') not in described -%}
             {%- set described = described|merge([field.vars.id ~ '_help']) -%}
         {%- endif -%}
-        {%- if field is same as(form) and (attr.maxlength ?? null) is not null and 'text' in block_prefixes and (counter ?? ('textarea' in block_prefixes)) and (id ~ '_count') not in described -%}
+        {%- if field is same as(form) and (crudit_ui_counter ?? false) and (id ~ '_count') not in described -%}
             {%- set described = described|merge([id ~ '_count']) -%}
             {%- set attr = attr|merge({
                 'data-controller': ((attr['data-controller'] ?? '') ~ ' 2lenet--crudit-ui-bundle--char-count')|trim,
@@ -166,6 +171,9 @@
                 'data-2lenet--crudit-ui-bundle--char-count-left-one-value': 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle'),
                 'data-2lenet--crudit-ui-bundle--char-count-full-value': 'crudit_ui.form.count.full'|trans({}, 'LleCruditUiBundle'),
             }) -%}
+            {%- if (app.request.locale ?? null) is not empty -%}
+                {%- set attr = attr|merge({'data-2lenet--crudit-ui-bundle--char-count-locale-value': app.request.locale}) -%}
+            {%- endif -%}
         {%- endif -%}
         {%- if field.vars.errors|length > 0 and (field.vars.id ~ '_error') not in described -%}
             {%- set described = described|merge([field.vars.id ~ '_error']) -%}
@@ -181,25 +189,29 @@
 {# Inputs #}
 
 {#
- # The keyboard of a phone (inputmode) for the kind of the value, unless attr gives one: numeric for an integer, decimal
- # for a percentage typed as text, email, tel and url (Symfony sets it for a number and an amount typed as text,
- # numeric with a scale of 0; with html5, type="number" has the keyboard of the browser). No spell check on an e-mail
- # address.
+ # The keyboard of a phone (inputmode) for the kind of the value, unless attr gives one. An integer is always
+ # type="number": its keyboard on iOS has a minus key, the digit pad (numeric) has none, so numeric only when attr.min
+ # is 0 or more. A part of a date or a time in inputs (widget text: day, month, year…) is numeric too, never negative.
+ # decimal for a percentage typed as text; Symfony sets it for a number and an amount typed as text (numeric with a
+ # scale of 0), with the same limit: no minus key on iOS, attr: {inputmode: 'text'} for a negative value. An e-mail, a
+ # phone and a URL have their keyboard from their type. A year in inputs is wider than the other parts
+ # (crudit-ui-input--year). No spell check on an e-mail address.
  #}
 {%- block form_widget_simple -%}
     {%- set type = type|default('text') -%}
     {%- set crudit_ui_part = block('crudit_ui_date_part_label') -%}
     {%- if crudit_ui_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part}) %}{% endif -%}
+    {%- set crudit_ui_date_input = type == 'text' and form.parent is not null and name in ['year', 'month', 'day', 'hour', 'minute', 'second'] and form.parent.vars.block_prefixes|filter(p => p in ['date', 'time'])|length > 0 -%}
     {%- if type not in ['hidden', 'checkbox', 'radio', 'range'] -%}
-        {%- set attr = attr|merge({class: ('crudit-ui-input ' ~ attr.class|default(''))|trim}) -%}
+        {%- set attr = attr|merge({class: ('crudit-ui-input ' ~ (crudit_ui_date_input and name == 'year' ? 'crudit-ui-input--year ' : '') ~ attr.class|default(''))|trim}) -%}
     {%- endif -%}
     {%- if attr.inputmode is not defined -%}
-        {%- if 'integer' in block_prefixes -%}
+        {%- if crudit_ui_date_input or ('integer' in block_prefixes and (attr.min ?? null) is not null and attr.min >= 0) -%}
             {%- set attr = attr|merge({inputmode: 'numeric'}) -%}
+        {%- elseif 'integer' in block_prefixes -%}
+            {# type="number": the keyboard of the browser, with a minus key #}
         {%- elseif type == 'text' and block_prefixes|filter(p => p in ['number', 'money', 'percent'])|length > 0 -%}
             {%- set attr = attr|merge({inputmode: 'decimal'}) -%}
-        {%- elseif type in ['email', 'tel', 'url'] -%}
-            {%- set attr = attr|merge({inputmode: type}) -%}
         {%- endif -%}
     {%- endif -%}
     {%- if type == 'email' and attr.spellcheck is not defined -%}
@@ -221,7 +233,7 @@
     {%- if form.parent is not null and attr['aria-label'] is not defined and name in ['year', 'month', 'day', 'hour', 'minute', 'second'] and form.parent.vars.block_prefixes|filter(p => p in ['date', 'time'])|length > 0 -%}
         {{- ('crudit_ui.form.date.' ~ name)|trans({}, 'LleCruditUiBundle') -}}
     {%- endif -%}
-{%- endblock -%}
+{%- endblock crudit_ui_date_part_label -%}
 
 {# A required list: its empty option cannot be chosen again #}
 {%- block choice_widget_collapsed -%}
@@ -330,13 +342,14 @@
     {%- endif -%}
 {%- endblock percent_widget -%}
 
-{# Colour: the native picker and its code next to it (updated by the controller color-code) #}
+{# Colour: the native picker and its code next to it (updated by the controller color-code), hidden from assistive
+ # technologies like the units: the picker tells its value #}
 {%- block color_widget -%}
     {%- set type = 'color' -%}
     {%- set attr = attr|merge({'data-controller': ((attr['data-controller'] ?? '') ~ ' 2lenet--crudit-ui-bundle--color-code')|trim}) -%}
     <div class="crudit-ui-input-group crudit-ui-input-group--color">
         {{- block('form_widget_simple') -}}
-        <span class="crudit-ui-input-group__unit" data-color-code>{{ value|default('#000000') }}</span>
+        <span class="crudit-ui-input-group__unit" aria-hidden="true" data-color-code>{{ value|default('#000000') }}</span>
     </div>
 {%- endblock color_widget -%}
 

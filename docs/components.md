@@ -762,7 +762,8 @@ form that holds the field sends them as `<name>_op`, `<name>_value` and, for a r
 `date`, `datetime`, `period`, `choice`; `text`), `choices` (of a `choice`: `{value, label}`), `operators` (list of `{value, label, icon, noValue}`; `icon` is a name of the icon catalogue,
 `operator-equals`…; none or a single one: no condition button), `operator` (current value, the first by default), `value`, `to`
 (second bound of a range), `unit` (after the input), `placeholder`, `id` (base of the ids, random otherwise), `inline` (of a `period`: the dates shown directly, for a field already in a menu; the bar sets it on the main filters). A `boolean` sends
-`all`, `true` or `false`, as the 1.x does.
+`all`, `true` or `false`, as the 1.x does. A `number` and a `range` are `type="number"`, with the keyboard of the browser:
+it has the minus key, a negative bound can be typed on a phone (`inputmode="decimal"` would take it away on iOS).
 
 `Filter:Operator` props: `name`, `label`, `operators`, `current`, `id`. It is a `Dropdown` of radio buttons, used by the field.
 

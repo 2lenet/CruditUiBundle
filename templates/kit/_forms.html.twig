@@ -53,6 +53,7 @@
             </div>
             <textarea id="kit-form-notes" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-notes_count"
                 data-controller="2lenet--crudit-ui-bundle--char-count"
+                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ app.request.locale ?? '' }}"
                 data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
                 data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
                 data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"
@@ -60,8 +61,26 @@
                 data-2lenet--crudit-ui-bundle--char-count-full-value="{{ 'crudit_ui.form.count.full'|trans({}, 'LleCruditUiBundle') }}">Back door</textarea>
             <p id="kit-form-notes_count" class="crudit-ui-field__count">
                 <span data-crudit-ui-count>{{ 'crudit_ui.form.count.many'|trans({'%length%': 9, '%count%': 80}, 'LleCruditUiBundle') }}</span>
-                <span class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
             </p>
+            <span id="kit-form-notes_count_live" class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-memo" class="crudit-ui-label">Memo (near the limit when loaded)</label>
+            </div>
+            <textarea id="kit-form-memo" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-memo_count"
+                data-controller="2lenet--crudit-ui-bundle--char-count"
+                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ app.request.locale ?? '' }}"
+                data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-left-many-value="{{ 'crudit_ui.form.count.left_many'|trans({}, 'LleCruditUiBundle') }}"
+                data-2lenet--crudit-ui-bundle--char-count-full-value="{{ 'crudit_ui.form.count.full'|trans({}, 'LleCruditUiBundle') }}">Ring twice at the back door, the bell at the front does not work since last we</textarea>
+            <p id="kit-form-memo_count" class="crudit-ui-field__count">
+                <span data-crudit-ui-count>{{ 'crudit_ui.form.count.many'|trans({'%length%': 78, '%count%': 80}, 'LleCruditUiBundle') }}</span>
+            </p>
+            <span id="kit-form-memo_count_live" class="crudit-ui-visually-hidden" aria-live="polite" data-crudit-ui-count-live></span>
         </div>
 
         <fieldset class="crudit-ui-field crudit-ui-field__group">
@@ -79,9 +98,16 @@
             </div>
             <div class="crudit-ui-input-group crudit-ui-input-group--color">
                 <input type="color" id="kit-form-tint" class="crudit-ui-input" value="#1e40af" data-controller="2lenet--crudit-ui-bundle--color-code">
-                <span class="crudit-ui-input-group__unit" data-color-code>#1e40af</span>
+                <span class="crudit-ui-input-group__unit" aria-hidden="true" data-color-code>#1e40af</span>
             </div>
         </div>
+
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Delivery date (inputs)</legend>
+            <div id="kit-form-delivery" class="crudit-ui-date-lists">
+                <input type="text" id="kit-form-delivery_day" class="crudit-ui-input" inputmode="numeric" aria-label="{{ 'crudit_ui.form.date.day'|trans({}, 'LleCruditUiBundle') }}" value="24">/<input type="text" id="kit-form-delivery_month" class="crudit-ui-input" inputmode="numeric" aria-label="{{ 'crudit_ui.form.date.month'|trans({}, 'LleCruditUiBundle') }}" value="12">/<input type="text" id="kit-form-delivery_year" class="crudit-ui-input crudit-ui-input--year" inputmode="numeric" aria-label="{{ 'crudit_ui.form.date.year'|trans({}, 'LleCruditUiBundle') }}" value="2026">
+            </div>
+        </fieldset>
 
         <fieldset class="crudit-ui-field crudit-ui-field__group">
             <legend class="crudit-ui-label">Channels</legend>

@@ -137,13 +137,16 @@ try {
     assert.deepEqual(await switchState(), ['No'], 'the state of the switch does not follow it');
     // Counter of characters: it follows the typing, and tells the characters left near the limit, once the typing pauses
     const charCount = () => page.$eval('#kit-form-notes_count [data-crudit-ui-count]', (span) => span.textContent);
-    const countLive = () => page.$eval('#kit-form-notes_count [data-crudit-ui-count-live]', (span) => span.textContent);
+    const countLive = () => page.$eval('#kit-form-notes_count_live', (span) => span.textContent);
+    // An absence of message cannot be awaited: the pause of char-count (600 ms), and a margin
+    const announcePause = () => new Promise((resolve) => setTimeout(resolve, 600 + 200));
+    assert.equal(await page.$eval('#kit-form-notes_count', (counter) => counter.textContent.trim()), '9 / 80 characters', 'the message told is in the description of the input');
     assert.equal(await charCount(), '9 / 80 characters');
     await page.focus('#kit-form-notes');
     await page.keyboard.press('End');
     await page.keyboard.type(' 2');
     assert.equal(await charCount(), '11 / 80 characters', 'the counter does not follow the typing');
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await announcePause();
     assert.equal(await countLive(), '', 'the characters left are told far from the limit');
     await page.$eval('#kit-form-notes', (area) => {
         area.value = 'x'.repeat(77);
@@ -151,7 +154,7 @@ try {
     });
     assert.equal(await charCount(), '77 / 80 characters');
     assert.equal(await countLive(), '', 'the characters left are told before the typing pauses');
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await page.waitForFunction(() => document.getElementById('kit-form-notes_count_live').textContent === '3 characters left', {timeout: 2000}).catch(() => null);
     assert.equal(await countLive(), '3 characters left', 'the characters left are not told near the limit');
     // Segmented control: the arrows of the keyboard move the choice (native radios)
     await page.focus('#kit-form-size input:checked');
@@ -163,6 +166,24 @@ try {
         input.dispatchEvent(new Event('input', {bubbles: true}));
     });
     assert.equal(await page.$eval('#kit-forms [data-color-code]', (code) => code.textContent), '#ff0000', 'the code of the colour does not follow it');
+    // A value already near the limit when the page is loaded: shown, not told (nothing typed yet)
+    assert.equal(await page.$eval('#kit-form-memo_count [data-crudit-ui-count]', (span) => span.textContent), '78 / 80 characters');
+    await announcePause();
+    assert.equal(await page.$eval('#kit-form-memo_count_live', (span) => span.textContent), '', 'the characters left are told when the page is loaded');
+    // A reset of the form: the counter and the code of the colour show the values put back
+    await page.$eval('#kit-form-notes', (area) => area.form.reset());
+    await page.waitForFunction(() => document.querySelector('#kit-form-notes_count [data-crudit-ui-count]').textContent === '9 / 80 characters', {timeout: 1000}).catch(() => null);
+    assert.equal(await charCount(), '9 / 80 characters', 'the counter keeps the value before the reset');
+    assert.equal(await countLive(), '', 'the characters left before the reset are still told');
+    assert.equal(await page.$eval('#kit-forms [data-color-code]', (code) => code.textContent), '#1e40af', 'the code of the colour keeps the colour before the reset');
+    // A date in inputs (widget text): the day, the month and the year on one line, narrow
+    const dateParts = await page.$$eval('#kit-form-delivery > .crudit-ui-input', (inputs) => inputs.map((input) => {
+        const box = input.getBoundingClientRect();
+
+        return {top: Math.round(box.top), width: box.width, room: input.parentElement.getBoundingClientRect().width};
+    }));
+    assert.equal(new Set(dateParts.map((part) => part.top)).size, 1, 'the inputs of a date take one line each');
+    assert.ok(dateParts[0].width < dateParts[2].width && dateParts[2].width < dateParts[0].room / 3, 'the inputs of a date are wider than their digits');
     await page.click('#kit-forms .crudit-ui-toggletip');
     assert.ok(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open')), 'the toggletip does not open its help');
     await page.keyboard.press('Escape');

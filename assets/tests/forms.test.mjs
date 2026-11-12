@@ -36,6 +36,7 @@ test('the button of a toggletip stays active while its panel is open (popovertar
 });
 
 test('a segmented control keeps the native radio, draws the focus on its label and tells the checked one by more than the colour', () => {
+    assert.ok(css.includes('grid-template-columns:repeat(auto-fit, minmax(min(100%, 6rem), 1fr))'), 'the choices of a segmented control do not go on the next line when the room is short');
     assert.match(css, /\.crudit-ui-segmented__input\{position:absolute;inset:0;margin:0;opacity:0;/);
     assert.ok(css.includes('.crudit-ui-segmented__input:focus-visible+.crudit-ui-segmented__label{outline:var(--focus-ring-width) solid var(--c-focus)'));
     assert.match(css, /\.crudit-ui-segmented__input:checked\+\.crudit-ui-segmented__label\{border-color:var\(--c-border-strong\);[^}]*box-shadow:var\(--shadow-sm\);[^}]*font-weight:var\(--font-weight-semibold\)\}/);
@@ -45,4 +46,6 @@ test('a segmented control keeps the native radio, draws the focus on its label a
 test('the counter of characters keeps its width while the digits change, the lists of a date are on one line', () => {
     assert.match(css, /\.crudit-ui-field__count\{[^}]*font-variant-numeric:tabular-nums\}/);
     assert.match(css, /\.crudit-ui-date-lists\{display:flex;flex-wrap:wrap;/);
+    assert.match(css, /\.crudit-ui-date-lists>\.crudit-ui-input\{width:calc\(2ch \+ 2\*var\(--space-3\) \+ 2px\)/, 'the inputs of a date (widget text) take one line each');
+    assert.match(css, /\.crudit-ui-date-lists>\.crudit-ui-input--year\{width:calc\(4ch /);
 });
