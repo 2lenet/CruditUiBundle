@@ -135,18 +135,25 @@ try {
     assert.deepEqual(await switchState(), ['Yes'], 'the switch does not write its state');
     await page.click('#kit-form-active');
     assert.deepEqual(await switchState(), ['No'], 'the state of the switch does not follow it');
+    // In the middle of the screen: near an edge, the panel turns over (position-try-fallbacks)
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.scrollIntoView({block: 'center'}));
     await page.click('#kit-forms .crudit-ui-toggletip');
     assert.ok(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open')), 'the toggletip does not open its help');
-    // Under its button (anchor positioning), a popover hint (it does not close the other popovers open)
+    // Against its button (anchor positioning), not in the middle of the screen; a popover hint (it does not close the
+    // other popovers open)
     const tipPlace = await page.evaluate(() => {
         const button = document.querySelector('#kit-forms .crudit-ui-toggletip').getBoundingClientRect();
         const panel = document.getElementById('kit-form-name-tip');
         const rect = panel.getBoundingClientRect();
 
-        return {gap: Math.round(rect.top - button.bottom), shift: Math.round(rect.left - button.left), popover: panel.popover};
+        return {
+            gap: Math.round(Math.max(rect.top - button.bottom, button.top - rect.bottom)),
+            shift: Math.round(Math.min(Math.abs(rect.left - button.left), Math.abs(rect.right - button.right))),
+            popover: panel.popover,
+        };
     });
-    assert.ok(tipPlace.gap >= 0 && tipPlace.gap < 16, `the panel of the toggletip is not under its button (${tipPlace.gap}px)`);
-    assert.ok(Math.abs(tipPlace.shift) < 2, `the panel of the toggletip does not start at its button (${tipPlace.shift}px)`);
+    assert.ok(tipPlace.gap >= 0 && tipPlace.gap < 16, `the panel of the toggletip is not against its button (${tipPlace.gap}px)`);
+    assert.ok(tipPlace.shift < 2, `the panel of the toggletip is not aligned on its button (${tipPlace.shift}px)`);
     assert.equal(tipPlace.popover, 'hint', 'the panel of the toggletip is not a popover hint');
     await page.keyboard.press('Escape');
     assert.ok(!(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'))), 'Escape does not close the toggletip');
