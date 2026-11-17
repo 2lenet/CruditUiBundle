@@ -64,6 +64,16 @@ class FormThemeTest extends TestCase
         self::assertSame('As on the invoice', $html->getElementById('form_name_help')?->textContent);
     }
 
+    public function testARichHelpIsADiv(): void
+    {
+        $form = $this->form()->add('name', TextType::class, ['help' => '<ul><li>One</li><li>Two</li></ul>', 'help_html' => true])->getForm();
+        $html = $this->renderForm($form);
+
+        $help = $html->getElementById('form_name_help');
+        self::assertSame('div', $help?->localName);
+        self::assertCount(2, $help->querySelectorAll('ul > li'));
+    }
+
     public function testAnErrorIsAttachedAfterTheHelpWithAnIconAndInvalidState(): void
     {
         $form = $this->form()->add('name', TextType::class, ['help' => 'As on the invoice', 'attr' => ['aria-describedby' => 'mine']])->getForm();
@@ -135,6 +145,22 @@ class FormThemeTest extends TestCase
         self::assertNull($html->querySelector('.crudit-ui-field__label-row'));
     }
 
+    public function testTheLabelOfACheckboxTakesItsLabelAttr(): void
+    {
+        $form = $this->form()
+            ->add('active', CheckboxType::class, ['required' => false, 'label_attr' => ['class' => 'app-strong', 'data-x' => '1']])
+            ->add('enabled', CheckboxType::class, ['required' => false, 'label_attr' => ['class' => 'app-strong'], 'attr' => ['role' => 'switch']])
+            ->getForm();
+        $html = $this->renderForm($form);
+
+        $label = $html->querySelector('label.crudit-ui-check');
+        self::assertSame('crudit-ui-check app-strong', $label?->getAttribute('class'));
+        self::assertSame('1', $label->getAttribute('data-x'));
+        // A switch: label_attr on its label above, not on the switch
+        self::assertSame('crudit-ui-switch', $html->querySelector('label.crudit-ui-switch')?->getAttribute('class'));
+        self::assertSame('crudit-ui-label app-strong', $html->querySelector('label[for="form_enabled"]')?->getAttribute('class'));
+    }
+
     public function testASwitchKeepsItsLabelAboveAndWritesItsState(): void
     {
         $form = $this->form()->add('active', CheckboxType::class, ['label' => 'Active', 'required' => false, 'attr' => ['role' => 'switch']])->getForm();
@@ -162,7 +188,21 @@ class FormThemeTest extends TestCase
         self::assertCount(2, $groups);
         self::assertSame('€', trim((string) $groups->item(0)?->querySelector('.crudit-ui-input-group__unit')?->textContent));
         self::assertSame('%', $groups->item(1)?->querySelector('.crudit-ui-input-group__unit')?->textContent);
-        self::assertSame('true', $groups->item(1)->querySelector('.crudit-ui-input-group__unit')->getAttribute('aria-hidden'));
+        // The unit is read with the input, before its help
+        $unit = $html->getElementById('form_rate_unit');
+        self::assertSame('%', $unit?->textContent);
+        self::assertFalse($unit->hasAttribute('aria-hidden'));
+        self::assertSame('form_amount_unit', $html->getElementById('form_amount')?->getAttribute('aria-describedby'));
+        self::assertSame('€', trim((string) $html->getElementById('form_amount_unit')?->textContent));
+    }
+
+    public function testTheUnitIsReadBeforeTheHelpAndTheError(): void
+    {
+        $form = $this->form()->add('rate', PercentType::class, ['symbol' => '%', 'help' => 'Of the total'])->getForm();
+        $form->get('rate')->addError(new FormError('Too high'));
+        $html = $this->renderForm($form);
+
+        self::assertSame('form_rate_unit form_rate_help form_rate_error', $html->getElementById('form_rate')?->getAttribute('aria-describedby'));
     }
 
     public function testTheEmptyOptionOfARequiredListCannotBeChosenAgain(): void

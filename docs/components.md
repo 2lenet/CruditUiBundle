@@ -312,7 +312,9 @@ anchor positioning exists, in the middle of the screen elsewhere.
 The controller `toggletip` (to enable in `assets/controllers.json`) also opens it **on the hover** of a mouse and on
 the **keyboard focus**, and closes it when they leave the button and the panel (the panel can be hovered, WCAG
 1.4.13); a click on a panel opened that way keeps it open. A touch fires no hover. Without the controller, the click
-alone.
+alone. The controller makes the panel a popover `hint` where the browser supports it: opened by the hover, it does not
+close the other popovers open (a menu). Elsewhere, and without the controller, it stays a popover `auto`, which closes
+them.
 
 ```twig
 <twig:LleCruditUi:Toggletip label="{{ 'Help on the field %label%'|trans({'%label%': 'Phone'}) }}" id="phone-help">

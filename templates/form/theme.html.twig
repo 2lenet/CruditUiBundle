@@ -9,7 +9,8 @@
  # {% use '@LleCruditUi/form/theme.html.twig' %}. The block crudit_ui_label_after (empty) is what comes after the
  # label, on its line (a Toggletip).
  #
- # Ids: the help is `<id>_help` (as Symfony), the error `<id>_error`.
+ # Ids: the help is `<id>_help` (as Symfony), the error `<id>_error`, the unit of an amount or a percentage
+ # `<id>_unit`.
  #}
 {% use 'form_div_layout.html.twig' %}
 
@@ -88,9 +89,9 @@
 {%- block form_help -%}
     {%- if help is not empty -%}
         {%- set help_attr = help_attr|merge({class: ('crudit-ui-help ' ~ help_attr.class|default(''))|trim}) -%}
-        <p id="{{ id }}_help"{% with {attr: help_attr} %}{{ block('attributes') }}{% endwith %}>
+        <div id="{{ id }}_help"{% with {attr: help_attr} %}{{ block('attributes') }}{% endwith %}>
             {{- block('form_help_content') -}}
-        </p>
+        </div>
     {%- endif -%}
 {%- endblock form_help -%}
 
@@ -199,7 +200,9 @@
     {%- set switch = (attr.role ?? null) == 'switch' -%}
     {%- set base = switch ? 'crudit-ui-switch' : 'crudit-ui-check' -%}
     {%- set attr = attr|merge({class: (base ~ '__input ' ~ attr.class|default(''))|trim}) -%}
-    <label class="{{ base }}">
+    {#- The label of a checkbox or a radio is here: it takes label_attr (that of a switch is above, form_label) -#}
+    {%- set crudit_ui_label_attr = switch ? {} : label_attr|filter((v, k) => k != 'for') -%}
+    <label{% with {attr: crudit_ui_label_attr|merge({class: (base ~ ' ' ~ crudit_ui_label_attr.class|default(''))|trim})} %}{{ block('attributes') }}{% endwith %}>
         <input type="{{ type|default('checkbox') }}" {{ block('widget_attributes') }}{% if value is defined %} value="{{ value }}"{% endif %}{% if checked %} checked="checked"{% endif %}>
         {%- if switch -%}
             <span class="crudit-ui-switch__state crudit-ui-switch__state--on" aria-hidden="true">{{ 'crudit_ui.boolean.yes'|trans({}, 'LleCruditUiBundle') }}</span>
@@ -219,15 +222,16 @@
     {{- block('checkbox_widget') -}}
 {%- endblock radio_widget -%}
 
-{# Amounts and percentages: the unit next to the input; the focus surrounds both #}
+{# Amounts and percentages: the unit next to the input, read with it (aria-describedby); the focus surrounds both #}
 {%- block money_widget -%}
     {%- set prepend = not (money_pattern starts with '{{') -%}
     {%- set append = not (money_pattern ends with '}}') -%}
     {%- if prepend or append -%}
+        {%- set attr = attr|merge({'aria-describedby': (id ~ '_unit ' ~ attr['aria-describedby']|default(''))|trim}) -%}
         <div class="crudit-ui-input-group">
-            {%- if prepend %}<span class="crudit-ui-input-group__unit" aria-hidden="true">{{ money_pattern|form_encode_currency }}</span>{% endif -%}
+            {%- if prepend %}<span id="{{ id }}_unit" class="crudit-ui-input-group__unit">{{ money_pattern|form_encode_currency }}</span>{% endif -%}
             {{- block('form_widget_simple') -}}
-            {%- if append %}<span class="crudit-ui-input-group__unit" aria-hidden="true">{{ money_pattern|form_encode_currency }}</span>{% endif -%}
+            {%- if append and not prepend %}<span id="{{ id }}_unit" class="crudit-ui-input-group__unit">{{ money_pattern|form_encode_currency }}</span>{% endif -%}
         </div>
     {%- else -%}
         {{- block('form_widget_simple') -}}
@@ -236,9 +240,10 @@
 
 {%- block percent_widget -%}
     {%- if symbol -%}
+        {%- set attr = attr|merge({'aria-describedby': (id ~ '_unit ' ~ attr['aria-describedby']|default(''))|trim}) -%}
         <div class="crudit-ui-input-group">
             {{- block('form_widget_simple') -}}
-            <span class="crudit-ui-input-group__unit" aria-hidden="true">{{ symbol }}</span>
+            <span id="{{ id }}_unit" class="crudit-ui-input-group__unit">{{ symbol }}</span>
         </div>
     {%- else -%}
         {{- block('form_widget_simple') -}}
