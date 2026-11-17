@@ -25,16 +25,18 @@ export default class extends Controller {
         locale: String,
     };
 
-    // Intl only knows BCP 47 tags (fr-FR): an unknown one (fr_FR, an empty lang) falls back to the lang of the page,
-    // then to the language of the browser, rather than stopping connect() before the listeners.
+    // Intl only knows BCP 47 tags: a candidate it refuses (fr_FR) is skipped. An empty one (no request, no lang) is
+    // skipped too: Intl would take the language of the browser instead of the next candidate, the lang of the page.
     pluralRules() {
-        for (const locale of [this.localeValue, document.documentElement.lang, undefined]) {
+        for (const locale of [this.localeValue, document.documentElement.lang].filter(Boolean)) {
             try {
-                return new Intl.PluralRules(locale || undefined);
+                return new Intl.PluralRules(locale);
             } catch {
                 // Next candidate
             }
         }
+
+        return new Intl.PluralRules();
     }
 
     connect() {

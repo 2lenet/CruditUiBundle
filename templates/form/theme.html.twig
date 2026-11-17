@@ -84,8 +84,8 @@
  #}
 {%- block crudit_ui_required -%}
     {# The labels of the parts of an interval (years, months…) have none: the label of the interval has it #}
-    {%- set crudit_ui_part = form.parent is not null and 'dateinterval' in form.parent.vars.block_prefixes and form.parent.vars.widget|default('') != 'single_text' -%}
-    {%- set crudit_ui_star = required and not crudit_ui_part and (not compound or expanded|default(false) or block_prefixes|filter(p => p in ['date', 'time', 'datetime', 'dateinterval'])|length > 0) -%}
+    {%- set crudit_ui_interval_part = form.parent is not null and 'dateinterval' in form.parent.vars.block_prefixes and form.parent.vars.widget|default('') != 'single_text' -%}
+    {%- set crudit_ui_star = required and not crudit_ui_interval_part and (not compound or expanded|default(false) or block_prefixes|filter(p => p in ['date', 'time', 'datetime', 'dateinterval'])|length > 0) -%}
     {%- if crudit_ui_star %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif -%}
 {%- endblock -%}
 
@@ -107,7 +107,7 @@
  # char-count updates it while typing, and tells the characters left to assistive technologies only near the limit, once
  # the typing pauses, in a live region `<id>_count_live` next to the counter: not inside it, the description read with
  # the input stays "27 / 80 characters". The plural of the characters left follows the locale of the request
- # (data-…-locale-value; the lang of the page without a request).
+ # (data-…-locale-value, as a tag BCP 47: fr_FR becomes fr-FR; the lang of the page without a request).
  #}
 {%- block crudit_ui_counter -%}
     {%- if crudit_ui_counter ?? false -%}
@@ -201,8 +201,8 @@
  #}
 {%- block form_widget_simple -%}
     {%- set type = type|default('text') -%}
-    {%- set crudit_ui_part = block('crudit_ui_date_part_label') -%}
-    {%- if crudit_ui_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part}) %}{% endif -%}
+    {%- set crudit_ui_interval_part = block('crudit_ui_date_part_label') -%}
+    {%- if crudit_ui_interval_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_interval_part}) %}{% endif -%}
     {%- set crudit_ui_date_input = type == 'text' and form.parent is not null and name in ['year', 'month', 'day', 'hour', 'minute', 'second'] and form.parent.vars.block_prefixes|filter(p => p in ['date', 'time'])|length > 0 -%}
     {%- if type not in ['hidden', 'checkbox', 'radio', 'range'] -%}
         {%- set attr = attr|merge({class: ('crudit-ui-input ' ~ (crudit_ui_date_input and name == 'year' ? 'crudit-ui-input--year ' : '') ~ attr.class|default(''))|trim}) -%}
@@ -239,8 +239,8 @@
 
 {# A required list: its empty option cannot be chosen again #}
 {%- block choice_widget_collapsed -%}
-    {%- set crudit_ui_part = block('crudit_ui_date_part_label') -%}
-    {%- if crudit_ui_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part}) %}{% endif -%}
+    {%- set crudit_ui_interval_part = block('crudit_ui_date_part_label') -%}
+    {%- if crudit_ui_interval_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_interval_part}) %}{% endif -%}
     {%- set attr = attr|merge({class: ('crudit-ui-select ' ~ attr.class|default(''))|trim}) -%}
     {%- if required and placeholder is not none -%}
         {%- set placeholder_attr = placeholder_attr|default({})|merge({disabled: 'disabled'}) -%}

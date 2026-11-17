@@ -327,33 +327,6 @@ class FormThemeTest extends TestCase
         self::assertFalse((bool) $html->getElementById('form_memo')?->hasAttribute('aria-describedby'));
     }
 
-    public function testThePluralOfTheCharactersLeftFollowsTheLocaleOfTheRequest(): void
-    {
-        $form = $this->form()
-            ->add('notes', TextareaType::class, ['attr' => ['maxlength' => 80]])
-            ->getForm();
-        self::assertFalse((bool) $this->renderForm($form)->getElementById('form_notes')?->hasAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'), 'without a request, the lang of the page');
-
-        /** @var RequestStack $requests */
-        $requests = $this->container()->get('request_stack');
-        $request = new Request();
-        $request->setLocale('fr');
-        $requests->push($request);
-        $html = $this->renderForm($form);
-        $requests->pop();
-
-        self::assertSame('fr', $html->getElementById('form_notes')?->getAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'));
-
-        // A locale of Symfony (fr_FR, ar_SA) is not a tag BCP 47: Intl.PluralRules would throw a RangeError
-        $request = new Request();
-        $request->setLocale('ar_SA');
-        $requests->push($request);
-        $html = $this->renderForm($form);
-        $requests->pop();
-
-        self::assertSame('ar-SA', $html->getElementById('form_notes')?->getAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'));
-    }
-
     public function testAnIntervalInPartsHasItsErrorOnceAndItsStarOnTheLabelOfTheInterval(): void
     {
         $form = $this->form()
@@ -364,6 +337,27 @@ class FormThemeTest extends TestCase
 
         self::assertSame(1, $html->querySelectorAll('[id="form_duration_error"]')->length, 'one error, one id');
         self::assertSame(1, $html->querySelectorAll('.crudit-ui-required')->length, 'the star is on the label of the interval, not on each part');
+    }
+
+    public function testThePluralOfTheCharactersLeftFollowsTheLocaleOfTheRequest(): void
+    {
+        $form = $this->form()
+            ->add('notes', TextareaType::class, ['attr' => ['maxlength' => 80]])
+            ->getForm();
+        self::assertFalse((bool) $this->renderForm($form)->getElementById('form_notes')?->hasAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'), 'without a request, the lang of the page');
+
+        /** @var RequestStack $requests */
+        $requests = $this->container()->get('request_stack');
+        // A locale of Symfony (fr_FR, ar_SA) is not a tag BCP 47: Intl.PluralRules would throw a RangeError
+        foreach (['fr' => 'fr', 'fr_FR' => 'fr-FR', 'ar_SA' => 'ar-SA'] as $locale => $tag) {
+            $request = new Request();
+            $request->setLocale($locale);
+            $requests->push($request);
+            $html = $this->renderForm($form);
+            $requests->pop();
+
+            self::assertSame($tag, $html->getElementById('form_notes')?->getAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'), $locale);
+        }
     }
 
     public function testALongTextRenderedWithoutItsRowHasNoCounterToAttach(): void
