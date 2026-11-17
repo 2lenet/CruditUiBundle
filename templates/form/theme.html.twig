@@ -201,8 +201,8 @@
  #}
 {%- block form_widget_simple -%}
     {%- set type = type|default('text') -%}
-    {%- set crudit_ui_interval_part = block('crudit_ui_date_part_label') -%}
-    {%- if crudit_ui_interval_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_interval_part}) %}{% endif -%}
+    {%- set crudit_ui_part_label = block('crudit_ui_date_part_label') -%}
+    {%- if crudit_ui_part_label is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part_label}) %}{% endif -%}
     {%- set crudit_ui_date_input = type == 'text' and form.parent is not null and name in ['year', 'month', 'day', 'hour', 'minute', 'second'] and form.parent.vars.block_prefixes|filter(p => p in ['date', 'time'])|length > 0 -%}
     {%- if type not in ['hidden', 'checkbox', 'radio', 'range'] -%}
         {%- set attr = attr|merge({class: ('crudit-ui-input ' ~ (crudit_ui_date_input and name == 'year' ? 'crudit-ui-input--year ' : '') ~ attr.class|default(''))|trim}) -%}
@@ -239,8 +239,8 @@
 
 {# A required list: its empty option cannot be chosen again #}
 {%- block choice_widget_collapsed -%}
-    {%- set crudit_ui_interval_part = block('crudit_ui_date_part_label') -%}
-    {%- if crudit_ui_interval_part is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_interval_part}) %}{% endif -%}
+    {%- set crudit_ui_part_label = block('crudit_ui_date_part_label') -%}
+    {%- if crudit_ui_part_label is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part_label}) %}{% endif -%}
     {%- set attr = attr|merge({class: ('crudit-ui-select ' ~ attr.class|default(''))|trim}) -%}
     {%- if required and placeholder is not none -%}
         {%- set placeholder_attr = placeholder_attr|default({})|merge({disabled: 'disabled'}) -%}
