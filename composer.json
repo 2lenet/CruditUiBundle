@@ -34,6 +34,9 @@
         "twig/intl-extra": "^3.21",
         "twig/twig": "^3.21"
     },
+    "suggest": {
+        "symfony/form": "To use the form theme (@LleCruditUi/form/theme.html.twig)"
+    },
     "require-dev": {
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",

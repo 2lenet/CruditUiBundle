@@ -53,7 +53,7 @@
             </div>
             <textarea id="kit-form-notes" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-notes_count"
                 data-controller="2lenet--crudit-ui-bundle--char-count"
-                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ app.request.locale ?? '' }}"
+                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ (app.request.locale ?? '')|replace({'_': '-'}) }}"
                 data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
                 data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
                 data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"
@@ -71,7 +71,7 @@
             </div>
             <textarea id="kit-form-memo" class="crudit-ui-input crudit-ui-textarea" maxlength="80" aria-describedby="kit-form-memo_count"
                 data-controller="2lenet--crudit-ui-bundle--char-count"
-                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ app.request.locale ?? '' }}"
+                data-2lenet--crudit-ui-bundle--char-count-locale-value="{{ (app.request.locale ?? '')|replace({'_': '-'}) }}"
                 data-2lenet--crudit-ui-bundle--char-count-one-value="{{ 'crudit_ui.form.count.one'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
                 data-2lenet--crudit-ui-bundle--char-count-many-value="{{ 'crudit_ui.form.count.many'|trans({'%count%': 80}, 'LleCruditUiBundle') }}"
                 data-2lenet--crudit-ui-bundle--char-count-left-one-value="{{ 'crudit_ui.form.count.left_one'|trans({}, 'LleCruditUiBundle') }}"

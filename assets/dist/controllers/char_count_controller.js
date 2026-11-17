@@ -25,6 +25,18 @@ export default class extends Controller {
         locale: String,
     };
 
+    // Intl only knows BCP 47 tags (fr-FR): an unknown one (fr_FR, an empty lang) falls back to the lang of the page,
+    // then to the language of the browser, rather than stopping connect() before the listeners.
+    pluralRules() {
+        for (const locale of [this.localeValue, document.documentElement.lang, undefined]) {
+            try {
+                return new Intl.PluralRules(locale || undefined);
+            } catch {
+                // Next candidate
+            }
+        }
+    }
+
     connect() {
         const counter = document.getElementById(`${this.element.id}_count`);
         this.text = counter?.querySelector('[data-crudit-ui-count]');
@@ -33,7 +45,7 @@ export default class extends Controller {
         if (!this.text || this.max <= 0) {
             return;
         }
-        this.plural = new Intl.PluralRules(this.localeValue || document.documentElement.lang || undefined);
+        this.plural = this.pluralRules();
         this.onInput = () => {
             this.render();
             this.schedule();

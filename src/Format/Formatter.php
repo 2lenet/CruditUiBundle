@@ -150,7 +150,7 @@ class Formatter
         }
 
         $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::SHORT, \IntlDateFormatter::NONE, 'UTC', \IntlDateFormatter::GREGORIAN);
-        $shortPattern = (string) preg_replace("/'[^']*'/", '', (string) $formatter->getPattern());
+        $shortPattern = (string) preg_replace("/'[^']*'/", '', $formatter->getPattern());
         $skeleton = 'yyyy';
         foreach (['M', 'd'] as $field) {
             $skeleton .= 1 === preg_match('/' . $field . '+/', $shortPattern, $match) ? $match[0] : $field;

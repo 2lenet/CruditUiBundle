@@ -105,11 +105,8 @@ export default class extends Controller {
         if (this.isOpen()) {
             return;
         }
-        try {
-            this.panel.showPopover({source: this.element});
-        } catch {
-            this.panel.showPopover();
-        }
+        // A browser without the option source ignores the argument
+        this.panel.showPopover({source: this.element});
         this.look = true;
     }
 

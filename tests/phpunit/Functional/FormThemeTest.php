@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\ColorType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\DateIntervalType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
@@ -342,6 +343,27 @@ class FormThemeTest extends TestCase
         $requests->pop();
 
         self::assertSame('fr', $html->getElementById('form_notes')?->getAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'));
+
+        // A locale of Symfony (fr_FR, ar_SA) is not a tag BCP 47: Intl.PluralRules would throw a RangeError
+        $request = new Request();
+        $request->setLocale('ar_SA');
+        $requests->push($request);
+        $html = $this->renderForm($form);
+        $requests->pop();
+
+        self::assertSame('ar-SA', $html->getElementById('form_notes')?->getAttribute('data-2lenet--crudit-ui-bundle--char-count-locale-value'));
+    }
+
+    public function testAnIntervalInPartsHasItsErrorOnceAndItsStarOnTheLabelOfTheInterval(): void
+    {
+        $form = $this->form()
+            ->add('duration', DateIntervalType::class, ['widget' => 'integer', 'with_days' => true, 'with_hours' => true])
+            ->getForm();
+        $form->get('duration')->addError(new FormError('Invalid interval'));
+        $html = $this->renderTemplate($form, '{{ form_row(form.duration) }}');
+
+        self::assertSame(1, $html->querySelectorAll('[id="form_duration_error"]')->length, 'one error, one id');
+        self::assertSame(1, $html->querySelectorAll('.crudit-ui-required')->length, 'the star is on the label of the interval, not on each part');
     }
 
     public function testALongTextRenderedWithoutItsRowHasNoCounterToAttach(): void
