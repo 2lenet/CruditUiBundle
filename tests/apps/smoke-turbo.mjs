@@ -1,17 +1,17 @@
-// Smoke test of the components under Turbo Drive (test application tests/apps/turbo): node smoke-turbo.mjs <url> [chrome path]
+// Smoke test of the components under Turbo Drive (test application tests/apps/turbo): node smoke-turbo.mjs <url> [chromium|webkit|iphone|pixel]
 // Real Turbo visits, not simulated events: the cache and Back, the controllers disconnected and connected again
 // without leaving listeners behind, forms answered by a redirect (303), by their errors (422) or by a Turbo Stream, a
 // Turbo Frame, a page refreshed by a morph, the language and the theme across visits, accessibility of the pages.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
-import puppeteer from 'puppeteer-core';
+import {launch} from './browser.mjs';
 
 const url = process.argv[2];
-const executablePath = process.argv[3] ?? process.env.CHROME_PATH ?? '/usr/bin/google-chrome';
-assert.ok(url, 'Usage: node smoke-turbo.mjs <url> [chrome path]');
+const project = process.argv[3] ?? process.env.PROJECT ?? 'chromium';
+assert.ok(url, 'Usage: node smoke-turbo.mjs <url> [chromium|webkit|iphone|pixel]');
 
-const browser = await puppeteer.launch({executablePath, headless: true, args: ['--no-sandbox']});
+const browser = await launch(project);
 const errors = [];
 const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -40,6 +40,31 @@ try {
     const back = () => after('turbo:load', () => page.evaluate(() => history.back()));
     const path = () => page.evaluate(() => location.pathname + location.search);
 
+    await page.addInitScript(() => {
+        const registry = new Map();
+        const ids = new WeakMap();
+        const id = (listener) => ids.get(listener) ?? (ids.set(listener, ids.size + 1), ids.get(listener));
+        const key = (type, listener, options) => `${type}|${typeof options === 'object' ? options?.capture === true : options === true}|${id(listener)}`;
+        window.__listeners = registry;
+        for (const [target, name] of [[Document.prototype, 'document'], [Window.prototype, 'window']]) {
+            const {addEventListener, removeEventListener} = target;
+            target.addEventListener = function (type, listener, options) {
+                if (listener && (this === document || this === window)) {
+                    registry.set(this, (registry.get(this) ?? new Map()).set(key(type, listener, options), true));
+                    // A listener "once" is removed when it has run.
+                    options?.once && addEventListener.call(this, type, () => registry.get(this)?.delete(key(type, listener, options)), {once: true});
+                }
+
+                return addEventListener.call(this, type, listener, options);
+            };
+            target.removeEventListener = function (type, listener, options) {
+                listener && registry.get(this)?.delete(key(type, listener, options));
+
+                return removeEventListener.call(this, type, listener, options);
+            };
+        }
+    });
+
     // A page loaded once: the visits that follow keep this window (no full load).
     await page.goto(new URL('turbo', url).href, {waitUntil: 'networkidle0'});
     assert.equal(await page.evaluate(() => typeof window.Turbo?.visit), 'function', 'Turbo is not loaded');
@@ -63,21 +88,19 @@ try {
     const announced = (text) => page.waitForFunction((expected) => document.querySelector('#crudit-ui-toasts [aria-live="polite"]').textContent.includes(expected), {timeout: 3000}, text)
         .then(() => true, () => false);
 
-    // Listeners on the document and the window, counted by the DevTools protocol, by type.
-    const cdp = await page.createCDPSession();
-    const listeners = async () => {
+    // Listeners on the document and the window, by type: counted by the wrappers of add / removeEventListener below
+    // (installed before the page loads), as the DevTools protocol only exists in Chromium.
+    const listeners = async () => page.evaluate(() => {
         const counts = {};
-        for (const target of ['document', 'window']) {
-            const {result} = await cdp.send('Runtime.evaluate', {expression: target});
-            const {listeners: found} = await cdp.send('DOMDebugger.getEventListeners', {objectId: result.objectId});
-            await cdp.send('Runtime.releaseObject', {objectId: result.objectId});
-            found.forEach(({type}) => {
-                counts[`${target} ${type}`] = (counts[`${target} ${type}`] ?? 0) + 1;
-            });
+        for (const [name, target] of [['document', document], ['window', window]]) {
+            for (const key of window.__listeners.get(target)?.keys() ?? []) {
+                const type = key.split('|')[0];
+                counts[`${name} ${type}`] = (counts[`${name} ${type}`] ?? 0) + 1;
+            }
         }
 
         return counts;
-    };
+    });
 
     // Visits back and forth: the controllers of each page connect, those of the page left disconnect and remove
     // their listeners. Counted on the home page after a first round trip (Turbo adds its own listener of the clicks

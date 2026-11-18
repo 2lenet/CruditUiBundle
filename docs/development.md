@@ -70,7 +70,7 @@ A component is done when:
 `turbo`: the application `assetmapper` with Symfony UX Turbo (its latest version, Turbo 8).
 Each one installs the bundle as a project does (Composer path repository with `symlink: false`, so the bundle is
 **copied** into `vendor/`), loads the stylesheet explicitly, overrides a variable in its own CSS and shows the
-dropdown controller. `tests/apps/smoke.mjs` drives a headless Chrome on the page: the stylesheet and the
+dropdown controller. `tests/apps/smoke.mjs` drives a headless browser (Playwright) on the page: the stylesheet and the
 breakpoint variables are loaded, the project wins over the `crudit-ui` layer, the controller opens and closes the
 menu, the page in French, Arabic and Persian has the right direction, texts, numbers and dates, nothing fails to load,
 and the [design kit](components.md#design-kit) page has no accessibility violation for axe-core (WCAG 2.1 A and AA,
@@ -121,13 +121,33 @@ cd .. && npm install && node smoke.mjs http://127.0.0.1:8081/
 The application `turbo` the same way, without the Encore build, then its own smoke test:
 `node smoke-turbo.mjs http://127.0.0.1:8081/`.
 
-Without Node on the machine, the image of Puppeteer runs the smoke test; the path of its Chrome is the second
-argument. Not with `-u`: Chrome does not start.
+The tests take the project as last argument: `chromium` (default), `webkit` (Safari), `iphone` (WebKit, touch,
+phone viewport) and `pixel` (Chromium, touch, Android viewport); `tests/apps/browser.mjs` defines them.
+
+Nothing to install for the browsers: the image of Playwright (same version as `tests/apps/package.json`) holds them
+with their system libraries. Run the tests in it, on the network of the machine, after `npm install` in `tests/apps`:
 
 ```bash
 cd tests/apps
-docker run --rm --network host -v $PWD:/work -w /work ghcr.io/puppeteer/puppeteer:24.10.0 node smoke.mjs http://127.0.0.1:8081/ /home/pptruser/.cache/puppeteer/chrome/linux-137.0.7151.55/chrome-linux64/chrome
+npm install
+for project in chromium webkit iphone pixel; do
+    docker run --rm --network host --ipc=host -v $PWD:/work -w /work mcr.microsoft.com/playwright:v1.65.1-noble \
+        node smoke.mjs http://127.0.0.1:8081/ $project
+done
 ```
+
+(`smoke-turbo.mjs` the same way against the application `turbo`.) With Node and the browsers on the machine
+(`npx playwright install --with-deps chromium webkit`), `node smoke.mjs <url> <project>` runs directly; `CHROME_PATH`
+uses an installed Chrome instead of the Chromium of Playwright. The CI installs them with `--with-deps`.
+
+Differences of the phones that the tests take into account: a phone has no hover (the hover cases are skipped), WebKit
+sends the event of a scroll and lays out a sticky element about a second late (the tests wait for them), and typing
+key by key is slower than a debounce delay (`fill()` for those cases).
+
+`browser.mjs` keeps the few methods of the Puppeteer API the tests were written with (`evaluate` with several
+arguments, `setViewport`, `setRequestInterception`...) on top of Playwright. A new test can use the Playwright API
+(`page.locator()`, `page.tap()`...) all the same: the page is a Playwright page. A viewport set by a test only changes
+the size, the device of the project (touch, user agent) stays.
 
 Pitfalls:
 

@@ -1,18 +1,18 @@
-// Smoke test of a test application: node smoke.mjs <url> [chrome path]
+// Smoke test of a test application: node smoke.mjs <url> [chromium|webkit|iphone|pixel]
 // The page must show the dropdown controller of the bundle and load its stylesheet; the design kit page must have no
 // accessibility violation (axe-core), and its components work in a real browser (buttons, alerts, menus, tooltips,
 // dialogs, toasts, collapsibles, tabs).
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
-import puppeteer from 'puppeteer-core';
+import {launch} from './browser.mjs';
 
 const url = process.argv[2];
-const executablePath = process.argv[3] ?? process.env.CHROME_PATH ?? '/usr/bin/google-chrome';
-assert.ok(url, 'Usage: node smoke.mjs <url> [chrome path]');
+const project = process.argv[3] ?? process.env.PROJECT ?? 'chromium';
+assert.ok(url, 'Usage: node smoke.mjs <url> [chromium|webkit|iphone|pixel]');
 
-const browser = await puppeteer.launch({executablePath, headless: true, args: ['--no-sandbox']});
-console.log(`Browser: ${await browser.version()}`);
+const browser = await launch(project);
+console.log(`Browser: ${browser.version()}`);
 const errors = [];
 
 try {
@@ -589,8 +589,9 @@ try {
         return {position: getComputedStyle(panel).position, inside: rect.left >= 0 && rect.right <= innerWidth, outOfScroller: rect.bottom > scroller.bottom || rect.right > scroller.right || rect.left < scroller.left};
     });
     assert.deepEqual(floating, {position: 'fixed', inside: true, outOfScroller: true}, 'the floating dropdown is not placed');
-    // A resize of the window (the virtual keyboard of a phone) keeps it open, next to its button.
-    await page.setViewport({width: 1200, height: 700});
+    // A resize of the window (the virtual keyboard of a phone) keeps it open, next to its button. Its height only: a
+    // new width reflows the page, which scrolls (on a phone, the scroll closes the panel).
+    await page.setViewport({width: await page.evaluate(() => innerWidth), height: 700});
     await new Promise((resolve) => setTimeout(resolve, 100));
     const followed = await page.evaluate(() => {
         const button = document.querySelector('#kit-menu-floating-1 > button').getBoundingClientRect();
@@ -636,14 +637,17 @@ try {
     const tooltip = () => page.evaluate(() => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility);
     // visibility follows the transition of the opacity: waited for.
     const settled = (visibility) => page.waitForFunction((v) => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility === v, {timeout: 1000}, visibility).then(() => visibility, () => tooltip());
-    assert.equal(await tooltip(), 'hidden');
-    await page.hover('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button');
-    assert.equal(await settled('visible'), 'visible', 'the tooltip is not shown on hover');
-    await page.keyboard.press('Escape');
-    assert.equal(await settled('hidden'), 'hidden', 'Escape does not hide the tooltip');
-    const box = await (await page.$('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button')).boundingBox();
-    await page.mouse.move(box.x + 2, box.y + 2);
-    assert.equal(await settled('visible'), 'visible', 'the tooltip does not come back when the pointer moves');
+    // The hover only exists with a mouse: a phone shows a tooltip by the focus only (tested below).
+    if (await page.evaluate(() => matchMedia('(hover: hover)').matches)) {
+        assert.equal(await tooltip(), 'hidden');
+        await page.hover('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button');
+        assert.equal(await settled('visible'), 'visible', 'the tooltip is not shown on hover');
+        await page.keyboard.press('Escape');
+        assert.equal(await settled('hidden'), 'hidden', 'Escape does not hide the tooltip');
+        const box = await (await page.$('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host button')).boundingBox();
+        await page.mouse.move(box.x + 2, box.y + 2);
+        assert.equal(await settled('visible'), 'visible', 'the tooltip does not come back when the pointer moves');
+    }
 
     // A floating tooltip follows its host when the page scrolls. Shown by the focus: the pointer, which does not move,
     // would leave the host as the page scrolls.
@@ -653,6 +657,8 @@ try {
 
         return Math.round(host.querySelector('.crudit-ui-tooltip').getBoundingClientRect().top - host.getBoundingClientRect().top);
     });
+    // Placed once shown (it is not before: the transition of the opacity).
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip-host:has(.crudit-ui-tooltip--floating) .crudit-ui-tooltip')).visibility === 'visible', {timeout: 2000});
     const before = await gap();
     const scrolled = await page.evaluate(() => {
         const top = window.scrollY;
@@ -661,7 +667,10 @@ try {
         return window.scrollY - top;
     });
     assert.equal(scrolled, 40, 'the page does not scroll: the test of the floating tooltip checks nothing');
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Placed once per frame; WebKit on a phone sends the event of the scroll about a second late: waited for.
+    for (let wait = 0; (await gap()) !== before && wait < 80; wait++) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
     assert.equal(await gap(), before, 'a floating tooltip does not follow its host when the page scrolls');
 
     // Dialogs of the design kit (controller dialog): opened modal by a button (commandfor), the focus on the element
@@ -753,7 +762,8 @@ try {
     assert.equal((await dialog('kit-dialog-form')).focus, 'Close', 'without autofocus, the focus does not go to the first focusable element');
     await page.click('#kit-dialog-form .crudit-ui-btn--primary');
     assert.equal((await dialog('kit-dialog-form')).open, true, 'the dialog closes with a required field empty');
-    await page.type('#kit-dialog-date', '12122026');
+    // fill() takes the ISO format of a date field in every engine (typing the digits depends on the browser).
+    await page.fill('#kit-dialog-date', '2026-12-12');
     await page.click('#kit-dialog-form .crudit-ui-btn--primary');
     const submittedForm = await page.evaluate(() => ({
         open: document.getElementById('kit-dialog-form').open,
@@ -1389,7 +1399,8 @@ try {
 
     // Sticky header: the heading row follows the page under the header of the application (none in the kit: at the top).
     await page.evaluate(() => window.scrollTo(0, document.querySelector('#kit-table-groups .crudit-ui-table__wrap').getBoundingClientRect().top + window.scrollY + 80));
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // WebKit on a phone lays out a sticky element after the end of the scroll: waited for.
+    await page.waitForFunction(() => Math.abs(document.querySelector('#kit-table-groups thead').getBoundingClientRect().top) <= 2, {timeout: 3000}).catch(() => null);
     assert.ok(await page.evaluate(() => Math.abs(document.querySelector('#kit-table-groups thead').getBoundingClientRect().top) <= 2), 'table: the heading does not follow the page');
 
     // On a phone: the cards, not the table, and no horizontal scroll of the page.
@@ -1437,7 +1448,7 @@ try {
 
     // Filter:Period: a ready-made period fills the two dates and the summary follows; Filter choice sends the checked boxes.
     const period = '.crudit-ui-period:has(#kit-filter-period-period-value)';
-    await page.evaluate(() => document.querySelector('#kit-filter-period-period-value').scrollIntoView({block: 'center'}));
+    await page.$eval(`${period} button[aria-expanded]`, (button) => button.scrollIntoView({block: 'center'}));
     await new Promise((resolve) => setTimeout(resolve, 200));
     await page.click(`${period} button[aria-expanded]`);
     await page.click(`${period} .crudit-ui-period__period[data-from]`);
@@ -1483,7 +1494,8 @@ try {
     await page.addScriptTag({content: axeSource});
     const barViolations = await page.evaluate(async (selector) => (await window.axe.run(document.querySelector(selector), {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations.map((violation) => `${violation.id} (${violation.nodes.map((node) => node.target.join(' ')).join(', ')})`), barForm);
     assert.deepEqual(barViolations, [], 'filter bar: accessibility, panel open');
-    await page.type(`${barForm} input[type="search"]`, 'ab');
+    // One input event: typing key by key is slower than the delay on a phone emulated by WebKit.
+    await page.fill(`${barForm} input[type="search"]`, 'ab');
     assert.deepEqual(await barSent(), [], 'filter bar: nothing is sent before the delay');
     await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
     assert.ok((await barSent())[0].includes('visit_search=ab') && (await barSent())[0].includes('visit_filter=filter'), 'filter bar: the search is sent with the others');

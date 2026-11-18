@@ -1,7 +1,7 @@
 name: Test applications
 
 # The bundle is installed in a Symfony application for each asset tool it supports (AssetMapper, Webpack Encore),
-# then a headless Chrome checks that the stylesheet is loaded, that the project can override it and that a
+# then headless browsers (Playwright: Chromium, WebKit, an iPhone and an Android phone) check that the stylesheet is loaded, that the project can override it and that a
 # Stimulus controller of the bundle works (tests/apps/smoke.mjs). The application turbo (AssetMapper and Symfony UX
 # Turbo) runs the same test, then the components under real Turbo visits (tests/apps/smoke-turbo.mjs).
 
@@ -72,18 +72,36 @@ jobs:
                     php -S 127.0.0.1:8080 -t public > /tmp/server.log 2>&1 &
                     npx --yes wait-on http://127.0.0.1:8080/ --timeout 30000
 
-            -   name: 'Smoke test'
+            # Playwright: Chromium and WebKit with their system libraries (tests/apps/browser.mjs).
+            -   name: 'Install the browsers'
                 working-directory: tests/apps
-                env:
-                    PUPPETEER_SKIP_DOWNLOAD: '1'
                 run: |
                     npm install --no-audit --no-fund
-                    node smoke.mjs http://127.0.0.1:8080/ "$(which google-chrome)"
+                    npx playwright install --with-deps chromium webkit
+
+            # The same test on every project: Chrome and Safari on a desktop, Safari on an iPhone, Chrome on Android.
+            -   name: 'Smoke test'
+                working-directory: tests/apps
+                run: |
+                    failed=0
+                    for project in chromium webkit iphone pixel; do
+                        echo "::group::smoke $project"
+                        node smoke.mjs http://127.0.0.1:8080/ $project || failed=1
+                        echo "::endgroup::"
+                    done
+                    exit $failed
 
             -   name: 'Smoke test under Turbo'
                 if: matrix.app == 'turbo'
                 working-directory: tests/apps
-                run: node smoke-turbo.mjs http://127.0.0.1:8080/ "$(which google-chrome)"
+                run: |
+                    failed=0
+                    for project in chromium webkit iphone pixel; do
+                        echo "::group::smoke-turbo $project"
+                        node smoke-turbo.mjs http://127.0.0.1:8080/ $project || failed=1
+                        echo "::endgroup::"
+                    done
+                    exit $failed
 
             -   name: 'Server log'
                 if: failure()
