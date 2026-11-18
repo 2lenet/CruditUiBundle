@@ -28,8 +28,9 @@ export default class extends Controller {
             this.panel.popover = 'hint';
         }
         this.look = false;
-        // Closed by Escape from the panel, the browser gives the focus back to the button: this focus must not open
-        // it again. beforetoggle is fired before the focus comes back, toggle (asynchronous) after.
+        // Closed while the focus is in the panel (Escape from a link of the help), the browser gives the focus back to
+        // the button: this focus must not open it again. Set on beforetoggle (fired before the focus comes back) only
+        // in that case, cleared on toggle (a task queued after): no timer, no race with a later focus.
         this.closing = false;
         this.onEnter = (event) => {
             if (event.pointerType === 'touch') {
@@ -72,14 +73,11 @@ export default class extends Controller {
             this.look = false;
         };
         this.onBeforeToggle = (event) => {
-            if (event.newState === 'closed') {
-                this.closing = true;
-                setTimeout(() => {
-                    this.closing = false;
-                }, 0);
-            }
+            this.closing = event.newState === 'closed' && this.panel.matches(':focus-within');
         };
         this.onToggle = (event) => {
+            // (toggle events are coalesced: closed then opened again before the task, newState is "open")
+            this.closing = false;
             if (event.newState === 'closed') {
                 this.cancel();
                 this.look = false;
