@@ -95,6 +95,8 @@ class TestKernel extends Kernel
             'http_method_override' => false,
             'asset_mapper' => ['enabled' => true],
             'translator' => ['enabled' => true],
+            // The form theme (docs/forms.md)
+            'form' => ['enabled' => true, 'csrf_protection' => false],
         ]);
         $container->extension('twig', ['default_path' => $this->templateDir, 'strict_variables' => true]);
         $container->extension('twig_component', ['defaults' => [], 'anonymous_template_directory' => 'components/']);
@@ -104,5 +106,7 @@ class TestKernel extends Kernel
             'iconify' => ['on_demand' => false],
         ]);
         $container->extension('lle_crudit_ui', $this->uiConfig);
+        // Twig form services: TwigBundle loads them only when symfony/form is a requirement, not a dev one
+        $container->import(\dirname(__DIR__, 3) . '/vendor/symfony/twig-bundle/Resources/config/form.php');
     }
 }

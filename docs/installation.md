@@ -82,6 +82,7 @@ Flex does not create the Stimulus configuration of a project that did not have t
             "dropdown": {"enabled": true, "fetch": "eager"},
             "tabs": {"enabled": true, "fetch": "eager"},
             "theme": {"enabled": true, "fetch": "eager"},
+            "toggletip": {"enabled": true, "fetch": "eager"},
             "tooltip": {"enabled": true, "fetch": "eager"}
         }
     },

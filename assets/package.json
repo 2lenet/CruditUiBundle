@@ -97,6 +97,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "toggletip": {
+                "main": "dist/controllers/toggletip_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "tooltip": {
                 "main": "dist/controllers/tooltip_controller.js",
                 "webpackMode": "eager",
