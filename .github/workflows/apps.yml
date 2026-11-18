@@ -22,6 +22,7 @@ jobs:
                 include:
                     -   {app: assetmapper, env: dev}
                     -   {app: assetmapper, env: prod}
+                    -   {app: encore, env: dev}
                     -   {app: encore, env: prod}
                     -   {app: turbo, env: dev}
                     -   {app: turbo, env: prod}
@@ -56,11 +57,12 @@ jobs:
             -   name: 'Import the icons'
                 run: php bin/console ux:icons:lock
 
+            # `encore dev` (source maps, no versioning) is the build a developer runs every day; `encore production` the deployed one.
             -   name: 'Build the assets (Encore)'
                 if: matrix.app == 'encore'
                 run: |
                     npm install --no-audit --no-fund
-                    npm run build
+                    npm run ${{ matrix.env == 'prod' && 'build' || 'dev' }}
 
             -   name: 'Compile the assets (AssetMapper, production)'
                 if: matrix.app != 'encore' && matrix.env == 'prod'
