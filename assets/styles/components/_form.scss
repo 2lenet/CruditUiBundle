@@ -218,18 +218,6 @@
             border-end-start-radius: var(--radius-md);
         }
     }
-
-    // Colour: the native picker, narrow, and its code
-    &--color .crudit-ui-input {
-        max-width: 4rem;
-        flex: none;
-        padding: 0.125rem;
-    }
-
-    &--color .crudit-ui-input-group__unit {
-        flex: 1;
-        font-family: var(--font-mono);
-    }
 }
 
 // A date or a time in lists (day, month, year…): the lists on one line, wrapped when the room is short
@@ -447,10 +435,6 @@
         font-weight: var(--font-weight-medium);
     }
 
-    &__label {
-        font-size: var(--font-size-sm);
-    }
-
     // The state written: Yes when checked, No otherwise (read by the role="switch", hidden from assistive technologies)
     &__input:checked ~ &__state--off,
     &__input:not(:checked) ~ &__state--on {
@@ -486,7 +470,6 @@
     &__panel {
         max-width: min(20rem, calc(100vw - 2 * var(--space-4)));
         padding: var(--space-3);
-        margin: 0;
         border: 1px solid var(--c-border);
         border-radius: var(--radius-md);
         background-color: var(--c-surface);
@@ -496,12 +479,14 @@
         font-weight: var(--font-weight-regular);
         white-space: normal;
 
-        // Under its button (implicit anchor of a popover opened by popovertarget), in the middle of the screen where
-        // anchor positioning is not supported. No style attribute: no anchor-name per field (CSP).
+        // Under its button (implicit anchor of a popover opened by popovertarget). Where anchor positioning is not
+        // supported, the popover keeps the margin: auto of the browser, which centres it in the screen: no margin: 0
+        // outside of @supports. No style attribute: no anchor-name per field (CSP).
         @supports (position-area: block-end) {
             inset: auto;
             position-area: block-end span-inline-end;
             position-try-fallbacks: flip-block, flip-inline;
+            margin: 0;
             margin-block-start: var(--space-1);
         }
 

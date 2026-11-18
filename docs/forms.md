@@ -38,9 +38,9 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Row | `div.crudit-ui-field` (`--invalid` with an error), `row_attr` merged on it |
 | Label | above the input, `label.crudit-ui-label` pointing to it (`for`), in `div.crudit-ui-field__label-row` |
 | Required | the attribute `required`, and a star `span.crudit-ui-required` hidden from assistive technologies: **explain it** above the form ("The fields marked with a star (*) are required"). A compound field has the star only when it is one field (choices as boxes, a date or a time in lists), not a sub-form, a collection or a repeated field |
-| Help | `p.crudit-ui-help#<id>_help` |
+| Help | `div.crudit-ui-help#<id>_help` (a `div`: with `help_html`, it may hold a list or paragraphs) |
 | Error | `p.crudit-ui-error#<id>_error`, with an icon; the input has `aria-invalid="true"` |
-| `aria-describedby` | the help, the counter of characters, then the error, after the ids given by the project in `attr`; each list of a date or a time in lists is also attached to the help and the error of its field |
+| `aria-describedby` | the unit of an amount or a percentage, then the ids given by the project in `attr`, then the help, the counter of characters and the error; each list of a date or a time in lists is also attached to the help and the error of its field |
 | Errors of the whole form | `div.crudit-ui-form-errors` with `role="alert"` |
 | Compound field, choices as boxes | `fieldset.crudit-ui-field.crudit-ui-field__group` named by its `legend` |
 | Text, number, date… | `input.crudit-ui-input` |
@@ -51,10 +51,10 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Long text | `textarea.crudit-ui-input.crudit-ui-textarea` |
 | Checkboxes, radios | `ul.crudit-ui-check-list > li > label.crudit-ui-check` (input and label); each input is attached to the help and the error of the field |
 | Segmented control | short choices, one answer (`expanded`, not `multiple`), asked with the variable `segmented` (like `counter`, a variable of the call to `form_row()`, as `label` or `help`: no `crudit_ui_` prefix, but do not define a variable of these names in a theme stacked with `{% use %}`): `{{ form_row(form.size, {segmented: true}) }}` (CruditBundle: the option `segmented` of a choice). `div.crudit-ui-segmented > label.crudit-ui-segmented__option` with the native radio (`__input`, invisible over its label: the arrows of the keyboard, sent with the form) and its label (`__label`); each radio is attached to the help and the error. Not required: an empty choice first ("None", the option `placeholder` to name it, `placeholder: false` to take it away). Made for a few short choices: on one line, they go on the next lines when the room is short (a phone, each choice 6rem at least) |
-| A checkbox alone | its label next to it, inside the widget |
+| A checkbox alone | its label next to it, inside the widget: `label_attr` goes on this `label.crudit-ui-check` |
 | Switch | a checkbox with `attr: {role: 'switch'}`: `label.crudit-ui-switch`, a native `input[type=checkbox][role=switch]` (sent with the form) and its state written, *Yes* / *No* (hidden from assistive technologies, which read the state of the switch); its label stays above |
-| Amount, percentage | `div.crudit-ui-input-group` with the unit (`__unit`, hidden from assistive technologies): the focus surrounds the input and its unit |
-| Colour | `div.crudit-ui-input-group.crudit-ui-input-group--color`: the native picker and its code next to it (hidden from assistive technologies like the units: the picker tells its value), kept up to date by the controller `color-code` |
+| Amount, percentage | `div.crudit-ui-input-group` with the unit (`span.crudit-ui-input-group__unit#<id>_unit`, read with the input: `aria-describedby`): the focus surrounds the input and its unit |
+| Colour | `div.crudit-ui-input-group.crudit-ui-input-group--color`: the native picker and its code next to it (hidden from assistive technologies: the picker tells its value), kept up to date by the controller `color-code` |
 | File | the native `input[type=file]`, restyled |
 
 No floating label, no `placeholder` used as a label.

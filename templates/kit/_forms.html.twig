@@ -6,7 +6,7 @@
                 <twig:LleCruditUi:Toggletip label="Help on the field Customer" id="kit-form-name-tip">The name <b>on the invoice</b>.</twig:LleCruditUi:Toggletip>
             </div>
             <input type="text" id="kit-form-name" class="crudit-ui-input" required aria-describedby="kit-form-name_help" value="Martin SA">
-            <p id="kit-form-name_help" class="crudit-ui-help">As on the purchase order</p>
+            <div id="kit-form-name_help" class="crudit-ui-help">As on the purchase order</div>
         </div>
 
         <div class="crudit-ui-field crudit-ui-field--invalid">
@@ -33,8 +33,8 @@
                 <label for="kit-form-amount" class="crudit-ui-label">Amount</label>
             </div>
             <div class="crudit-ui-input-group">
-                <input type="text" inputmode="decimal" id="kit-form-amount" class="crudit-ui-input" value="1 250,00">
-                <span class="crudit-ui-input-group__unit" aria-hidden="true">€</span>
+                <input type="text" inputmode="decimal" id="kit-form-amount" class="crudit-ui-input" aria-describedby="kit-form-amount_unit" value="1 250,00">
+                <span id="kit-form-amount_unit" class="crudit-ui-input-group__unit">€</span>
             </div>
         </div>
 

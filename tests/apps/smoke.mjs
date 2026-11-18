@@ -12,6 +12,7 @@ const executablePath = process.argv[3] ?? process.env.CHROME_PATH ?? '/usr/bin/g
 assert.ok(url, 'Usage: node smoke.mjs <url> [chrome path]');
 
 const browser = await puppeteer.launch({executablePath, headless: true, args: ['--no-sandbox']});
+console.log(`Browser: ${await browser.version()}`);
 const errors = [];
 
 try {
@@ -184,13 +185,37 @@ try {
     }));
     assert.equal(new Set(dateParts.map((part) => part.top)).size, 1, 'the inputs of a date take one line each');
     assert.ok(dateParts[0].width < dateParts[2].width && dateParts[2].width < dateParts[0].room / 3, 'the inputs of a date are wider than their digits');
+    // In the middle of the screen: near an edge, the panel turns over (position-try-fallbacks)
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.scrollIntoView({block: 'center'}));
     await page.click('#kit-forms .crudit-ui-toggletip');
     assert.ok(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open')), 'the toggletip does not open its help');
+    // Against its button (anchor positioning), not in the middle of the screen; a popover hint (it does not close the
+    // other popovers open)
+    const tipPlace = await page.evaluate(() => {
+        const button = document.querySelector('#kit-forms .crudit-ui-toggletip').getBoundingClientRect();
+        const panel = document.getElementById('kit-form-name-tip');
+        const rect = panel.getBoundingClientRect();
+
+        return {
+            gap: Math.round(Math.max(rect.top - button.bottom, button.top - rect.bottom)),
+            shift: Math.round(Math.min(Math.abs(rect.left - button.left), Math.abs(rect.right - button.right))),
+            popover: panel.popover,
+        };
+    });
+    assert.ok(tipPlace.gap >= 0 && tipPlace.gap < 16, `the panel of the toggletip is not against its button (${tipPlace.gap}px)`);
+    assert.ok(tipPlace.shift < 2, `the panel of the toggletip is not aligned on its button (${tipPlace.shift}px)`);
+    assert.equal(tipPlace.popover, 'hint', 'the panel of the toggletip is not a popover hint');
     await page.keyboard.press('Escape');
     assert.ok(!(await page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'))), 'Escape does not close the toggletip');
     // The hover opens it for a look, leaving closes it; a click keeps it open; the keyboard focus opens it too.
     const tipOpen = () => page.$eval('#kit-form-name-tip', (panel) => panel.matches(':popover-open'));
     const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // What a failure of the keyboard focus needs to be understood from the CI log
+    const tipFocusState = () => page.$eval('#kit-forms .crudit-ui-toggletip', (button) => JSON.stringify({
+        focused: document.activeElement === button,
+        focusVisible: button.matches(':focus-visible'),
+        popover: document.getElementById('kit-form-name-tip').popover,
+    }));
     // (after Escape the button still has the focus, shown since a key was pressed: it would keep the panel open)
     await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
     await page.mouse.move(5, 5);
@@ -210,7 +235,7 @@ try {
     assert.ok(!(await tipOpen()), 'Escape does not close a toggletip kept open');
     await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
     await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
-    assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
+    assert.ok(await tipOpen(), `the keyboard focus does not open the toggletip ${await tipFocusState()}`);
     await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
     assert.ok(!(await tipOpen()), 'leaving the toggletip with the keyboard does not close it');
     // With the keyboard into the panel (a link in the help), then out of it: the panel closes. Its button stays active
@@ -219,12 +244,23 @@ try {
     const closedColor = await tipButtonColor();
     await page.$eval('#kit-form-name-tip', (panel) => panel.insertAdjacentHTML('beforeend', ' <a href="#kit-forms" id="kit-form-name-tip-link">More</a>'));
     await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
-    assert.ok(await tipOpen(), 'the keyboard focus does not open the toggletip');
+    assert.ok(await tipOpen(), `the keyboard focus does not open the toggletip ${await tipFocusState()}`);
     assert.notEqual(await tipButtonColor(), closedColor, 'the button of an open toggletip is not active');
     await page.$eval('#kit-form-name-tip-link', (link) => link.focus({focusVisible: true}));
     assert.ok(await tipOpen(), 'going into the panel with the keyboard closes the toggletip');
     await page.$eval('#kit-form-amount', (input) => input.focus({focusVisible: true}));
     assert.ok(!(await tipOpen()), 'leaving the panel with the keyboard does not close the toggletip');
+    // Escape in the panel: the browser gives the focus back to the button, which does not open it again
+    await page.$eval('#kit-form-amount', (input) => input.blur());
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.focus({focusVisible: true}));
+    assert.ok(await tipOpen(), `the keyboard focus does not open the toggletip ${await tipFocusState()}`);
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'kit-form-name-tip-link', 'Tab does not go into the panel of the toggletip');
+    await page.keyboard.press('Escape');
+    await pause(50);
+    assert.ok(!(await tipOpen()), 'Escape in the panel opens the toggletip again');
+    assert.ok(await page.evaluate(() => document.activeElement.matches('#kit-forms .crudit-ui-toggletip')), 'Escape in the panel does not give the focus back to the button');
+    await page.$eval('#kit-forms .crudit-ui-toggletip', (button) => button.blur());
     await page.$eval('#kit-form-name-tip-link', (link) => link.remove());
     const unitFocus = await page.$eval('#kit-form-amount', (input) => {
         input.focus({focusVisible: true});

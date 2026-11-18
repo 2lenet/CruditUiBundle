@@ -27,6 +27,10 @@ test('the switch moves in the direction of the text, writes its state and is vis
 
 test('the panel of a toggletip is placed under its button only where anchor positioning exists', () => {
     assert.match(css, /@supports\(position-area: block-end\)\{\.crudit-ui-toggletip__panel\{inset:auto;position-area:block-end span-inline-end/);
+    // Elsewhere, the margin: auto of the browser centres the popover: margin: 0 only with anchor positioning
+    assert.match(css, /\.crudit-ui-toggletip__panel\{max-width:[^}]*\}/);
+    assert.doesNotMatch(css.match(/\.crudit-ui-toggletip__panel\{max-width:[^}]*\}/)[0], /margin/);
+    assert.match(css, /@supports\(position-area: block-end\)\{\.crudit-ui-toggletip__panel\{[^}]*margin:0;margin-block-start:/);
 });
 
 test('the button of a toggletip stays active while its panel is open (popovertarget sets no aria-expanded in the DOM)', () => {

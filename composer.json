@@ -48,6 +48,9 @@
         "symfony/asset-mapper": "^7.0 || ^8.0",
         "symfony/form": "^7.4 || ^8.0"
     },
+    "suggest": {
+        "symfony/form": "To render the Symfony forms with the theme @LleCruditUi/form/theme.html.twig (docs/forms.md)"
+    },
     "autoload": {
         "psr-4": {
             "Lle\\CruditUiBundle\\": "src/"

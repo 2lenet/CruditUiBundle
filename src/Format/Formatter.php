@@ -150,7 +150,12 @@ class Formatter
         }
 
         $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::SHORT, \IntlDateFormatter::NONE, 'UTC', \IntlDateFormatter::GREGORIAN);
-        $shortPattern = (string) preg_replace("/'[^']*'/", '', $formatter->getPattern());
+        $pattern = $formatter->getPattern();
+        // PHP declares string|false, PHPStan only string
+        if (false === $pattern) { // @phpstan-ignore identical.alwaysFalse
+            return $this->dateSkeletons[$locale] = 'yyyyMd';
+        }
+        $shortPattern = (string) preg_replace("/'[^']*'/", '', $pattern);
         $skeleton = 'yyyy';
         foreach (['M', 'd'] as $field) {
             $skeleton .= 1 === preg_match('/' . $field . '+/', $shortPattern, $match) ? $match[0] : $field;

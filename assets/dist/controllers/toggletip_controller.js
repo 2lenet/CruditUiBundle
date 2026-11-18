@@ -11,6 +11,9 @@ import { Controller } from '@hotwired/stimulus';
  * - a click on a panel opened for a look keeps it open (instead of the native toggle that would close it): it then
  *   closes like a panel opened by a click.
  * A touch fires no hover: it is the native click.
+ *
+ * The panel is a popover "hint" where the browser supports it (otherwise "auto"): opened by the hover, it does not
+ * close the other popovers open (a menu), as an "auto" one would.
  */
 const OPEN_DELAY = 100;
 const CLOSE_DELAY = 200;
@@ -21,7 +24,14 @@ export default class extends Controller {
         if (!this.panel || typeof this.panel.showPopover !== 'function') {
             return;
         }
+        if (supportsHint()) {
+            this.panel.popover = 'hint';
+        }
         this.look = false;
+        // Closed while the focus is in the panel (Escape from a link of the help), the browser gives the focus back to
+        // the button: this focus must not open it again. Set on beforetoggle (fired before the focus comes back) only
+        // in that case, cleared on toggle (a task queued after): no timer, no race with a later focus.
+        this.closing = false;
         this.onEnter = (event) => {
             if (event.pointerType === 'touch') {
                 return;
@@ -39,7 +49,7 @@ export default class extends Controller {
             this.timer = setTimeout(() => this.closeLook(), CLOSE_DELAY);
         };
         this.onFocus = () => {
-            if (this.element.matches(':focus-visible') && !this.isOpen()) {
+            if (!this.closing && this.element.matches(':focus-visible') && !this.isOpen()) {
                 this.open();
             }
         };
@@ -62,7 +72,12 @@ export default class extends Controller {
             }
             this.look = false;
         };
+        this.onBeforeToggle = (event) => {
+            this.closing = event.newState === 'closed' && this.panel.matches(':focus-within');
+        };
         this.onToggle = (event) => {
+            // (toggle events are coalesced: closed then opened again before the task, newState is "open")
+            this.closing = false;
             if (event.newState === 'closed') {
                 this.cancel();
                 this.look = false;
@@ -77,6 +92,7 @@ export default class extends Controller {
         this.panel.addEventListener('pointerenter', this.onEnter);
         this.panel.addEventListener('pointerleave', this.onLeave);
         this.panel.addEventListener('focusout', this.onPanelFocusOut);
+        this.panel.addEventListener('beforetoggle', this.onBeforeToggle);
         this.panel.addEventListener('toggle', this.onToggle);
     }
 
@@ -93,6 +109,7 @@ export default class extends Controller {
         this.panel.removeEventListener('pointerenter', this.onEnter);
         this.panel.removeEventListener('pointerleave', this.onLeave);
         this.panel.removeEventListener('focusout', this.onPanelFocusOut);
+        this.panel.removeEventListener('beforetoggle', this.onBeforeToggle);
         this.panel.removeEventListener('toggle', this.onToggle);
     }
 
@@ -125,4 +142,17 @@ export default class extends Controller {
     cancel() {
         clearTimeout(this.timer);
     }
+}
+
+// Probed once for the page (null: not yet)
+let hintSupported = null;
+
+function supportsHint() {
+    if (hintSupported === null) {
+        const probe = document.createElement('div');
+        probe.popover = 'hint';
+        hintSupported = probe.popover === 'hint';
+    }
+
+    return hintSupported;
 }
