@@ -210,18 +210,6 @@
             border-end-start-radius: var(--radius-md);
         }
     }
-
-    // Colour: the native picker, narrow, and its code
-    &--color .crudit-ui-input {
-        max-width: 4rem;
-        flex: none;
-        padding: 0.125rem;
-    }
-
-    &--color .crudit-ui-input-group__unit {
-        flex: 1;
-        font-family: var(--font-mono);
-    }
 }
 
 // Checkboxes and radios: a native input and its label

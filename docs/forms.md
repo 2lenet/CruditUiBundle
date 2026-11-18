@@ -40,7 +40,7 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Required | the attribute `required`, and a star `span.crudit-ui-required` hidden from assistive technologies: **explain it** above the form ("The fields marked with a star (*) are required"). A compound field has the star only when it is one field (choices as boxes, a date or a time in lists), not a sub-form, a collection or a repeated field |
 | Help | `div.crudit-ui-help#<id>_help` (a `div`: with `help_html`, it may hold a list or paragraphs) |
 | Error | `p.crudit-ui-error#<id>_error`, with an icon; the input has `aria-invalid="true"` |
-| `aria-describedby` | the unit of an amount or a percentage, the help, then the error, after the ids given by the project in `attr`; each list of a date or a time in lists is also attached to the help and the error of its field |
+| `aria-describedby` | the unit of an amount or a percentage, then the ids given by the project in `attr`, then the help and the error; each list of a date or a time in lists is also attached to the help and the error of its field |
 | Errors of the whole form | `div.crudit-ui-form-errors` with `role="alert"` |
 | Compound field, choices as boxes | `fieldset.crudit-ui-field.crudit-ui-field__group` named by its `legend` |
 | Text, number, date… | `input.crudit-ui-input` |

@@ -147,9 +147,15 @@ export default class extends Controller {
     }
 }
 
-function supportsHint() {
-    const probe = document.createElement('div');
-    probe.popover = 'hint';
+// Probed once for the page (null: not yet)
+let hintSupported = null;
 
-    return probe.popover === 'hint';
+function supportsHint() {
+    if (hintSupported === null) {
+        const probe = document.createElement('div');
+        probe.popover = 'hint';
+        hintSupported = probe.popover === 'hint';
+    }
+
+    return hintSupported;
 }
