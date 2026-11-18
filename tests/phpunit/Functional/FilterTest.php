@@ -67,6 +67,11 @@ class FilterTest extends TestCase
         self::assertNull($field->querySelector('.crudit-ui-operator'), 'no condition, no button');
         self::assertSame('100', $field->querySelector('input[name=filter_amount_value]')?->getAttribute('value'));
         self::assertSame('500', $field->querySelector('input[name=filter_amount_to]')?->getAttribute('value'));
+        foreach (['value', 'to'] as $bound) {
+            $input = $field->querySelector('input[name=filter_amount_' . $bound . ']');
+            self::assertSame('number', $input?->getAttribute('type'));
+            self::assertFalse($input->hasAttribute('inputmode'), 'a negative bound can be typed on a phone: ' . $bound);
+        }
         self::assertSame('Amount, minimum', $field->querySelector('label[for=f-value]')?->textContent);
         self::assertSame('Amount, maximum', $field->querySelector('label[for=f-to]')?->textContent);
     }
@@ -89,6 +94,7 @@ class FilterTest extends TestCase
     {
         $number = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="n" label="Duration" type="number" unit="min" />', '.crudit-ui-filter-field');
         self::assertSame('number', $number->querySelector('input#f-value')?->getAttribute('type'));
+        self::assertFalse($number->querySelector('input#f-value')->hasAttribute('inputmode'), 'the keyboard of type="number" keeps the minus key (decimal on iOS has none)');
         self::assertSame('min', $number->querySelector('.crudit-ui-filter-field__affix')?->textContent);
 
         $datetime = $this->element('<twig:LleCruditUi:Filter:Field id="f" name="n" label="Date" type="datetime" />', '.crudit-ui-filter-field');

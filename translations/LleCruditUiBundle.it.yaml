@@ -47,6 +47,20 @@ crudit_ui:
             from: "Dal"
             to: "Al"
             ready_made: "Periodi predefiniti per %label%"
+    form:
+        date:
+            day: "Giorno"
+            month: "Mese"
+            year: "Anno"
+            hour: "Ora"
+            minute: "Minuto"
+            second: "Secondo"
+        count:
+            one: "%length% / %count% carattere"
+            many: "%length% / %count% caratteri"
+            left_one: "%count% carattere rimanente"
+            left_many: "%count% caratteri rimanenti"
+            full: "Numero massimo di caratteri raggiunto"
     language:
         label: Lingua
     selection:

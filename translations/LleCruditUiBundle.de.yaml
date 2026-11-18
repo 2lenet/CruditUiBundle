@@ -47,6 +47,20 @@ crudit_ui:
             from: "Von"
             to: "Bis"
             ready_made: "Vordefinierte Zeiträume für %label%"
+    form:
+        date:
+            day: "Tag"
+            month: "Monat"
+            year: "Jahr"
+            hour: "Stunde"
+            minute: "Minute"
+            second: "Sekunde"
+        count:
+            one: "%length% / %count% Zeichen"
+            many: "%length% / %count% Zeichen"
+            left_one: "Noch %count% Zeichen"
+            left_many: "Noch %count% Zeichen"
+            full: "Maximale Zeichenzahl erreicht"
     language:
         label: Sprache
     selection:
