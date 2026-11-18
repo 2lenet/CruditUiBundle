@@ -294,6 +294,9 @@ try {
     };
     await frame(1);
     await after('turbo:frame-load', () => page.click('#turbo-frame-next'));
+    // The event of the first load of the frame can come after the one of the click on a slow machine: the new content is waited for.
+    await page.waitForFunction(() => document.querySelector('#turbo-frame-title')?.textContent === 'Step 2', {timeout: 5000});
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
     await frame(2);
     assert.equal(await path(), '/turbo/frame', 'the link of the frame changes the page');
     await sameWindow('frame');
