@@ -67,8 +67,14 @@ const adapt = (page) => {
         $$eval: (selector, fn, ...args) => page.$$eval(selector, runOn, [call(fn), args]),
         // Puppeteer: (function, options, ...arguments); Playwright: (function, argument, options).
         waitForFunction: (fn, options = {}, ...args) => page.waitForFunction(run, [call(fn), args], options),
-        // Like Puppeteer, click even an element that Playwright finds not enabled (aria-disabled: the tests check that it does nothing).
-        click: (selector, options) => page.click(selector, {force: true, ...options}),
+        // Playwright waits until the element is visible, stable and not covered (a dialog that closes, a toast), which
+        // Puppeteer did not: the click is what a user does. Except on a disabled element (aria-disabled): the tests
+        // check that it does nothing, and Playwright would wait for it to be enabled.
+        async click(selector, options) {
+            const disabled = await page.$eval(selector, (element) => element.matches(':disabled, [aria-disabled="true"]')).catch(() => false);
+
+            return page.click(selector, {force: disabled, ...options});
+        },
         goto: (address, options) => page.goto(address, waitUntil(options)),
         reload: (options) => page.reload(waitUntil(options)),
         // WebKit reports a form answered by 204 (no navigation) as an aborted navigation: wait for the next one.

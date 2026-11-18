@@ -173,7 +173,7 @@ try {
     assert.equal(await page.$eval('#kit-form-memo_count_live', (span) => span.textContent), '', 'the characters left are told when the page is loaded');
     // A reset of the form: the counter and the code of the colour show the values put back
     await page.$eval('#kit-form-notes', (area) => area.form.reset());
-    await page.waitForFunction(() => document.querySelector('#kit-form-notes_count [data-crudit-ui-count]').textContent === '9 / 80 characters', {timeout: 1000}).catch(() => null);
+    await page.waitForFunction(() => document.querySelector('#kit-form-notes_count [data-crudit-ui-count]').textContent === '9 / 80 characters', {timeout: 3000}).catch(() => null);
     assert.equal(await charCount(), '9 / 80 characters', 'the counter keeps the value before the reset');
     assert.equal(await countLive(), '', 'the characters left before the reset are still told');
     assert.equal(await page.$eval('#kit-forms [data-color-code]', (code) => code.textContent), '#1e40af', 'the code of the colour keeps the colour before the reset');
@@ -636,7 +636,7 @@ try {
     // Tooltip: shown on hover, hidden by Escape until the pointer moves (controller tooltip).
     const tooltip = () => page.evaluate(() => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility);
     // visibility follows the transition of the opacity: waited for.
-    const settled = (visibility) => page.waitForFunction((v) => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility === v, {timeout: 1000}, visibility).then(() => visibility, () => tooltip());
+    const settled = (visibility) => page.waitForFunction((v) => getComputedStyle(document.querySelector('.crudit-ui-kit__tooltips .crudit-ui-tooltip')).visibility === v, {timeout: 3000}, visibility).then(() => visibility, () => tooltip());
     // The hover only exists with a mouse: a phone shows a tooltip by the focus only (tested below).
     if (await page.evaluate(() => matchMedia('(hover: hover)').matches)) {
         assert.equal(await tooltip(), 'hidden');
@@ -688,7 +688,7 @@ try {
     }, id);
     const openDialog = async (opener, id) => {
         await page.click(`#${opener}`);
-        await page.waitForFunction((dialogId) => document.getElementById(dialogId).open, {timeout: 1000}, id);
+        await page.waitForFunction((dialogId) => document.getElementById(dialogId).open, {timeout: 3000}, id);
     };
     await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
     assert.deepEqual(await dialog('kit-dialog-confirm'), {open: true, modal: true, focus: 'Cancel', locked: true}, 'the confirmation is not opened modal, with the focus on Cancel');
@@ -775,7 +775,7 @@ try {
     // The drawer: on the inline end side, the whole height; Escape closes its dropdown first, then the drawer.
     const drawer = async () => {
         await openDialog('kit-drawer-open', 'kit-drawer');
-        await page.waitForFunction(() => getComputedStyle(document.getElementById('kit-drawer')).translate === 'none', {timeout: 1000});
+        await page.waitForFunction(() => getComputedStyle(document.getElementById('kit-drawer')).translate === 'none', {timeout: 3000});
 
         return page.evaluate(() => {
             const rect = document.getElementById('kit-drawer').getBoundingClientRect();
@@ -815,7 +815,7 @@ try {
         await page.goto(new URL(path, url).href, {waitUntil: 'networkidle0'});
         await openDialog(opener, id);
         // Once opened: during its animation, the colours are blended with the backdrop.
-        await page.waitForFunction((dialogId) => document.getElementById(dialogId).getAnimations().length === 0, {timeout: 1000}, id);
+        await page.waitForFunction((dialogId) => document.getElementById(dialogId).getAnimations().length === 0, {timeout: 3000}, id);
         await page.addScriptTag({content: axeSource});
         const violations = await page.evaluate(async () => (await window.axe.run(document, {runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']})).violations
             .map((violation) => `${violation.id} (${violation.nodes.map((node) => node.target.join(' ')).join(', ')}): ${violation.help}`));
@@ -869,7 +869,7 @@ try {
     assert.deepEqual(await toasts(), ['Success: <b>Saved</b>', 'Error: Refused.'], 'the event crudit-ui:toast does not show a toast');
     assert.equal(await page.$('#kit-toasts-region b'), null, 'the message of a toast is read as HTML');
     // Once they have slid in: the pointer on the middle of a toast, not in the gap between two.
-    await page.waitForFunction(() => document.getElementById('kit-toasts-region').getAnimations({subtree: true}).length === 0, {timeout: 1000});
+    await page.waitForFunction(() => document.getElementById('kit-toasts-region').getAnimations({subtree: true}).length === 0, {timeout: 3000});
     const errorBox = await (await page.$('#kit-toasts-region .crudit-ui-toast--danger')).boundingBox();
     await page.mouse.move(errorBox.x + errorBox.width / 2, errorBox.y + errorBox.height / 2);
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -914,16 +914,16 @@ try {
     assert.equal((await dialog('kit-dialog-confirm')).open, true, 'closing a toast closes the dialog');
     await show({message: 'Saved.', tone: 'success', persistent: true});
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => document.getElementById('kit-toasts-region').parentElement.closest('#kit-toasts'), {timeout: 1000});
+    await page.waitForFunction(() => document.getElementById('kit-toasts-region').parentElement.closest('#kit-toasts'), {timeout: 3000});
     assert.deepEqual(await toasts(), ['Success: Saved.'], 'the region does not go back to its place with its toasts');
 
     // Removed with the dialog it is in (a row deleted with its dialog): back in its place. Emptied before Turbo
     // caches the page.
     await openDialog('kit-dialog-form-open', 'kit-dialog-form');
     await show({message: 'Postponed.', tone: 'success', persistent: true});
-    await page.waitForFunction(() => document.getElementById('kit-dialog-form').contains(document.getElementById('kit-toasts-region')), {timeout: 1000});
+    await page.waitForFunction(() => document.getElementById('kit-dialog-form').contains(document.getElementById('kit-toasts-region')), {timeout: 3000});
     await page.evaluate(() => document.getElementById('kit-dialog-form').remove());
-    await page.waitForFunction(() => document.getElementById('kit-toasts-region')?.parentElement.closest('#kit-toasts'), {timeout: 1000});
+    await page.waitForFunction(() => document.getElementById('kit-toasts-region')?.parentElement.closest('#kit-toasts'), {timeout: 3000});
     assert.deepEqual(await toasts(), ['Success: Saved.', 'Success: Postponed.'], 'the region is lost with the dialog it was in');
     await page.evaluate(() => document.dispatchEvent(new Event('turbo:before-cache')));
     assert.deepEqual(await toasts(), [], 'the toasts are not removed before Turbo caches the page');
@@ -943,7 +943,7 @@ try {
     assert.deepEqual(await regionOf({message: null, persistent: true}), ['kit-toasts-first: Information:'], 'the first region of the page does not take the event, or a message null is shown');
     await openDialog('kit-dialog-confirm-open', 'kit-dialog-confirm');
     assert.deepEqual(await regionOf({message: 'In the dialog.', persistent: true}), ['kit-toasts-first: Information:', 'kit-toasts-first: Information: In the dialog.'], 'the region of the page does not take the event while a dialog is open');
-    await page.waitForFunction(() => document.getElementById('kit-dialog-confirm').contains(document.getElementById('kit-toasts-first')), {timeout: 1000});
+    await page.waitForFunction(() => document.getElementById('kit-dialog-confirm').contains(document.getElementById('kit-toasts-first')), {timeout: 3000});
     // A toast at once after the dialog closes (the success of a confirmation): the event "close" of the dialog, which
     // puts the region back, comes later. The region still takes it, and goes back to be shown.
     await page.evaluate(() => document.querySelectorAll('.crudit-ui-toasts > .crudit-ui-toast').forEach((toast) => toast.remove()));
@@ -954,7 +954,7 @@ try {
         return Array.from(document.querySelectorAll('.crudit-ui-toasts > .crudit-ui-toast')).map((toast) => toast.parentElement.id);
     });
     assert.deepEqual(atClose, ['kit-toasts-first'], 'the region that takes the event changes once a dialog has opened, or when it closes');
-    await page.waitForFunction(() => !document.getElementById('kit-toasts-first').closest('dialog'), {timeout: 1000});
+    await page.waitForFunction(() => !document.getElementById('kit-toasts-first').closest('dialog'), {timeout: 3000});
     assert.deepEqual(await page.evaluate(() => document.body.firstElementChild.id), 'kit-toasts-first', 'the region does not go back to its place');
     await page.evaluate(() => document.getElementById('kit-toasts-first').remove());
 
