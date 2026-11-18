@@ -1304,6 +1304,8 @@ try {
     assert.equal(posts[1].headers()['x-csrf-token'], 'kit-token', 'table: the token is not sent in the header');
     assert.deepEqual(JSON.parse(posts[1].postData()), ['413', '414', '412', '415'], 'table: the last order is not the one posts');
     page.off('request', queued);
+    // The message of the refusal above is still there: cleared, or the wait below would end before this refusal.
+    await page.$eval('#kit-table-sort [role="status"]', (status) => { status.textContent = ''; });
     posts[1].respond({status: 500, body: ''});
     await page.waitForFunction(() => document.querySelector('#kit-table-sort [role="status"]').textContent.includes('could not be saved'), {timeout: 3000});
     assert.deepEqual(await order('kit-table-sort'), ['413', '412', '414', '415'], 'table: a refusal does not go back to the last accepted order');
