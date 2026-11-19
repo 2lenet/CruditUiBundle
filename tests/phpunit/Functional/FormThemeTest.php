@@ -441,6 +441,137 @@ class FormThemeTest extends TestCase
         self::assertNotNull($html->querySelector('ul#form_channels.crudit-ui-check-list'), 'several answers stay boxes');
     }
 
+    public function testAListWithSearchIsAComboboxWithItsChoicesAsTokens(): void
+    {
+        $form = $this->form()
+            ->add('zones', ChoiceType::class, [
+                'label' => 'Zones',
+                'choices' => ['North' => 'n', 'South' => 's', 'East & West' => 'ew'],
+                'multiple' => true,
+                'help' => 'Where the technician goes',
+                'data' => ['s', 'ew'],
+            ])
+            ->getForm();
+        $html = $this->renderTemplate($form, '{{ form_row(form.zones, {combobox: true}) }}');
+
+        self::assertSame('form_zones', $html->querySelector('label.crudit-ui-label')?->getAttribute('for'), 'a label, not a legend');
+        $root = $html->querySelector('.crudit-ui-combobox');
+        self::assertSame('2lenet--crudit-ui-bundle--combobox', $root?->getAttribute('data-controller'));
+        self::assertSame('true', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-multiple-value'));
+        self::assertFalse($root->hasAttribute('data-2lenet--crudit-ui-bundle--combobox-url-value'));
+        self::assertSame('Remove %label%', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-remove-text-value'));
+
+        $input = $html->getElementById('form_zones');
+        self::assertNotNull($input);
+        self::assertSame('input', strtolower($input->tagName));
+        self::assertSame('combobox', $input->getAttribute('role'));
+        self::assertSame('list', $input->getAttribute('aria-autocomplete'));
+        self::assertSame('false', $input->getAttribute('aria-expanded'));
+        self::assertSame('form_zones_listbox', $input->getAttribute('aria-controls'));
+        self::assertSame('form_zones_help', $input->getAttribute('aria-describedby'));
+        self::assertSame('true', $input->getAttribute('aria-required'));
+        self::assertFalse($input->hasAttribute('name'), 'the hidden list sends the value');
+        self::assertFalse($input->hasAttribute('required'));
+        self::assertSame('Search…', $input->getAttribute('placeholder'));
+
+        $tokens = $html->querySelector('ul.crudit-ui-combobox__tokens');
+        self::assertSame('Zones: choices made', $tokens?->getAttribute('aria-label'));
+        self::assertFalse($tokens->hasAttribute('hidden'));
+        $items = $tokens->querySelectorAll('li.crudit-ui-combobox__token');
+        self::assertCount(2, $items);
+        self::assertSame('s', $items->item(0)?->getAttribute('data-value'));
+        self::assertSame('South', $items->item(0)->querySelector('.crudit-ui-combobox__token-label')?->textContent);
+        $remove = $items->item(1)?->querySelector('button.crudit-ui-combobox__remove');
+        self::assertSame('button', $remove?->getAttribute('type'));
+        self::assertSame('Remove East & West', $remove->querySelector('.crudit-ui-visually-hidden')?->textContent);
+
+        $listbox = $html->getElementById('form_zones_listbox');
+        self::assertSame('listbox', $listbox?->getAttribute('role'));
+        self::assertSame('Zones', $listbox->getAttribute('aria-label'));
+        self::assertSame('true', $listbox->getAttribute('aria-multiselectable'));
+        self::assertTrue($listbox->hasAttribute('hidden'));
+        self::assertNotNull($root->querySelector('[role="status"][aria-live="polite"]'));
+
+        $select = $root->querySelector('select[name="form[zones][]"]');
+        self::assertNotNull($select);
+        self::assertTrue($select->hasAttribute('hidden'));
+        self::assertTrue($select->hasAttribute('multiple'));
+        self::assertFalse($select->hasAttribute('required'), 'the browser could not show the message of a hidden list');
+        $selected = array_map(static fn (\Dom\Element $option): string => (string) $option->getAttribute('value'), iterator_to_array($select->querySelectorAll('option[selected]')));
+        self::assertSame(['s', 'ew'], $selected);
+        self::assertCount(3, $select->querySelectorAll('option'));
+    }
+
+    public function testAListWithSearchWithOneAnswerHasAnEmptyChoiceAndNoToken(): void
+    {
+        $form = $this->form()
+            ->add('priority', ChoiceType::class, ['choices' => ['Low' => 'low', 'High' => 'high'], 'required' => false, 'placeholder' => 'Any priority'])
+            ->getForm();
+        $html = $this->renderTemplate($form, '{{ form_widget(form.priority, {combobox: true}) }}');
+
+        $root = $html->querySelector('.crudit-ui-combobox');
+        self::assertSame('false', $root?->getAttribute('data-2lenet--crudit-ui-bundle--combobox-multiple-value'));
+        self::assertTrue((bool) $html->querySelector('ul.crudit-ui-combobox__tokens')?->hasAttribute('hidden'));
+        self::assertFalse((bool) $html->getElementById('form_priority_listbox')?->hasAttribute('aria-multiselectable'));
+        $input = $html->getElementById('form_priority');
+        self::assertFalse((bool) $input?->hasAttribute('aria-required'));
+        self::assertSame('Any priority', $input?->getAttribute('placeholder'));
+        $select = $root->querySelector('select[name="form[priority]"]');
+        self::assertFalse((bool) $select?->hasAttribute('multiple'));
+        self::assertSame('', $select?->querySelector('option')?->getAttribute('value'), 'an empty choice: the choice can be removed');
+    }
+
+    public function testAListWithSearchOfTheServerSendsTheValuesJoined(): void
+    {
+        $form = $this->form()
+            ->add('technicians', ChoiceType::class, ['label' => 'Technicians'])
+            ->getForm();
+        $form->get('technicians')->addError(new FormError('Choose a technician.'));
+        $html = $this->renderTemplate($form, "{{ form_row(form.technicians, {
+            combobox: true,
+            multiple: true,
+            combobox_url: '/technician/autocomplete',
+            combobox_selected: [{value: '3', label: 'Ana <Diaz>'}, {value: '7', label: 'Bob'}],
+        }) }}");
+
+        $root = $html->querySelector('.crudit-ui-combobox');
+        self::assertSame('/technician/autocomplete', $root?->getAttribute('data-2lenet--crudit-ui-bundle--combobox-url-value'));
+        self::assertSame('0', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-min-length-value'));
+        self::assertSame(',', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-separator-value'));
+        self::assertStringContainsString('crudit-ui-combobox--invalid', (string) $root->getAttribute('class'));
+        self::assertNull($root->querySelector('select'));
+        $hidden = $root->querySelector('input[type="hidden"]');
+        self::assertSame('form[technicians]', $hidden?->getAttribute('name'));
+        self::assertSame('3,7', $hidden->getAttribute('value'));
+        self::assertSame('Ana <Diaz>', $root->querySelector('.crudit-ui-combobox__token-label')?->textContent, 'the label is text, escaped');
+
+        $input = $html->getElementById('form_technicians');
+        self::assertSame('true', $input?->getAttribute('aria-invalid'));
+        self::assertSame('form_technicians_error', $input->getAttribute('aria-describedby'));
+    }
+
+    public function testADisabledListWithSearchHasNoButtonToRemoveAChoice(): void
+    {
+        $form = $this->form()
+            ->add('zones', ChoiceType::class, ['choices' => ['North' => 'n'], 'multiple' => true, 'disabled' => true, 'data' => ['n']])
+            ->getForm();
+        $html = $this->renderTemplate($form, '{{ form_widget(form.zones, {combobox: true}) }}');
+
+        self::assertTrue((bool) $html->getElementById('form_zones')?->hasAttribute('disabled'));
+        self::assertNotNull($html->querySelector('.crudit-ui-combobox--disabled'));
+        self::assertNull($html->querySelector('.crudit-ui-combobox__remove'));
+        self::assertTrue((bool) $html->querySelector('select[name="form[zones][]"]')?->hasAttribute('disabled'));
+    }
+
+    public function testAListWithoutTheVariableComboboxStaysNative(): void
+    {
+        $form = $this->form()->add('zones', ChoiceType::class, ['choices' => ['North' => 'n'], 'multiple' => true])->getForm();
+        $html = $this->renderForm($form);
+
+        self::assertNull($html->querySelector('.crudit-ui-combobox'));
+        self::assertSame('select', strtolower((string) $html->getElementById('form_zones')?->tagName));
+    }
+
     public function testASegmentedControlNotRequiredHasAnEmptyChoiceFirst(): void
     {
         $form = $this->form()

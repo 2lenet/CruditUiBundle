@@ -238,8 +238,11 @@
     {%- endif -%}
 {%- endblock crudit_ui_date_part_label -%}
 
-{# A required list: its empty option cannot be chosen again #}
+{# A required list: its empty option cannot be chosen again. A list with the variable combobox: a list with search #}
 {%- block choice_widget_collapsed -%}
+    {%- if combobox|default(false) -%}
+        {{- block('crudit_ui_combobox_widget') -}}
+    {%- else -%}
     {%- set crudit_ui_part_label = block('crudit_ui_date_part_label') -%}
     {%- if crudit_ui_part_label is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part_label}) %}{% endif -%}
     {%- set attr = attr|merge({class: ('crudit-ui-select ' ~ attr.class|default(''))|trim}) -%}
@@ -247,7 +250,82 @@
         {%- set placeholder_attr = placeholder_attr|default({})|merge({disabled: 'disabled'}) -%}
     {%- endif -%}
     {{- parent() -}}
+    {%- endif -%}
 {%- endblock choice_widget_collapsed -%}
+
+{#
+ # List with search (controller combobox, docs/forms.md): what is typed filters the choices, the choices made are
+ # tokens in the field, each with a button that removes it. ARIA combobox pattern: the focus stays in the input, the
+ # active option is given by aria-activedescendant, the listbox says if several choices are allowed.
+ #
+ # - A choice (ChoiceType, not expanded) with the variable combobox: the choices are those of the field, filtered in the
+ #   page. The value is sent by a hidden <select> (name of the field), as a list.
+ # - Any other field that sets the variables combobox_url (GET <url>?q=&offset=&limit=, answer {"items": [{"id",
+ #   "text"}], "next_offset", "total_count"}) and combobox_selected (the choices made: [{value, label}]): the choices
+ #   come from the server, 20 at a time, the next ones when the list is scrolled to its end. The value is sent by a
+ #   hidden input, the values joined by a comma (combobox_separator).
+ # - multiple: several choices, the list stays open; else a choice replaces the other one and closes the list.
+ #   combobox_min_length: characters typed before a request (0: the first choices as soon as the list opens).
+ #
+ # The input has the id of the field (the label points to it), the help and the error; required gives it
+ # aria-required (the hidden <select> has no required: the browser could not show its message). JavaScript is needed.
+ #}
+{%- block crudit_ui_combobox_widget -%}
+    {%- set crudit_ui_url = combobox_url|default(null) -%}
+    {%- if label is same as(false) -%}
+        {%- set crudit_ui_name = attr['aria-label'] ?? name|humanize -%}
+    {%- else -%}
+        {%- set crudit_ui_name = label is empty ? (label_format is not empty ? label_format|replace({'%name%': name, '%id%': id}) : name|humanize) : label -%}
+        {%- if translation_domain is not same as(false) -%}
+            {%- set crudit_ui_name = crudit_ui_name|trans(label_translation_parameters, translation_domain) -%}
+        {%- endif -%}
+    {%- endif -%}
+    {#- The choices of the field (groups flattened) and the choices made, in the order of the field -#}
+    {%- set crudit_ui_options = [] -%}
+    {%- set crudit_ui_selected = combobox_selected|default([]) -%}
+    {%- if crudit_ui_url is null -%}
+        {%- set crudit_ui_selected = [] -%}
+        {%- for crudit_ui_entry in choices -%}
+            {%- for crudit_ui_choice in (crudit_ui_entry.choices is defined ? crudit_ui_entry.choices : [crudit_ui_entry]) -%}
+                {%- set crudit_ui_option = {
+                    value: crudit_ui_choice.value,
+                    label: choice_translation_domain is same as(false) ? crudit_ui_choice.label : crudit_ui_choice.label|trans(crudit_ui_choice.labelTranslationParameters, choice_translation_domain),
+                } -%}
+                {%- set crudit_ui_options = crudit_ui_options|merge([crudit_ui_option]) -%}
+                {%- if crudit_ui_choice is selectedchoice(value) -%}
+                    {%- set crudit_ui_selected = crudit_ui_selected|merge([crudit_ui_option]) -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endfor -%}
+    {%- endif -%}
+    {#- The help and the error attached to the input, as widget_attributes does -#}
+    {%- set described = (attr['aria-describedby'] ?? '')|split(' ')|filter(v => v != '') -%}
+    {%- if help is not empty and (id ~ '_help') not in described %}{% set described = described|merge([id ~ '_help']) %}{% endif -%}
+    {%- if errors|length > 0 and (id ~ '_error') not in described -%}
+        {%- set described = described|merge([id ~ '_error']) -%}
+        {%- set attr = attr|merge({'aria-invalid': 'true'}) -%}
+    {%- endif -%}
+    {%- if described is not empty %}{% set attr = attr|merge({'aria-describedby': described|join(' ')}) %}{% endif -%}
+    {%- if required %}{% set attr = attr|merge({'aria-required': 'true'}) %}{% endif -%}
+    {%- if attr.placeholder is not defined and placeholder|default(null) is not empty -%}
+        {%- set attr = attr|merge({placeholder: translation_domain is same as(false) ? placeholder : placeholder|trans({}, translation_domain)}) -%}
+    {%- endif -%}
+    {{- include('@LleCruditUi/form/_combobox.html.twig', {
+        id: id,
+        name: full_name,
+        label: crudit_ui_name,
+        multiple: multiple|default(false),
+        disabled: disabled,
+        invalid: errors|length > 0,
+        class: attr.class|default(''),
+        attr: attr|filter((v, k) => k != 'class'),
+        options: crudit_ui_options,
+        selected: crudit_ui_selected,
+        url: crudit_ui_url,
+        min_length: combobox_min_length|default(0),
+        separator: combobox_separator|default(','),
+    }, with_context: false) -}}
+{%- endblock crudit_ui_combobox_widget -%}
 
 {# Choices shown as boxes: a list, each input attached to the help and the error of the field #}
 {%- block choice_widget_expanded -%}

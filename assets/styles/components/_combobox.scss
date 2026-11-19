@@ -1,0 +1,209 @@
+@use '../tools/a11y' as *;
+
+// List with search (block crudit_ui_combobox_widget of the form theme, controller combobox): the choices made as
+// tokens, then the input, in a frame that has the border and the focus of an input; the listbox under it. Same as
+// `.combobox` and `.form-combobox` of the crudit-v2 mockup (src/styles/components/_combobox.scss, _form.scss).
+.crudit-ui-combobox {
+    position: relative;
+    min-width: 0;
+
+    // The frame: choices then input, on one line (on several when there are many choices)
+    &__field {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        min-height: var(--control-h);
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-1);
+        padding-block: 0.1875rem;
+        padding-inline: var(--space-1) var(--space-6);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--radius-md);
+        background-color: var(--c-surface);
+        cursor: text;
+
+        &:has(.crudit-ui-combobox__input:focus-visible) {
+            border-color: var(--c-focus);
+            @include focus-ring(0);
+        }
+    }
+
+    &--invalid &__field {
+        border-color: var(--c-danger-solid);
+    }
+
+    &--disabled &__field {
+        background-color: var(--c-surface-sunken);
+        color: var(--c-text-muted);
+        cursor: not-allowed;
+    }
+
+    &__tokens {
+        display: contents;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__token {
+        display: inline-flex;
+        max-width: 100%;
+        min-height: 1.5rem;
+        align-items: center;
+        gap: 0.125rem;
+        padding-inline-start: var(--space-2);
+        border-radius: var(--radius-sm);
+        background-color: var(--c-neutral-bg);
+        color: var(--c-neutral-text);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        overflow-wrap: anywhere;
+    }
+
+    // A disabled field: its tokens have no button
+    &__token:not(:has(button)) {
+        padding-inline-end: var(--space-2);
+    }
+
+    &__remove {
+        display: inline-grid;
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: none;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background-color: transparent;
+        color: inherit;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--c-surface-active);
+        }
+
+        &:focus-visible {
+            @include focus-ring(0);
+        }
+    }
+
+    &__remove-icon {
+        width: 0.625rem;
+        height: 0.625rem;
+    }
+
+    &__input {
+        min-width: 3rem;
+        height: 1.5rem;
+        flex: 1;
+        padding: 0 var(--space-2);
+        border: 0;
+        background-color: transparent;
+        color: var(--c-text);
+        font: inherit;
+        font-size: var(--font-size-sm);
+
+        &::placeholder {
+            color: var(--c-text-muted);
+            opacity: 1;
+        }
+
+        // The frame shows the focus
+        &:focus-visible {
+            outline: none;
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+        }
+    }
+
+    &__chevron {
+        position: absolute;
+        top: 50%;
+        inset-inline-end: var(--space-3);
+        width: 0.75rem;
+        height: 0.75rem;
+        color: var(--c-text-muted);
+        pointer-events: none;
+        translate: 0 -50%;
+    }
+
+    &__listbox {
+        position: absolute;
+        z-index: var(--z-popover);
+        top: calc(100% + var(--space-1));
+        inset-inline: 0;
+        max-height: 15rem;
+        overflow-y: auto;
+        padding: var(--space-1);
+        margin: 0;
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+        background-color: var(--c-surface);
+        box-shadow: var(--shadow-lg);
+        list-style: none;
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__option {
+        display: flex;
+        min-height: 2.5rem;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        overflow-wrap: anywhere;
+
+        &[aria-selected='true'] {
+            font-weight: var(--font-weight-semibold);
+        }
+
+        // The active option (aria-activedescendant): a visible frame, the focus stays in the input
+        &--active {
+            background-color: var(--c-surface-hover);
+            box-shadow: inset 0 0 0 2px var(--c-focus);
+        }
+    }
+
+    &__check {
+        display: inline-grid;
+        width: 1rem;
+        flex: none;
+        place-items: center;
+        color: var(--c-primary-text);
+    }
+
+    &__check-icon {
+        width: 0.75rem;
+        height: 0.75rem;
+        visibility: hidden;
+    }
+
+    &__option[aria-selected='true'] &__check-icon {
+        visibility: visible;
+    }
+
+    &__message {
+        padding: var(--space-2);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+}
+
+// Windows High Contrast: the active option keeps a frame without its shadow
+@media (forced-colors: active) {
+    .crudit-ui-combobox__option--active {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+    }
+}

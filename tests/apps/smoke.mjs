@@ -268,6 +268,99 @@ try {
     });
     assert.equal(unitFocus, 'solid', 'the focus does not surround the input and its unit');
 
+    // List with search (combobox): the choices of the page filtered, Enter chooses (the form is not sent), Backspace
+    // removes the last choice, Escape closes the list; the hidden <select> follows.
+    const zonesValues = () => page.$eval('#kit-forms select[name="zones[]"]', (select) => [...select.selectedOptions].map((option) => option.value));
+    const zonesTokens = () => page.$$eval('#kit-forms .crudit-ui-combobox:has(#kit-form-zones) .crudit-ui-combobox__token-label', (labels) => labels.map((label) => label.textContent));
+    const zonesState = () => page.$eval('#kit-form-zones', (input) => ({
+        expanded: input.getAttribute('aria-expanded'),
+        active: document.getElementById(input.getAttribute('aria-activedescendant') ?? '')?.textContent ?? null,
+        options: [...document.querySelectorAll('#kit-form-zones_listbox [role="option"]')].map((option) => option.textContent),
+        hidden: document.getElementById('kit-form-zones_listbox').hidden,
+    }));
+    assert.deepEqual(await zonesValues(), ['s']);
+    assert.deepEqual(await zonesTokens(), ['South']);
+    await page.focus('#kit-form-zones');
+    await page.waitForFunction(() => document.getElementById('kit-form-zones').getAttribute('aria-expanded') === 'true', {timeout: 5000}).catch(() => null);
+    let zones = await zonesState();
+    assert.equal(zones.expanded, 'true', 'the focus does not open the list with search');
+    assert.ok(!zones.hidden);
+    assert.equal(zones.options.length, 7);
+    assert.equal(zones.active, 'North', 'the first choice is not active');
+    await page.keyboard.type('cote');
+    zones = await zonesState();
+    assert.deepEqual(zones.options, ['Côte d’Azur'], 'the typing does not filter the choices, accents left aside');
+    await page.evaluate(() => {
+        let submitted = false;
+        document.getElementById('kit-form-zones').form.addEventListener('submit', (event) => {
+            submitted = true;
+            event.preventDefault();
+        }, {once: true});
+        window.kitZonesSubmitted = () => submitted;
+    });
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => window.kitZonesSubmitted()), false, 'Enter in the list sends the form');
+    assert.deepEqual(await zonesValues(), ['s', 'cst'], 'Enter does not choose the active option');
+    assert.deepEqual(await zonesTokens(), ['South', 'Côte d’Azur']);
+    assert.equal((await zonesState()).expanded, 'true', 'a list with several answers closes after a choice');
+    await page.waitForFunction(() => document.querySelector('.crudit-ui-combobox:has(#kit-form-zones) [role="status"]').textContent === 'Côte d’Azur added.', {timeout: 2000}).catch(() => null);
+    assert.equal(await page.$eval('.crudit-ui-combobox:has(#kit-form-zones) [role="status"]', (status) => status.textContent), 'Côte d’Azur added.', 'the choice is not told');
+    await page.$eval('#kit-form-zones', (input) => {
+        input.value = '';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    await page.keyboard.press('Backspace');
+    assert.deepEqual(await zonesValues(), ['s'], 'Backspace in an empty input does not remove the last choice');
+    await page.keyboard.press('ArrowDown');
+    assert.equal((await zonesState()).active, 'South', 'the arrow down does not move the active option');
+    await page.keyboard.press('Escape');
+    zones = await zonesState();
+    assert.equal(zones.expanded, 'false', 'Escape does not close the list');
+    assert.ok(zones.hidden);
+    // The button of a token removes it, and gives the focus back to the input
+    await page.click('.crudit-ui-combobox:has(#kit-form-zones) .crudit-ui-combobox__remove');
+    assert.deepEqual(await zonesValues(), [], 'the button of a token does not remove it');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'kit-form-zones', 'the focus is lost when a choice is removed');
+    // The reset of the form gives back the first choices
+    await page.$eval('#kit-form-zones', (input) => input.form.reset());
+    await page.waitForFunction(() => document.querySelectorAll('.crudit-ui-combobox:has(#kit-form-zones) .crudit-ui-combobox__token').length === 1, {timeout: 2000}).catch(() => null);
+    assert.deepEqual(await zonesTokens(), ['South'], 'the reset does not give back the first choices');
+    assert.deepEqual(await zonesValues(), ['s']);
+    await page.$eval('#kit-form-zones', (input) => input.blur());
+
+    // From the server: the first choices when it opens, the ones of the text after a pause, the next page at the end of
+    // the list; a choice replaces the other one and closes the list.
+    const clientState = () => page.$eval('#kit-form-client', (input) => ({
+        expanded: input.getAttribute('aria-expanded'),
+        options: [...document.querySelectorAll('#kit-form-client_listbox [role="option"]')].map((option) => option.textContent),
+        message: document.querySelector('#kit-form-client_listbox [data-message]')?.textContent ?? null,
+        value: input.closest('.crudit-ui-combobox').querySelector('input[type="hidden"]').value,
+    }));
+    await page.focus('#kit-form-client');
+    await page.waitForFunction(() => document.querySelectorAll('#kit-form-client_listbox [role="option"]').length === 20, {timeout: 5000}).catch(() => null);
+    let client = await clientState();
+    assert.equal(client.options.length, 20, `the first page of choices is not shown (${JSON.stringify(client)})`);
+    await page.$eval('#kit-form-client_listbox', (list) => {
+        list.scrollTop = list.scrollHeight;
+    });
+    await page.waitForFunction(() => document.querySelectorAll('#kit-form-client_listbox [role="option"]').length === 40, {timeout: 5000}).catch(() => null);
+    assert.equal((await clientState()).options.length, 40, 'the end of the list does not ask the next choices');
+    await page.keyboard.type('mulhouse');
+    await page.waitForFunction(() => [...document.querySelectorAll('#kit-form-client_listbox [role="option"]')].every((option) => option.textContent.includes('Mulhouse')), {timeout: 5000}).catch(() => null);
+    client = await clientState();
+    assert.ok(client.options.length > 0 && client.options.every((option) => option.includes('Mulhouse')), `the typing does not ask the choices of the text (${JSON.stringify(client.options)})`);
+    assert.ok(await page.$('#kit-form-client_listbox [role="option"] mark'), 'the text typed is not marked in the choices');
+    await page.keyboard.press('Enter');
+    client = await clientState();
+    assert.equal(client.expanded, 'false', 'a choice does not close a list with one answer');
+    assert.equal(client.value, '3', 'the choice does not replace the other one');
+    assert.equal(await page.$eval('#kit-form-client', (input) => input.value), '', 'the text typed stays after a choice');
+    await page.keyboard.type('none');
+    await page.waitForFunction(() => document.querySelector('#kit-form-client_listbox [data-message]')?.textContent === 'No result.', {timeout: 5000}).catch(() => null);
+    assert.equal((await clientState()).message, 'No result.', 'no choice is not told');
+    await page.keyboard.press('Escape');
+    await page.$eval('#kit-form-client', (input) => input.blur());
+
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});
     const widths = await page.evaluate(() => ({client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth}));

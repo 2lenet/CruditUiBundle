@@ -15,6 +15,18 @@ crudit_ui:
         label: "Fil d'Ariane"
     chip:
         remove: "Retirer le filtre %label%"
+    combobox:
+        placeholder: "Rechercher…"
+        selected: "%label% : choix faits"
+        remove: "Retirer %label%"
+        added: "%label% ajouté."
+        removed: "%label% retiré."
+        empty: "Aucun résultat."
+        loading: "Chargement…"
+        error: "Les choix n'ont pas pu être chargés. Réessayez."
+        count:
+            one: "%count% résultat."
+            other: "%count% résultats."
     filter:
         operator_for: "Condition pour %label% : %operator%"
         operator_legend: "Condition pour %label%"
