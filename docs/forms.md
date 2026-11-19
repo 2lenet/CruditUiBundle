@@ -87,15 +87,25 @@ The keyboard: the list opens on the focus, a click and the arrows; up and down m
 (`aria-activedescendant`, the focus stays in the input), Enter chooses it without sending the form, Escape closes the
 list (not a dialog around it), Backspace in an empty input removes the last choice. With several answers the list stays
 open, else a choice replaces the other one and closes it. What is typed filters the choices, accents and case left
-aside, and is marked in them.
+aside, and is marked in them. With one answer too, Backspace in an empty input removes the choice, as its button does
+(as the mockup): a required field left empty is refused by the validation when the form is sent.
 
-**From the server**: a field that sets `combobox_url` (and `combobox_selected`, the choices made:
-`[{value, label}]`) asks its choices to `GET <url>?q=<text>&offset=<n>&limit=20`, answered by
+The first 50 choices that match are shown, then a line tells how many there are (*First 50 results of 1234: refine the
+search.*); the count read by a screen reader is the total. For more than a few hundred choices, prefer the choices from
+the server (`AutocompleteType` of CruditBundle): all the choices of the page are in the HTML.
+
+The list is in `position: fixed`, under the field, or above it when there is no room below: a dialog, a card or a table
+that scrolls does not cut it. It follows the field when the page scrolls.
+
+**From the server**: a field type whose widget block renders `crudit_ui_combobox_widget` and sets `combobox_url` (and
+`combobox_selected`, the choices made: `[{value, label}]`), such as `AutocompleteType` of CruditBundle, asks its choices to `GET <url>?q=<text>&offset=<n>&limit=20`, answered by
 `{"items": [{"id", "text"}], "next_offset": <n>, "total_count": <n>}` (the answer of the route `autocomplete` of
 CruditBundle). The first choices are asked when the list opens (`combobox_min_length`: characters typed before a
 request, 0), the ones of the text 200 ms after the last key, the next ones when the list is scrolled to its end;
 the request still running is cancelled by a newer one. The value is sent by a hidden input, the values joined by a comma
-(`combobox_separator`).
+(`combobox_separator`): the field type reads this text (a data transformer, as `EntityToIdTransformer` of CruditBundle),
+so a value must not contain the separator (ids do not). A `ChoiceType` reads a list: on it, `combobox_url` is ignored and
+its choices stay in the page.
 
 The markup is in `@LleCruditUi/form/_combobox.html.twig`, which a page without a Symfony form can include with plain
 values (see its header; the kit does so). JavaScript is needed: without it the choices cannot be changed. The controller

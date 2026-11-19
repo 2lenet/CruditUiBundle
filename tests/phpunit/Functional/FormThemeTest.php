@@ -523,21 +523,27 @@ class FormThemeTest extends TestCase
 
     public function testAListWithSearchOfTheServerSendsTheValuesJoined(): void
     {
-        $form = $this->form()
-            ->add('technicians', ChoiceType::class, ['label' => 'Technicians'])
-            ->getForm();
+        // A field type of its own whose widget is the list with search (as AutocompleteType of CruditBundle): it reads
+        // the values joined, with a data transformer
+        $form = $this->form()->add('technicians', TextType::class, ['label' => 'Technicians'])->getForm();
         $form->get('technicians')->addError(new FormError('Choose a technician.'));
-        $html = $this->renderTemplate($form, "{{ form_row(form.technicians, {
-            combobox: true,
-            multiple: true,
-            combobox_url: '/technician/autocomplete',
-            combobox_selected: [{value: '3', label: 'Ana <Diaz>'}, {value: '7', label: 'Bob'}],
-        }) }}");
+        /** @var Environment $twig */
+        $twig = $this->container()->get('twig');
+        $template = $twig->createTemplate(<<<'TWIG'
+            {% form_theme form with ['remote_combobox_theme.html.twig'] only %}
+            {{ form_row(form.technicians, {
+                multiple: true,
+                combobox_url: '/technician/autocomplete',
+                combobox_selected: [{value: '3', label: 'Ana <Diaz>'}, {value: '7', label: 'Bob'}],
+            }) }}
+            TWIG);
+        $html = $this->html($template->render(['form' => $form->createView()]));
 
         $root = $html->querySelector('.crudit-ui-combobox');
         self::assertSame('/technician/autocomplete', $root?->getAttribute('data-2lenet--crudit-ui-bundle--combobox-url-value'));
         self::assertSame('0', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-min-length-value'));
         self::assertSame(',', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-separator-value'));
+        self::assertSame('true', $root->getAttribute('data-2lenet--crudit-ui-bundle--combobox-multiple-value'));
         self::assertStringContainsString('crudit-ui-combobox--invalid', (string) $root->getAttribute('class'));
         self::assertNull($root->querySelector('select'));
         $hidden = $root->querySelector('input[type="hidden"]');
@@ -548,6 +554,22 @@ class FormThemeTest extends TestCase
         $input = $html->getElementById('form_technicians');
         self::assertSame('true', $input?->getAttribute('aria-invalid'));
         self::assertSame('form_technicians_error', $input->getAttribute('aria-describedby'));
+    }
+
+    public function testAChoiceWithAnAddressOfTheServerKeepsItsChoicesInThePage(): void
+    {
+        // A ChoiceType reads a list (form[zones][]): the values joined of the server mode would be refused
+        $form = $this->form()
+            ->add('zones', ChoiceType::class, ['choices' => ['North' => 'n', 'South' => 's'], 'multiple' => true, 'data' => ['s']])
+            ->getForm();
+        $html = $this->renderTemplate($form, "{{ form_widget(form.zones, {combobox: true, combobox_url: '/zone/autocomplete'}) }}");
+
+        $root = $html->querySelector('.crudit-ui-combobox');
+        self::assertNotNull($root);
+        self::assertFalse($root->hasAttribute('data-2lenet--crudit-ui-bundle--combobox-url-value'));
+        self::assertNull($root->querySelector('input[type="hidden"]'));
+        $select = $root->querySelector('select[name="form[zones][]"]');
+        self::assertSame(['n', 's'], array_map(fn ($option) => $option->getAttribute('value'), iterator_to_array($select?->querySelectorAll('option') ?? [])));
     }
 
     public function testADisabledListWithSearchHasNoButtonToRemoveAChoice(): void

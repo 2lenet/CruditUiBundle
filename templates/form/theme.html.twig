@@ -241,6 +241,8 @@
 {# A required list: its empty option cannot be chosen again. A list with the variable combobox: a list with search #}
 {%- block choice_widget_collapsed -%}
     {%- if combobox|default(false) -%}
+        {#- The choices of the field, in the page: a ChoiceType reads a list, not the values joined of the server mode -#}
+        {%- set combobox_url = null -%}
         {{- block('crudit_ui_combobox_widget') -}}
     {%- else -%}
     {%- set crudit_ui_part_label = block('crudit_ui_date_part_label') -%}
@@ -260,10 +262,12 @@
  #
  # - A choice (ChoiceType, not expanded) with the variable combobox: the choices are those of the field, filtered in the
  #   page. The value is sent by a hidden <select> (name of the field), as a list.
- # - Any other field that sets the variables combobox_url (GET <url>?q=&offset=&limit=, answer {"items": [{"id",
- #   "text"}], "next_offset", "total_count"}) and combobox_selected (the choices made: [{value, label}]): the choices
- #   come from the server, 20 at a time, the next ones when the list is scrolled to its end. The value is sent by a
- #   hidden input, the values joined by a comma (combobox_separator).
+ #   Its variable combobox_url is ignored.
+ # - A field type whose widget block renders this block and sets the variables combobox_url (GET
+ #   <url>?q=&offset=&limit=, answer {"items": [{"id", "text"}], "next_offset", "total_count"}) and combobox_selected
+ #   (the choices made: [{value, label}]), such as AutocompleteType of CruditBundle: the choices come from the server,
+ #   20 at a time, the next ones when the list is scrolled to its end. The value is sent by a hidden input, the values
+ #   joined by a comma (combobox_separator): the field type reads this text (a data transformer).
  # - multiple: several choices, the list stays open; else a choice replaces the other one and closes the list.
  #   combobox_min_length: characters typed before a request (0: the first choices as soon as the list opens).
  #

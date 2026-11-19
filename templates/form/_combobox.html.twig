@@ -34,6 +34,7 @@
     data-{{ controller }}-error-text-value="{{ 'crudit_ui.combobox.error'|trans({}, domain) }}"
     data-{{ controller }}-count-one-text-value="{{ 'crudit_ui.combobox.count.one'|trans({}, domain) }}"
     data-{{ controller }}-count-other-text-value="{{ 'crudit_ui.combobox.count.other'|trans({}, domain) }}"
+    data-{{ controller }}-more-text-value="{{ 'crudit_ui.combobox.more'|trans({}, domain) }}"
 >
     <div class="crudit-ui-combobox__field" data-action="click->{{ controller }}#focus">
         <ul class="crudit-ui-combobox__tokens" aria-label="{{ 'crudit_ui.combobox.selected'|trans({'%label%': label}, domain) }}"{% if selected is empty %} hidden{% endif %} data-{{ controller }}-target="tokens">

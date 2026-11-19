@@ -43,7 +43,7 @@ export function placeFloating(anchor, panel, {align = 'end', placement = 'below'
     const width = panel.offsetWidth;
     const height = panel.offsetHeight;
     const rtl = getComputedStyle(anchor).direction === 'rtl';
-    const origin = fixedOrigin(anchor);
+    const origin = fixedOrigin(anchor, panel);
     const bounds = {
         top: Math.max(0, origin.clip.top),
         bottom: Math.min(window.innerHeight, origin.clip.bottom),
@@ -90,8 +90,17 @@ export function resetPosition(panel) {
  * An ancestor with a transform (a sticky table header, a drawer that slides) becomes the reference of
  * `position: fixed`, and the panel is cut by the container that scrolls around it: it is kept inside its edges.
  */
-function fixedOrigin(anchor) {
+function fixedOrigin(anchor, panel) {
     const viewport = {top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth};
+    // Measured first: the browsers do not agree on what makes the reference (a container of container queries is not
+    // one in Chrome 157). At 0, 0 the panel is on the corner of the screen when the screen is its reference.
+    panel.style.top = '0px';
+    panel.style.left = '0px';
+    const corner = panel.getBoundingClientRect();
+    const style = getComputedStyle(panel);
+    if (Math.abs(corner.top - parseFloat(style.marginTop || '0')) < 1 && Math.abs(corner.left - parseFloat(style.marginLeft || '0')) < 1) {
+        return {top: 0, left: 0, clip: viewport};
+    }
     for (let element = anchor.parentElement; element; element = element.parentElement) {
         if (containsFixed(getComputedStyle(element))) {
             const rect = element.getBoundingClientRect();

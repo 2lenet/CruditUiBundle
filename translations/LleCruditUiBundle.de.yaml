@@ -24,6 +24,7 @@ crudit_ui:
         empty: "Kein Ergebnis."
         loading: "Wird geladen…"
         error: "Die Auswahl konnte nicht geladen werden. Versuchen Sie es erneut."
+        more: "Erste %shown% von %count% Ergebnissen: Suche verfeinern."
         count:
             one: "%count% Ergebnis."
             other: "%count% Ergebnisse."

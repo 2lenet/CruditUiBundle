@@ -134,11 +134,10 @@
         translate: 0 -50%;
     }
 
+    // In position: fixed, placed under the field (or above it) by the controller: not cut by a container that scrolls
     &__listbox {
-        position: absolute;
+        position: fixed;
         z-index: var(--z-popover);
-        top: calc(100% + var(--space-1));
-        inset-inline: 0;
         max-height: 15rem;
         overflow-y: auto;
         padding: var(--space-1);

@@ -24,6 +24,7 @@ crudit_ui:
         empty: "Aucun résultat."
         loading: "Chargement…"
         error: "Les choix n'ont pas pu être chargés. Réessayez."
+        more: "%shown% premiers résultats sur %count% : précisez la recherche."
         count:
             one: "%count% résultat."
             other: "%count% résultats."

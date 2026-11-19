@@ -1,5 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 import { fold, find, marked } from '../utils/text.js';
+import { placeFloating, resetPosition } from '../utils/position.js';
 
 const DEBOUNCE = 200;
 // The count is announced once the typing has stopped: not at every key.
@@ -7,6 +8,8 @@ const ANNOUNCE = 600;
 // Choices asked to the server at a time, and distance to the end of the list (px) from which the next ones are asked.
 const PAGE = 20;
 const NEAR_END = 48;
+// Choices of the page shown at a time: a long list is narrowed by the search, not scrolled.
+const SHOWN = 50;
 
 /*
  * List with search (block crudit_ui_combobox_widget of the form theme, docs/forms.md): ARIA combobox pattern. The focus
@@ -16,6 +19,9 @@ const NEAR_END = 48;
  *   GET <url>?q=<text>&offset=<n>&limit=20, answer {"items": [{"id", "text"}], "next_offset", "total_count"}. One
  *   request at a time: the one still running is cancelled by a newer one, its answer is never shown. The next page is
  *   asked when the list is scrolled to its end. The text of the choices is always set as text, never as HTML.
+ *   The choices of the page: the first 50 that match, then a line that tells how many there are.
+ * - The list is in position: fixed under the field (above it when there is no room below): a container that scrolls
+ *   or hides its overflow (a dialog, a card) does not cut it. It follows the field when the page scrolls.
  * - The list opens on focus, on a click and on the arrows. Up and down change the active option, from the last to the
  *   first and back; Enter chooses it (the form is not sent); Escape closes the list; Backspace in an empty input
  *   removes the last choice. A click outside, or Tab, closes it.
@@ -42,6 +48,7 @@ export default class extends Controller {
         errorText: String,
         countOneText: String,
         countOtherText: String,
+        moreText: String,
     };
 
     connect() {
@@ -57,7 +64,11 @@ export default class extends Controller {
         this.loading = false;
         this.all = this.urlValue ? null : Array.from(this.valueTarget.options)
             .filter((option) => option.value !== '')
-            .map((option) => ({ value: option.value, label: option.textContent.trim() }));
+            .map((option) => {
+                const label = option.textContent.trim();
+
+                return { value: option.value, label, folded: fold(label) };
+            });
 
         this.onFocusOut = (event) => {
             if (!this.element.contains(event.relatedTarget)) {
@@ -72,6 +83,13 @@ export default class extends Controller {
             this.sync(false);
         });
         this.onBeforeCache = () => this.close();
+        // The page or a container scrolls (not the list): the list follows the field, once per frame.
+        this.onScroll = (event) => {
+            if (!(event.target instanceof Node && this.listboxTarget.contains(event.target))) {
+                this.follow();
+            }
+        };
+        this.onResize = () => this.follow();
 
         this.form = this.element.closest('form');
         this.form?.addEventListener('reset', this.onReset);
@@ -88,6 +106,7 @@ export default class extends Controller {
         window.clearTimeout(this.debounce);
         window.clearTimeout(this.announce);
         this.request?.abort();
+        this.unfollow();
     }
 
     // A click in the field, outside the input and the buttons: the input takes the focus.
@@ -105,6 +124,9 @@ export default class extends Controller {
         this.listboxTarget.hidden = false;
         this.inputTarget.setAttribute('aria-expanded', 'true');
         this.update(true);
+        this.place();
+        window.addEventListener('scroll', this.onScroll, { capture: true, passive: true });
+        window.addEventListener('resize', this.onResize);
     }
 
     close() {
@@ -119,6 +141,30 @@ export default class extends Controller {
         this.listboxTarget.removeAttribute('aria-busy');
         this.inputTarget.setAttribute('aria-expanded', 'false');
         this.activate(-1);
+        this.unfollow();
+    }
+
+    // Under the field, as wide as it.
+    place() {
+        if (!this.isOpen) {
+            return;
+        }
+        const field = this.inputTarget.closest('.crudit-ui-combobox__field') ?? this.inputTarget;
+        this.listboxTarget.style.width = `${field.getBoundingClientRect().width}px`;
+        placeFloating(field, this.listboxTarget, { align: 'start' });
+    }
+
+    follow() {
+        cancelAnimationFrame(this.frame);
+        this.frame = requestAnimationFrame(() => this.place());
+    }
+
+    unfollow() {
+        cancelAnimationFrame(this.frame);
+        window.removeEventListener('scroll', this.onScroll, { capture: true });
+        window.removeEventListener('resize', this.onResize);
+        resetPosition(this.listboxTarget);
+        this.listboxTarget.style.width = '';
     }
 
     search() {
@@ -145,6 +191,14 @@ export default class extends Controller {
             return;
         }
         if (query === this.loaded) {
+            // Back to the text whose choices are shown: the request of another text is cancelled, its "Loading" too.
+            if (this.loading) {
+                this.request?.abort();
+                this.loading = false;
+                this.listboxTarget.removeAttribute('aria-busy');
+                this.message(this.choices.length === 0 ? this.emptyTextValue : null);
+            }
+            this.pending = false;
             return;
         }
         this.pending = true;
@@ -157,8 +211,11 @@ export default class extends Controller {
 
     filter(query) {
         const words = fold(query);
-        const choices = words.length === 0 ? this.all : this.all.filter((choice) => find(fold(choice.label), words) >= 0);
-        this.show(choices, query, false);
+        const choices = words.length === 0 ? this.all : this.all.filter((choice) => find(choice.folded, words) >= 0);
+        this.show(choices.slice(0, SHOWN), query, false);
+        if (choices.length > SHOWN) {
+            this.message(this.moreTextValue.replace('%shown%', () => String(SHOWN)).replace('%count%', () => String(choices.length)));
+        }
         this.announceCount(choices.length);
     }
 
@@ -206,9 +263,12 @@ export default class extends Controller {
             this.announceText(this.errorTextValue, 0);
         } finally {
             if (this.request === request) {
-                this.pending = false;
                 this.loading = false;
                 this.listboxTarget.removeAttribute('aria-busy');
+                // An answer for an older text (typed since, or a page of the list): the text in the input still waits.
+                if (query === this.inputTarget.value.trim()) {
+                    this.pending = false;
+                }
             }
         }
     }
@@ -244,6 +304,7 @@ export default class extends Controller {
             this.activate(this.choices.length > 0 ? 0 : -1);
             this.listboxTarget.scrollTop = 0;
         }
+        this.place();
     }
 
     option(choice, words, index) {
@@ -283,6 +344,7 @@ export default class extends Controller {
         item.dataset.message = '';
         item.textContent = text;
         this.listboxTarget.append(item);
+        this.place();
     }
 
     keydown(event) {

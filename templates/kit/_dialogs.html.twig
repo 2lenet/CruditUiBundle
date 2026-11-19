@@ -23,6 +23,19 @@
         <input id="kit-dialog-date" type="date" name="date" required>
         <label for="kit-dialog-reason">Reason</label>
         <textarea id="kit-dialog-reason" name="reason" rows="3"></textarea>
+        {#- A list with search at the bottom of the dialog (its list is not cut by the body that scrolls), with 300
+            choices in the page (the first 50 shown). -#}
+        {%- set technicians = [] -%}
+        {%- for index in 1..300 -%}
+            {%- set technicians = technicians|merge([{value: 't' ~ index, label: 'Technician ' ~ ('%03d'|format(index))}]) -%}
+        {%- endfor -%}
+        <label for="kit-dialog-technician">Technician</label>
+        {{ include('@LleCruditUi/form/_combobox.html.twig', {
+            id: 'kit-dialog-technician',
+            name: 'technician',
+            label: 'Technician',
+            options: technicians,
+        }, with_context: false) }}
     </form>
     <twig:block name="footer">
         <twig:LleCruditUi:Button commandfor="kit-dialog-form" command="close">Cancel</twig:LleCruditUi:Button>

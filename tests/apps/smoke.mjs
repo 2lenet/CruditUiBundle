@@ -20,8 +20,8 @@ try {
     page.on('pageerror', (error) => errors.push(`page error: ${error.message} (${page.url()})${error.stack ? `\n${String(error.stack).split('\n').slice(0, 4).join('\n')}` : ''}`));
     page.on('console', (message) => message.type() === 'error' && !message.location().url?.endsWith('/favicon.ico') && !message.location().url?.includes('/crudit-ui/kit-table-sort') && errors.push(`console: ${message.text()}`));
     // A navigation answered with 204 (the demos of the kit that send a form) is aborted by Chrome: the page stays. A
-    // search of the command palette is cancelled by the next one.
-    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && !request.url().includes('/crudit-ui/kit-search') && !request.url().includes('/crudit-ui/kit-table-sort') && errors.push(`request failed: ${request.url()}`));
+    // search of the command palette, or of a list with search, is cancelled by the next one.
+    page.on('requestfailed', (request) => !request.url().includes('/crudit-ui/kit-sent') && !request.url().includes('/crudit-ui/kit-search') && !request.url().includes('/crudit-ui/kit-choices') && !request.url().includes('/crudit-ui/kit-table-sort') && errors.push(`request failed: ${request.url()}`));
     page.on('response', (response) => response.status() >= 400 && !response.url().endsWith('/favicon.ico') && !response.url().includes('/crudit-ui/kit-table-sort') && errors.push(`${response.status()}: ${response.url()}`));
 
     await page.goto(url, {waitUntil: 'networkidle0'});
@@ -359,6 +359,72 @@ try {
     await page.waitForFunction(() => document.querySelector('#kit-form-client_listbox [data-message]')?.textContent === 'No result.', {timeout: 5000}).catch(() => null);
     assert.equal((await clientState()).message, 'No result.', 'no choice is not told');
     await page.keyboard.press('Escape');
+
+    // A slow server: Enter while the choices of the text are asked chooses nothing (the ones shown are of an older
+    // text); back to the text whose choices are shown, the request of the other text is cancelled.
+    const clientToken = () => page.$eval('.crudit-ui-combobox:has(#kit-form-client) .crudit-ui-combobox__token-label', (label) => label.textContent);
+    // The answer of "g" arrives once "ga" is typed, before its request is sent (200 ms after the key): the choices
+    // shown are still those of an older text, Enter chooses nothing.
+    let heldChoices = null;
+    const holdChoices = (route) => {
+        if (!heldChoices && route.request().url().includes('q=g&')) {
+            heldChoices = route;
+        } else {
+            route.continue().catch(() => null);
+        }
+    };
+    await page.route('**/crudit-ui/kit-choices**', holdChoices);
+    await page.$eval('#kit-form-client', (input) => {
+        input.value = '';
+    });
+    await page.keyboard.type('g');
+    for (let wait = 0; !heldChoices && wait < 50; wait++) {
+        await pause(100);
+    }
+    await page.keyboard.type('a');
+    const answerOfG = page.waitForResponse((response) => response.url().includes('q=g&'));
+    await heldChoices.continue();
+    await answerOfG;
+    await pause(30);
+    await page.keyboard.press('Enter');
+    client = await clientState();
+    assert.deepEqual({value: client.value, expanded: client.expanded}, {value: '3', expanded: 'true'}, 'Enter chooses a choice of an older text, after its answer arrived while the next text waits');
+    await page.unroute('**/crudit-ui/kit-choices**', holdChoices);
+    await page.keyboard.press('Escape');
+
+    const slowChoices = (route) => setTimeout(() => route.continue().catch(() => null), 800);
+    await page.route('**/crudit-ui/kit-choices**', slowChoices);
+    await page.$eval('#kit-form-client', (input) => {
+        input.value = '';
+    });
+    await page.keyboard.type('colmar');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await page.keyboard.press('Enter');
+    client = await clientState();
+    assert.equal(client.value, '3', `Enter while the choices are asked chooses one of an older text (${JSON.stringify(client)})`);
+    assert.equal(client.expanded, 'true', 'Enter while the choices are asked closes the list');
+    await page.waitForFunction(() => {
+        const options = [...document.querySelectorAll('#kit-form-client_listbox [role="option"]')];
+        return options.length > 0 && options.every((option) => option.textContent.includes('Colmar'));
+    }, {timeout: 5000}).catch(() => null);
+    await page.keyboard.press('Enter');
+    assert.equal(await clientToken(), 'Garage de Colmar 9', 'once the choices of the text are there, Enter does not choose the first one');
+
+    // The list still shows the choices of the last search: the answer of "colmar" is waited for.
+    const answerOfColmar = page.waitForResponse((response) => response.url().includes('q=colmar&'));
+    await page.keyboard.type('colmar');
+    await answerOfColmar;
+    await pause(30);
+    await page.keyboard.type('x');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await page.keyboard.press('Backspace');
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    client = await clientState();
+    assert.ok(client.message === null && client.options.length > 0 && client.options.every((option) => option.includes('Colmar')), `the answer of a text left is shown (${JSON.stringify(client)})`);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    assert.equal(await clientToken(), 'Mairie de Colmar 18', 'back to the text whose choices are shown, Enter chooses nothing');
+    await page.unroute('**/crudit-ui/kit-choices**', slowChoices);
     await page.$eval('#kit-form-client', (input) => input.blur());
 
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
@@ -855,6 +921,37 @@ try {
     assert.equal((await dialog('kit-dialog-form')).focus, 'Close', 'without autofocus, the focus does not go to the first focusable element');
     await page.click('#kit-dialog-form .crudit-ui-btn--primary');
     assert.equal((await dialog('kit-dialog-form')).open, true, 'the dialog closes with a required field empty');
+    // A list with search at the bottom of the dialog: its list is whole on the screen, not cut by the body that
+    // scrolls; of 300 choices of the page, the first 50 are shown, then a line that tells how many there are.
+    await page.focus('#kit-dialog-technician');
+    await page.waitForFunction(() => !document.getElementById('kit-dialog-technician_listbox').hidden, {timeout: 2000}).catch(() => null);
+    const technicians = await page.evaluate(() => {
+        const list = document.getElementById('kit-dialog-technician_listbox');
+        const rect = list.getBoundingClientRect();
+        const field = document.getElementById('kit-dialog-technician').closest('.crudit-ui-combobox__field').getBoundingClientRect();
+        const middle = document.elementFromPoint(rect.left + rect.width / 2, rect.top + Math.min(rect.height, 40) / 2);
+
+        return {
+            options: list.querySelectorAll('[role="option"]').length,
+            message: list.querySelector('[data-message]')?.textContent ?? null,
+            onScreen: rect.top >= 0 && rect.bottom <= window.innerHeight && rect.height > 40,
+            onTop: list.contains(middle),
+            width: Math.round(rect.width) === Math.round(field.width),
+        };
+    });
+    assert.deepEqual(
+        {options: technicians.options, message: technicians.message, onScreen: technicians.onScreen, onTop: technicians.onTop, width: technicians.width},
+        {options: 50, message: 'First 50 results of 300: refine the search.', onScreen: true, onTop: true, width: true},
+        'the list of a dialog is cut, or a long list of the page is not limited to 50 choices',
+    );
+    await page.keyboard.type('299');
+    await page.waitForFunction(() => document.querySelectorAll('#kit-dialog-technician_listbox [role="option"]').length === 1, {timeout: 2000}).catch(() => null);
+    await page.keyboard.press('Enter');
+    assert.deepEqual(await page.evaluate(() => ({
+        message: document.querySelector('#kit-dialog-technician_listbox [data-message]')?.textContent ?? null,
+        value: document.querySelector('.crudit-ui-combobox:has(#kit-dialog-technician) select').value,
+        open: document.getElementById('kit-dialog-form').open,
+    })), {message: null, value: 't299', open: true}, 'the search does not narrow a long list, or Enter closes the dialog');
     // fill() takes the ISO format of a date field in every engine (typing the digits depends on the browser).
     await page.fill('#kit-dialog-date', '2026-12-12');
     await page.click('#kit-dialog-form .crudit-ui-btn--primary');
