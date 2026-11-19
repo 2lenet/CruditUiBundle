@@ -138,7 +138,7 @@ done
 
 (`smoke-turbo.mjs` the same way against the application `turbo`.) With Node and the browsers on the machine
 (`npx playwright install --with-deps chromium webkit`), `node smoke.mjs <url> <project>` runs directly; `CHROME_PATH`
-uses an installed Chrome instead of the Chromium of Playwright. The CI installs them with `--with-deps`.
+uses an installed Chrome instead of the Chromium of Playwright. The CI installs them with `--with-deps`, in one job per application, environment and project (24 in parallel).
 
 Differences of the phones that the tests take into account: a phone has no hover (the hover cases are skipped), WebKit
 sends the event of a scroll and lays out a sticky element about a second late (the tests wait for them), and typing
