@@ -43,7 +43,8 @@ try {
     await page.addInitScript(() => {
         const registry = new Map();
         const ids = new WeakMap();
-        const id = (listener) => ids.get(listener) ?? (ids.set(listener, ids.size + 1), ids.get(listener));
+        let last = 0;
+        const id = (listener) => ids.get(listener) ?? (ids.set(listener, ++last), last);
         const key = (type, listener, options) => `${type}|${typeof options === 'object' ? options?.capture === true : options === true}|${id(listener)}`;
         window.__listeners = registry;
         for (const [target, name] of [[Document.prototype, 'document'], [Window.prototype, 'window']]) {
