@@ -334,6 +334,8 @@ try {
         const frame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const input = document.getElementById('kit-form-zones');
         const field = input.closest('.crudit-ui-combobox__field');
+        // In the middle of the screen: room under it once the keyboard is closed, whatever the engine and its layout
+        input.scrollIntoView({block: 'center', behavior: 'instant'});
         const real = Object.getOwnPropertyDescriptor(window, 'visualViewport');
         const fake = Object.assign(new EventTarget(), {offsetTop: 0, offsetLeft: 0, width: window.innerWidth, height: Math.min(field.getBoundingClientRect().bottom + 40, window.innerHeight)});
         Object.defineProperty(window, 'visualViewport', {configurable: true, get: () => fake});
