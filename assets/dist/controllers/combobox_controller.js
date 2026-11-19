@@ -21,7 +21,8 @@ const SHOWN = 50;
  *   asked when the list is scrolled to its end. The text of the choices is always set as text, never as HTML.
  *   The choices of the page: the first 50 that match, then a line that tells how many there are.
  * - The list is in position: fixed under the field (above it when there is no room below): a container that scrolls
- *   or hides its overflow (a dialog, a card) does not cut it. It follows the field when the page scrolls.
+ *   or hides its overflow (a dialog, a card) does not cut it. It follows the field when the page scrolls, and stays
+ *   above the virtual keyboard of a phone (visualViewport).
  * - The list opens on focus, on a click and on the arrows. Up and down change the active option, from the last to the
  *   first and back; Enter chooses it (the form is not sent); Escape closes the list; Backspace in an empty input
  *   removes the last choice. A click outside, or Tab, closes it.
@@ -127,6 +128,9 @@ export default class extends Controller {
         this.place();
         window.addEventListener('scroll', this.onScroll, { capture: true, passive: true });
         window.addEventListener('resize', this.onResize);
+        // The virtual keyboard of a phone opens or the page zooms: the part of the page seen changes.
+        window.visualViewport?.addEventListener('resize', this.onResize);
+        window.visualViewport?.addEventListener('scroll', this.onResize);
     }
 
     close() {
@@ -163,6 +167,8 @@ export default class extends Controller {
         cancelAnimationFrame(this.frame);
         window.removeEventListener('scroll', this.onScroll, { capture: true });
         window.removeEventListener('resize', this.onResize);
+        window.visualViewport?.removeEventListener('resize', this.onResize);
+        window.visualViewport?.removeEventListener('scroll', this.onResize);
         resetPosition(this.listboxTarget);
         this.listboxTarget.style.width = '';
     }

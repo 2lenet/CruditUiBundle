@@ -328,6 +328,34 @@ try {
     assert.deepEqual(await zonesValues(), ['s']);
     await page.$eval('#kit-form-zones', (input) => input.blur());
 
+    // The virtual keyboard of a phone, simulated (no browser of the tests shows one): visualViewport ends 40 px under
+    // the field. The list stays above the keyboard, and goes back under the field when the keyboard closes.
+    const keyboard = await page.evaluate(async () => {
+        const frame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const input = document.getElementById('kit-form-zones');
+        const field = input.closest('.crudit-ui-combobox__field');
+        const real = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+        const fake = Object.assign(new EventTarget(), {offsetTop: 0, offsetLeft: 0, width: window.innerWidth, height: Math.min(field.getBoundingClientRect().bottom + 40, window.innerHeight)});
+        Object.defineProperty(window, 'visualViewport', {configurable: true, get: () => fake});
+        input.focus();
+        await frame();
+        const list = document.getElementById('kit-form-zones_listbox');
+        const open = {list: list.getBoundingClientRect().toJSON(), field: field.getBoundingClientRect().toJSON(), seen: fake.height};
+        fake.height = window.innerHeight;
+        fake.dispatchEvent(new Event('resize'));
+        await frame();
+        const closed = {list: list.getBoundingClientRect().toJSON(), field: field.getBoundingClientRect().toJSON()};
+        input.blur();
+        delete window.visualViewport;
+        if (real) {
+            Object.defineProperty(window, 'visualViewport', real);
+        }
+
+        return {open, closed};
+    });
+    assert.ok(keyboard.open.list.bottom <= keyboard.open.seen + 1 && keyboard.open.list.bottom <= keyboard.open.field.top + 1, `the list goes under the virtual keyboard (${JSON.stringify(keyboard.open)})`);
+    assert.ok(keyboard.closed.list.top >= keyboard.closed.field.bottom - 1, `the list does not go back under the field when the keyboard closes (${JSON.stringify(keyboard.closed)})`);
+
     // From the server: the first choices when it opens, the ones of the text after a pause, the next page at the end of
     // the list; a choice replaces the other one and closes the list.
     const clientState = () => page.$eval('#kit-form-client', (input) => ({

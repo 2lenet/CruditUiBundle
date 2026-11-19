@@ -134,6 +134,8 @@ export default class extends Controller {
             this.place();
             window.addEventListener('scroll', this.onScroll, {capture: true, passive: true});
             window.addEventListener('resize', this.onResize);
+            // The virtual keyboard of a phone (a field of the panel): the part of the page seen changes.
+            window.visualViewport?.addEventListener('resize', this.onResize);
         } else {
             keepInViewport(this.panelTarget);
         }
@@ -157,6 +159,7 @@ export default class extends Controller {
         document.removeEventListener('pointerdown', this.onDocumentPointerDown);
         window.removeEventListener('scroll', this.onScroll, {capture: true});
         window.removeEventListener('resize', this.onResize);
+        window.visualViewport?.removeEventListener('resize', this.onResize);
         this.dispatch('close');
     }
 

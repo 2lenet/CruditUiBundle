@@ -95,7 +95,8 @@ search.*); the count read by a screen reader is the total. For more than a few h
 the server (`AutocompleteType` of CruditBundle): all the choices of the page are in the HTML.
 
 The list is in `position: fixed`, under the field, or above it when there is no room below: a dialog, a card or a table
-that scrolls does not cut it. It follows the field when the page scrolls.
+that scrolls does not cut it. It follows the field when the page scrolls, and stays in the part of the page seen on a
+phone, above the virtual keyboard (`visualViewport`).
 
 **From the server**: a field type whose widget block renders `crudit_ui_combobox_widget` and sets `combobox_url` (and
 `combobox_selected`, the choices made: `[{value, label}]`), such as `AutocompleteType` of CruditBundle, asks its choices to `GET <url>?q=<text>&offset=<n>&limit=20`, answered by

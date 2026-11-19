@@ -44,11 +44,12 @@ export function placeFloating(anchor, panel, {align = 'end', placement = 'below'
     const height = panel.offsetHeight;
     const rtl = getComputedStyle(anchor).direction === 'rtl';
     const origin = fixedOrigin(anchor, panel);
+    const visible = visibleArea();
     const bounds = {
-        top: Math.max(0, origin.clip.top),
-        bottom: Math.min(window.innerHeight, origin.clip.bottom),
-        left: Math.max(0, origin.clip.left),
-        right: Math.min(window.innerWidth, origin.clip.right),
+        top: Math.max(visible.top, origin.clip.top),
+        bottom: Math.min(visible.bottom, origin.clip.bottom),
+        left: Math.max(visible.left, origin.clip.left),
+        right: Math.min(visible.right, origin.clip.right),
     };
 
     let top;
@@ -90,6 +91,26 @@ export function resetPosition(panel) {
  * An ancestor with a transform (a sticky table header, a drawer that slides) becomes the reference of
  * `position: fixed`, and the panel is cut by the container that scrolls around it: it is kept inside its edges.
  */
+/**
+ * The part of the page seen on the screen, in the coordinates of getBoundingClientRect(): without the virtual keyboard
+ * of a phone (visualViewport; window.innerHeight still counts the height under the keyboard on iOS).
+ *
+ * @returns {{top: number, bottom: number, left: number, right: number}}
+ */
+export function visibleArea() {
+    const visual = window.visualViewport;
+    if (!visual) {
+        return {top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth};
+    }
+
+    return {
+        top: visual.offsetTop,
+        bottom: visual.offsetTop + visual.height,
+        left: visual.offsetLeft,
+        right: visual.offsetLeft + visual.width,
+    };
+}
+
 function fixedOrigin(anchor, panel) {
     const viewport = {top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth};
     // Measured first: the browsers do not agree on what makes the reference (a container of container queries is not
