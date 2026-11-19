@@ -17,7 +17,7 @@ const errors = [];
 
 try {
     const page = await browser.newPage();
-    page.on('pageerror', (error) => errors.push(`page error: ${error.message}`));
+    page.on('pageerror', (error) => errors.push(`page error: ${error.message} (${page.url()})${error.stack ? `\n${String(error.stack).split('\n').slice(0, 4).join('\n')}` : ''}`));
     page.on('console', (message) => message.type() === 'error' && !message.location().url?.endsWith('/favicon.ico') && !message.location().url?.includes('/crudit-ui/kit-table-sort') && errors.push(`console: ${message.text()}`));
     // A navigation answered with 204 (the demos of the kit that send a form) is aborted by Chrome: the page stays. A
     // search of the command palette is cancelled by the next one.
