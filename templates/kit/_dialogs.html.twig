@@ -23,6 +23,19 @@
         <input id="kit-dialog-date" type="date" name="date" required>
         <label for="kit-dialog-reason">Reason</label>
         <textarea id="kit-dialog-reason" name="reason" rows="3"></textarea>
+        {#- A list with search at the bottom of the dialog (its list is not cut by the body that scrolls), with 300
+            choices in the page (the first 50 shown). -#}
+        {%- set technicians = [] -%}
+        {%- for index in 1..300 -%}
+            {%- set technicians = technicians|merge([{value: 't' ~ index, label: 'Technician ' ~ ('%03d'|format(index))}]) -%}
+        {%- endfor -%}
+        <label for="kit-dialog-technician">Technician</label>
+        {{ include('@LleCruditUi/form/_combobox.html.twig', {
+            id: 'kit-dialog-technician',
+            name: 'technician',
+            label: 'Technician',
+            options: technicians,
+        }, with_context: false) }}
     </form>
     <twig:block name="footer">
         <twig:LleCruditUi:Button commandfor="kit-dialog-form" command="close">Cancel</twig:LleCruditUi:Button>
@@ -30,7 +43,7 @@
     </twig:block>
 </twig:LleCruditUi:Dialog>
 
-{#- A drawer: long enough to scroll, with a dropdown (Escape closes it first) and a tooltip. -#}
+{#- A drawer: long enough to scroll, with a dropdown (Escape closes it first), a tooltip and a list with search. -#}
 <twig:LleCruditUi:Dialog id="kit-drawer" variant="drawer" title="Filters">
     <form id="kit-drawer-form" method="dialog" class="crudit-ui-kit__stack">
         <div class="crudit-ui-kit__row">
@@ -44,7 +57,16 @@
                 <twig:LleCruditUi:IconButton icon="save" label="Save the filters" size="small"/>
             </twig:LleCruditUi:Tooltip>
         </div>
-        {% for filter in ['Status', 'Customer', 'Technician', 'City', 'Type of visit', 'Contract', 'Zone', 'Created by'] %}
+        {#- A list with search: its list is placed again once the drawer has slid in (opened during the animation). -#}
+        <label for="kit-drawer-status">Status</label>
+        {{ include('@LleCruditUi/form/_combobox.html.twig', {
+            id: 'kit-drawer-status',
+            name: 'status[]',
+            label: 'Status',
+            multiple: true,
+            options: [{value: 'new', label: 'New'}, {value: 'planned', label: 'Planned'}, {value: 'done', label: 'Done'}],
+        }, with_context: false) }}
+        {% for filter in ['Customer', 'Technician', 'City', 'Type of visit', 'Contract', 'Zone', 'Created by'] %}
             <label for="kit-drawer-field-{{ loop.index }}">{{ filter }}</label>
             <input id="kit-drawer-field-{{ loop.index }}" type="text" name="filter-{{ loop.index }}">
         {% endfor %}

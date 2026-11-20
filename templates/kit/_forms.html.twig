@@ -128,6 +128,57 @@
 
         <div class="crudit-ui-field">
             <div class="crudit-ui-field__label-row">
+                <label for="kit-form-zones" class="crudit-ui-label">Zones (list with search, several answers)</label>
+            </div>
+            {{ include('@LleCruditUi/form/_combobox.html.twig', {
+                id: 'kit-form-zones',
+                name: 'zones[]',
+                label: 'Zones',
+                multiple: true,
+                attr: {'aria-describedby': 'kit-form-zones_help'},
+                options: [
+                    {value: 'n', label: 'North'}, {value: 's', label: 'South'}, {value: 'e', label: 'East'},
+                    {value: 'w', label: 'West'}, {value: 'c', label: 'Centre'}, {value: 'mtn', label: 'Mountains (Vosges)'},
+                    {value: 'cst', label: 'Côte d’Azur'},
+                ],
+                selected: [{value: 's', label: 'South'}],
+            }, with_context: false) }}
+            <p id="kit-form-zones_help" class="crudit-ui-help">Type to filter, Enter to add, Backspace to remove the last one.</p>
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-sites" class="crudit-ui-label">Sites (a closed site stays, it cannot be removed)</label>
+            </div>
+            {{ include('@LleCruditUi/form/_combobox.html.twig', {
+                id: 'kit-form-sites',
+                name: 'sites[]',
+                label: 'Sites',
+                multiple: true,
+                options: [
+                    {value: 'epi', label: 'Épinal'}, {value: 'nan', label: 'Nancy'},
+                    {value: 'mul', label: 'Mulhouse (closed)', disabled: true}, {value: 'col', label: 'Colmar (closed)', disabled: true},
+                ],
+                selected: [{value: 'mul', label: 'Mulhouse (closed)', disabled: true}, {value: 'epi', label: 'Épinal'}],
+            }, with_context: false) }}
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-client" class="crudit-ui-label">Client (list with search, from the server)</label>
+            </div>
+            {{ include('@LleCruditUi/form/_combobox.html.twig', {
+                id: 'kit-form-client',
+                name: 'client',
+                label: 'Client',
+                url: path('crudit_ui_kit_choices'),
+                attr: {'aria-required': 'true'},
+                selected: [{value: '1', label: 'Garage de Épinal 1'}],
+            }, with_context: false) }}
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
                 <label for="kit-form-active" class="crudit-ui-label">Active</label>
             </div>
             <label class="crudit-ui-switch">
