@@ -3,6 +3,11 @@
  * mockup. The styles are set with the CSSOM (element.style), which a strict Content Security Policy allows.
  */
 
+// The reference of each panel in position: fixed (an ancestor, or null for the screen), found when the panel is first
+// placed and kept until resetPosition(): it only depends on the ancestors. Its place on the screen is read again each
+// time (it moves when the page scrolls), but the panel is no longer moved to 0, 0 and measured at each frame.
+const references = new WeakMap();
+
 // Space kept between a panel and the edge of the screen, and between a panel and its button (px).
 const MARGIN = 8;
 const GAP = 4;
@@ -43,7 +48,10 @@ export function placeFloating(anchor, panel, {align = 'end', placement = 'below'
     const width = panel.offsetWidth;
     const height = panel.offsetHeight;
     const rtl = getComputedStyle(anchor).direction === 'rtl';
-    const origin = fixedOrigin(anchor, panel);
+    if (!references.has(panel)) {
+        references.set(panel, fixedReference(anchor, panel));
+    }
+    const origin = fixedOrigin(references.get(panel));
     const visible = visibleArea();
     const bounds = {
         top: Math.max(visible.top, origin.clip.top),
@@ -82,6 +90,7 @@ export function placeFloating(anchor, panel, {align = 'end', placement = 'below'
  * @param {HTMLElement} panel
  */
 export function resetPosition(panel) {
+    references.delete(panel);
     for (const property of ['top', 'left', 'maxHeight', 'translate']) {
         panel.style[property] = '';
     }
@@ -111,26 +120,43 @@ export function visibleArea() {
     };
 }
 
-function fixedOrigin(anchor, panel) {
-    const viewport = {top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth};
-    // Measured first: the browsers do not agree on what makes the reference (a container of container queries is not
-    // one in Chrome 157). At 0, 0 the panel is on the corner of the screen when the screen is its reference.
+/*
+ * The element that is the reference of the panel in position: fixed, or null for the screen.
+ */
+function fixedReference(anchor, panel) {
+    // Measured first: the browsers do not agree on what makes the reference. A size container (container-type) no
+    // longer has layout containment, so it is no longer the reference of position: fixed (CSSWG resolution,
+    // https://github.com/w3c/csswg-drafts/issues/10544, test
+    // https://github.com/web-platform-tests/wpt/blob/master/css/css-conditional/container-queries/no-layout-containment-fixedpos.html);
+    // browsers released before it still make it one. At 0, 0 the panel is on the corner of the screen when the screen
+    // is its reference.
     panel.style.top = '0px';
     panel.style.left = '0px';
     const corner = panel.getBoundingClientRect();
     const style = getComputedStyle(panel);
     if (Math.abs(corner.top - parseFloat(style.marginTop || '0')) < 1 && Math.abs(corner.left - parseFloat(style.marginLeft || '0')) < 1) {
-        return {top: 0, left: 0, clip: viewport};
+        return null;
     }
     for (let element = anchor.parentElement; element; element = element.parentElement) {
         if (containsFixed(getComputedStyle(element))) {
-            const rect = element.getBoundingClientRect();
-
-            return {top: rect.top + element.clientTop, left: rect.left + element.clientLeft, clip: clippingRect(element) ?? viewport};
+            return element;
         }
     }
 
-    return {top: 0, left: 0, clip: viewport};
+    return null;
+}
+
+/*
+ * Where the reference is on the screen now, and the part of the screen that shows it.
+ */
+function fixedOrigin(reference) {
+    const viewport = {top: 0, bottom: window.innerHeight, left: 0, right: window.innerWidth};
+    if (!reference) {
+        return {top: 0, left: 0, clip: viewport};
+    }
+    const rect = reference.getBoundingClientRect();
+
+    return {top: rect.top + reference.clientTop, left: rect.left + reference.clientLeft, clip: clippingRect(reference) ?? viewport};
 }
 
 /*
@@ -140,7 +166,8 @@ function containsFixed(style) {
     return ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdropFilter', 'webkitBackdropFilter'].some((property) => (style[property] ?? 'none') !== 'none')
         || /transform|translate|rotate|scale|perspective|filter/.test(style.willChange)
         || /paint|layout|strict|content/.test(style.contain)
-        // A size container has layout containment, which the computed value of contain does not show.
+        // A size container had layout containment in the browsers released before the resolution above (not shown by
+        // the computed value of contain): only reached when the measure did not find the screen.
         || (style.containerType ?? 'normal') !== 'normal';
 }
 

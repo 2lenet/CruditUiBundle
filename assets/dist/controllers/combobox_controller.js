@@ -29,7 +29,12 @@ const SHOWN = 50;
  * - multiple: a choice is added or removed, the list stays open; else a choice replaces the other one and closes the
  *   list. Each choice made is a token with a button that removes it; the focus then goes back to the input.
  * - The value is written in the hidden <select> (its options selected) or the hidden input (the values joined by the
- *   separator), which dispatches "change". The reset of the form gives back the first choices.
+ *   separator), which dispatches "change". The reset of the form gives back the choices of the server (value initial,
+ *   never changed: also after a restore from the cache of Turbo).
+ * - A disabled option of the <select> is shown (aria-disabled) but cannot be chosen; a disabled choice already made
+ *   keeps its token, without a button. The options of the <select> are read again each time the list opens (a script
+ *   may change them, a field that depends on another one).
+ * - From the server: the first page of the empty text is kept, the list opens again on it without a request.
  * - Announced in a live region: the count of choices (after 600 ms), no choice, an error, a choice added or removed.
  *
  * Events: "change" ({values}) on the element, "change" (bubbles) on the hidden field.
@@ -50,11 +55,16 @@ export default class extends Controller {
         countOneText: String,
         countOtherText: String,
         moreText: String,
+        initial: Array,
     };
 
     connect() {
         this.selected = this.readTokens();
-        this.initial = [...this.selected];
+        this.initial = this.hasInitialValue ? this.initialValue.map((choice) => ({
+            value: String(choice.value),
+            label: String(choice.label),
+            disabled: Boolean(choice.disabled),
+        })) : [...this.selected];
         this.placeholder = this.inputTarget.getAttribute('placeholder') ?? '';
         this.choices = [];
         this.activeIndex = -1;
@@ -63,13 +73,9 @@ export default class extends Controller {
         this.nextOffset = null;
         this.pending = false;
         this.loading = false;
-        this.all = this.urlValue ? null : Array.from(this.valueTarget.options)
-            .filter((option) => option.value !== '')
-            .map((option) => {
-                const label = option.textContent.trim();
-
-                return { value: option.value, label, folded: fold(label) };
-            });
+        // The first page of the empty text, from the server: {items, nextOffset, total}.
+        this.firstPage = null;
+        this.all = this.readOptions();
 
         this.onFocusOut = (event) => {
             if (!this.element.contains(event.relatedTarget)) {
@@ -122,6 +128,7 @@ export default class extends Controller {
             return;
         }
         this.isOpen = true;
+        this.all = this.readOptions();
         this.listboxTarget.hidden = false;
         this.inputTarget.setAttribute('aria-expanded', 'true');
         this.update(true);
@@ -196,6 +203,17 @@ export default class extends Controller {
             this.show([], query, false);
             return;
         }
+        if (query === '' && this.loaded === null && this.firstPage !== null) {
+            // The first choices, already received: no request each time the field takes the focus.
+            this.request?.abort();
+            this.loading = false;
+            this.pending = false;
+            this.nextOffset = this.firstPage.nextOffset;
+            this.loaded = '';
+            this.show(this.firstPage.items, '', false);
+            this.announceCount(this.firstPage.total);
+            return;
+        }
         if (query === this.loaded) {
             // Back to the text whose choices are shown: the request of another text is cancelled, its "Loading" too.
             if (this.loading) {
@@ -255,6 +273,9 @@ export default class extends Controller {
             const total = data.total_count;
             this.nextOffset = typeof next === 'number' && next > offset && items.length > 0 && (typeof total !== 'number' || next < total) ? next : null;
             this.loaded = query;
+            if (query === '' && offset === 0) {
+                this.firstPage = { items, nextOffset: this.nextOffset, total: typeof total === 'number' ? total : items.length };
+            }
             this.show(items, query, offset > 0);
             if (offset === 0) {
                 this.announceCount(typeof total === 'number' ? total : items.length);
@@ -319,8 +340,10 @@ export default class extends Controller {
         option.className = 'crudit-ui-combobox__option';
         option.setAttribute('role', 'option');
         option.setAttribute('aria-selected', this.isSelected(choice.value) ? 'true' : 'false');
-        // The option takes no focus: the input keeps it.
-        option.addEventListener('mousedown', (event) => event.preventDefault());
+        if (choice.disabled) {
+            option.setAttribute('aria-disabled', 'true');
+            option.classList.add('crudit-ui-combobox__option--disabled');
+        }
         option.addEventListener('click', () => this.toggle(index));
         option.addEventListener('mousemove', () => this.activate(index));
 
@@ -372,7 +395,10 @@ export default class extends Controller {
         } else if (event.key === 'Enter' && this.isOpen && (this.pending || this.choices[this.activeIndex])) {
             // The choices are those of an older text: nothing is chosen until the ones of the text in the input are there.
             event.preventDefault();
-            if (!this.pending) {
+            if (this.pending) {
+                // Nothing chosen yet: the user is told that the choices are coming.
+                this.announceText(this.loadingTextValue, 0);
+            } else {
                 this.toggle(this.activeIndex);
             }
         } else if (event.key === 'Escape' && this.isOpen) {
@@ -380,8 +406,11 @@ export default class extends Controller {
             event.preventDefault();
             event.stopPropagation();
             this.close();
-        } else if (event.key === 'Backspace' && this.inputTarget.value === '' && this.selected.length > 0) {
-            this.unselect(this.selected[this.selected.length - 1].value);
+        } else if (event.key === 'Backspace' && this.inputTarget.value === '') {
+            const last = this.selected.filter((choice) => !choice.disabled).pop();
+            if (last) {
+                this.unselect(last.value);
+            }
         }
     }
 
@@ -404,7 +433,7 @@ export default class extends Controller {
 
     toggle(index) {
         const choice = this.choices[index];
-        if (!choice) {
+        if (!choice || choice.disabled) {
             return;
         }
         if (this.isSelected(choice.value)) {
@@ -438,7 +467,7 @@ export default class extends Controller {
 
     unselect(value) {
         const choice = this.selected.find((candidate) => candidate.value === value);
-        if (!choice) {
+        if (!choice || choice.disabled) {
             return;
         }
         this.selected = this.selected.filter((candidate) => candidate !== choice);
@@ -458,11 +487,32 @@ export default class extends Controller {
         });
     }
 
+    // A click in the list, on an option or not (its message, its scrollbar): the input keeps the focus, the list stays open.
+    keepFocus(event) {
+        event.preventDefault();
+    }
+
     readTokens() {
         return Array.from(this.tokensTarget.querySelectorAll('[data-value]'), (token) => ({
             value: token.dataset.value,
             label: (token.querySelector('.crudit-ui-combobox__token-label')?.textContent ?? '').trim(),
+            disabled: token.hasAttribute('data-disabled'),
         }));
+    }
+
+    // The choices of the hidden <select> (none from the server), as they are now.
+    readOptions() {
+        if (this.urlValue) {
+            return null;
+        }
+
+        return Array.from(this.valueTarget.options)
+            .filter((option) => option.value !== '')
+            .map((option) => {
+                const label = option.textContent.trim();
+
+                return { value: option.value, label, folded: fold(label), disabled: option.disabled };
+            });
     }
 
     renderTokens() {
@@ -471,11 +521,14 @@ export default class extends Controller {
             const token = document.createElement('li');
             token.className = 'crudit-ui-combobox__token';
             token.dataset.value = choice.value;
+            if (choice.disabled) {
+                token.dataset.disabled = '';
+            }
             const label = document.createElement('span');
             label.className = 'crudit-ui-combobox__token-label';
             label.textContent = choice.label;
             token.append(label);
-            if (!disabled) {
+            if (!disabled && !choice.disabled) {
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'crudit-ui-combobox__remove';
