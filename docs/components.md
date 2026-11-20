@@ -763,8 +763,9 @@ of Crudit: it counts the pages from `total` and `perPage`, and builds its addres
     to the first page, and a server that keeps the page in its session does not read the old one.
   - The rows per page in use is **always one of the choices** (added, in order, without doubles), so the selector
     shows what the list shows. With `perPage` 5 and 8 results, the selector stays for the choices above 5.
-- The attributes of the root (`class`, `id`, `data-` …) are the project's; a `data-action` it passes is **added** to the
-  one of the pager (the press on a link), as in `Filter:Bar`.
+- The attributes of the root (`class`, `id`, `data-` …) are the project's; a `data-controller` or a `data-action` it
+  passes is **added** to those of the pager (the controller `pager` and the press on a link), they do not replace
+  them.
 - **The selection of the table follows the pager** (3.1.c): the table recognises a link that only changes the page by its
   parameter, `page` or a name ending with `_offset`. With another `pageParam`, the selection is not kept from one page
   to the other.

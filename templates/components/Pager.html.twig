@@ -30,10 +30,11 @@
 {#- The rows per page of the list is always a choice: else the selector shows another number than the list does. -#}
 {%- set choices = ui_pager_choices(perPageChoices, size) -%}
 {%- set hasChoices = choices and total > min(choices) -%}
-{#- The action of the pager, then those of the project (data-action it passes): the two work. -#}
+{#- The controller and the action of the pager, then those of the project (data-controller and data-action it passes): the two work. -#}
 {%- set projectActions = attributes.all['data-action']|default(null) -%}
+{%- set projectControllers = attributes.all['data-controller']|default(null) -%}
 {%- if total > 0 -%}
-<div {{ attributes.without('data-action').defaults({id: id, class: 'crudit-ui-pager', 'data-controller': hasChoices ? controller : null, 'data-action': ((hasChoices ? 'pointerdown->' ~ controller ~ '#pointer' : '') ~ ' ' ~ (projectActions ?? ''))|trim ?: null}) }}>
+<div {{ attributes.without('data-action', 'data-controller').defaults({id: id, class: 'crudit-ui-pager', 'data-controller': ((hasChoices ? controller : '') ~ ' ' ~ (projectControllers ?? ''))|trim ?: null, 'data-action': ((hasChoices ? 'pointerdown->' ~ controller ~ '#pointer' : '') ~ ' ' ~ (projectActions ?? ''))|trim ?: null}) }}>
     <p class="crudit-ui-pager__summary">{{ 'crudit_ui.pager.summary'|trans({'%from%': first|ui_number, '%to%': last|ui_number, '%total%': total|ui_number, '%label%': label}, domain) }}</p>
 
     {%- if count > 1 -%}
