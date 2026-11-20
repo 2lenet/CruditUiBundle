@@ -148,6 +148,23 @@
 
         <div class="crudit-ui-field">
             <div class="crudit-ui-field__label-row">
+                <label for="kit-form-sites" class="crudit-ui-label">Sites (a closed site stays, it cannot be removed)</label>
+            </div>
+            {{ include('@LleCruditUi/form/_combobox.html.twig', {
+                id: 'kit-form-sites',
+                name: 'sites[]',
+                label: 'Sites',
+                multiple: true,
+                options: [
+                    {value: 'epi', label: 'Épinal'}, {value: 'nan', label: 'Nancy'},
+                    {value: 'mul', label: 'Mulhouse (closed)', disabled: true}, {value: 'col', label: 'Colmar (closed)', disabled: true},
+                ],
+                selected: [{value: 'mul', label: 'Mulhouse (closed)', disabled: true}, {value: 'epi', label: 'Épinal'}],
+            }, with_context: false) }}
+        </div>
+
+        <div class="crudit-ui-field">
+            <div class="crudit-ui-field__label-row">
                 <label for="kit-form-client" class="crudit-ui-label">Client (list with search, from the server)</label>
             </div>
             {{ include('@LleCruditUi/form/_combobox.html.twig', {

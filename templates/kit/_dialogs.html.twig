@@ -43,7 +43,7 @@
     </twig:block>
 </twig:LleCruditUi:Dialog>
 
-{#- A drawer: long enough to scroll, with a dropdown (Escape closes it first) and a tooltip. -#}
+{#- A drawer: long enough to scroll, with a dropdown (Escape closes it first), a tooltip and a list with search. -#}
 <twig:LleCruditUi:Dialog id="kit-drawer" variant="drawer" title="Filters">
     <form id="kit-drawer-form" method="dialog" class="crudit-ui-kit__stack">
         <div class="crudit-ui-kit__row">
@@ -57,7 +57,16 @@
                 <twig:LleCruditUi:IconButton icon="save" label="Save the filters" size="small"/>
             </twig:LleCruditUi:Tooltip>
         </div>
-        {% for filter in ['Status', 'Customer', 'Technician', 'City', 'Type of visit', 'Contract', 'Zone', 'Created by'] %}
+        {#- A list with search: its list is placed again once the drawer has slid in (opened during the animation). -#}
+        <label for="kit-drawer-status">Status</label>
+        {{ include('@LleCruditUi/form/_combobox.html.twig', {
+            id: 'kit-drawer-status',
+            name: 'status[]',
+            label: 'Status',
+            multiple: true,
+            options: [{value: 'new', label: 'New'}, {value: 'planned', label: 'Planned'}, {value: 'done', label: 'Done'}],
+        }, with_context: false) }}
+        {% for filter in ['Customer', 'Technician', 'City', 'Type of visit', 'Contract', 'Zone', 'Created by'] %}
             <label for="kit-drawer-field-{{ loop.index }}">{{ filter }}</label>
             <input id="kit-drawer-field-{{ loop.index }}" type="text" name="filter-{{ loop.index }}">
         {% endfor %}

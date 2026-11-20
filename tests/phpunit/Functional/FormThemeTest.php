@@ -587,8 +587,11 @@ class FormThemeTest extends TestCase
         $select = $html->querySelector('.crudit-ui-combobox select');
         self::assertNotNull($select);
         self::assertSame(['n', 's', 'e'], array_map(fn ($option) => $option->getAttribute('value'), iterator_to_array($select->querySelectorAll('option'))));
-        self::assertFalse($select->querySelector('option[value="n"]')?->hasAttribute('disabled'));
-        self::assertTrue($select->querySelector('option[value="e"]')?->hasAttribute('disabled'), 'the script reads it and does not choose it');
+        self::assertFalse($select->querySelector('option[value="n"]')?->hasAttribute('data-disabled'));
+        self::assertTrue($select->querySelector('option[value="e"]')?->hasAttribute('data-disabled'), 'the script reads it and does not choose it');
+        // Never the attribute disabled: a browser does not send a disabled option, the choice already made would be lost
+        self::assertNull($select->querySelector('option[disabled]'));
+        self::assertTrue($select->querySelector('option[value="s"]')?->hasAttribute('selected'));
         // The disabled choice already made keeps its token, without a button
         $token = $html->querySelector('.crudit-ui-combobox__token[data-value="s"]');
         self::assertTrue($token?->hasAttribute('data-disabled'));

@@ -1,6 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
 import { fold, find, marked } from '../utils/text.js';
-import { placeFloating, resetPosition } from '../utils/position.js';
+import { forgetReference, placeFloating, resetPosition } from '../utils/position.js';
 
 const DEBOUNCE = 200;
 // The count is announced once the typing has stopped: not at every key.
@@ -31,8 +31,9 @@ const SHOWN = 50;
  * - The value is written in the hidden <select> (its options selected) or the hidden input (the values joined by the
  *   separator), which dispatches "change". The reset of the form gives back the choices of the server (value initial,
  *   never changed: also after a restore from the cache of Turbo).
- * - A disabled option of the <select> is shown (aria-disabled) but cannot be chosen; a disabled choice already made
- *   keeps its token, without a button. The options of the <select> are read again each time the list opens (a script
+ * - A disabled option of the <select> (data-disabled, or disabled set by a script) is shown (aria-disabled) but cannot
+ *   be chosen; a disabled choice already made keeps its token, without a button, and is sent with the form (data-disabled:
+ *   a browser never sends an option with the attribute disabled). The options of the <select> are read again each time the list opens (a script
  *   may change them, a field that depends on another one).
  * - From the server: the first page of the empty text is kept, the list opens again on it without a request.
  * - Announced in a live region: the count of choices (after 600 ms), no choice, an error, a choice added or removed.
@@ -97,6 +98,14 @@ export default class extends Controller {
             }
         };
         this.onResize = () => this.follow();
+        // An ancestor has finished an animation (a drawer that slides in, while the list opened on the focus of its first
+        // field): what makes the reference of position: fixed may have changed, it is measured again.
+        this.onAnimationEnd = (event) => {
+            if (event.target instanceof Node && event.target.contains(this.element)) {
+                forgetReference(this.listboxTarget);
+                this.follow();
+            }
+        };
 
         this.form = this.element.closest('form');
         this.form?.addEventListener('reset', this.onReset);
@@ -135,6 +144,8 @@ export default class extends Controller {
         this.place();
         window.addEventListener('scroll', this.onScroll, { capture: true, passive: true });
         window.addEventListener('resize', this.onResize);
+        document.addEventListener('transitionend', this.onAnimationEnd, { capture: true });
+        document.addEventListener('animationend', this.onAnimationEnd, { capture: true });
         // The virtual keyboard of a phone opens or the page zooms: the part of the page seen changes.
         window.visualViewport?.addEventListener('resize', this.onResize);
         window.visualViewport?.addEventListener('scroll', this.onResize);
@@ -174,6 +185,8 @@ export default class extends Controller {
         cancelAnimationFrame(this.frame);
         window.removeEventListener('scroll', this.onScroll, { capture: true });
         window.removeEventListener('resize', this.onResize);
+        document.removeEventListener('transitionend', this.onAnimationEnd, { capture: true });
+        document.removeEventListener('animationend', this.onAnimationEnd, { capture: true });
         window.visualViewport?.removeEventListener('resize', this.onResize);
         window.visualViewport?.removeEventListener('scroll', this.onResize);
         resetPosition(this.listboxTarget);
@@ -203,8 +216,9 @@ export default class extends Controller {
             this.show([], query, false);
             return;
         }
-        if (query === '' && this.loaded === null && this.firstPage !== null) {
-            // The first choices, already received: no request each time the field takes the focus.
+        if (query === '' && this.loaded !== '' && this.firstPage !== null) {
+            // The first choices, already received: no request each time the field takes the focus, or the text is
+            // erased (not when they are shown, maybe with the next pages: nothing to do then, see below).
             this.request?.abort();
             this.loading = false;
             this.pending = false;
@@ -511,7 +525,7 @@ export default class extends Controller {
             .map((option) => {
                 const label = option.textContent.trim();
 
-                return { value: option.value, label, folded: fold(label), disabled: option.disabled };
+                return { value: option.value, label, folded: fold(label), disabled: option.disabled || option.hasAttribute('data-disabled') };
             });
     }
 

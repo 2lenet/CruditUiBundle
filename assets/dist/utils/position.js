@@ -4,7 +4,7 @@
  */
 
 // The reference of each panel in position: fixed (an ancestor, or null for the screen), found when the panel is first
-// placed and kept until resetPosition(): it only depends on the ancestors. Its place on the screen is read again each
+// placed and kept until resetPosition() or forgetReference(): it only depends on the ancestors. Its place on the screen is read again each
 // time (it moves when the page scrolls), but the panel is no longer moved to 0, 0 and measured at each frame.
 const references = new WeakMap();
 
@@ -85,12 +85,22 @@ export function placeFloating(anchor, panel, {align = 'end', placement = 'below'
 }
 
 /**
+ * Forgets the reference of the panel: placeFloating() measures it again. To call when an ancestor may have changed while
+ * the panel is shown (a drawer that has finished sliding in no longer has a transform).
+ *
+ * @param {HTMLElement} panel
+ */
+export function forgetReference(panel) {
+    references.delete(panel);
+}
+
+/**
  * Removes what keepInViewport() and placeFloating() set.
  *
  * @param {HTMLElement} panel
  */
 export function resetPosition(panel) {
-    references.delete(panel);
+    forgetReference(panel);
     for (const property of ['top', 'left', 'maxHeight', 'translate']) {
         panel.style[property] = '';
     }

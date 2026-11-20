@@ -328,6 +328,25 @@ try {
     assert.deepEqual(await zonesValues(), ['s']);
     await page.$eval('#kit-form-zones', (input) => input.blur());
 
+    // A disabled choice already made keeps its token, without a button, and is sent with the form (a browser never
+    // sends an <option disabled>); a disabled choice that is not made cannot be chosen.
+    const sites = await page.$eval('#kit-form-sites', (input) => ({
+        sent: new FormData(input.form).getAll('sites[]'),
+        buttons: [...input.closest('.crudit-ui-combobox').querySelectorAll('.crudit-ui-combobox__token')].map((token) => token.querySelector('button') !== null),
+    }));
+    assert.deepEqual(sites, {sent: ['epi', 'mul'], buttons: [false, true]}, 'a disabled choice already made is not sent, or can be removed');
+    await page.focus('#kit-form-sites');
+    await page.keyboard.type('colmar');
+    await page.waitForFunction(() => document.querySelectorAll('#kit-form-sites_listbox [role="option"]').length === 1, {timeout: 2000}).catch(() => null);
+    await page.keyboard.press('Enter');
+    assert.deepEqual(
+        await page.$eval('#kit-form-sites', (input) => new FormData(input.form).getAll('sites[]')),
+        ['epi', 'mul'],
+        'a disabled choice can be chosen',
+    );
+    await page.keyboard.press('Escape');
+    await page.$eval('#kit-form-sites', (input) => input.blur());
+
     // The virtual keyboard of a phone, simulated (no browser of the tests shows one): visualViewport ends 40 px under
     // the field. The list stays above the keyboard, and goes back under the field when the keyboard closes.
     const keyboard = await page.evaluate(async () => {
@@ -388,6 +407,25 @@ try {
     await page.keyboard.type('none');
     await page.waitForFunction(() => document.querySelector('#kit-form-client_listbox [data-message]')?.textContent === 'No result.', {timeout: 5000}).catch(() => null);
     assert.equal((await clientState()).message, 'No result.', 'no choice is not told');
+    // The text erased: the first choices, kept, without a request
+    const emptyTextRequests = [];
+    const countEmptyText = (request) => {
+        if (request.url().includes('/crudit-ui/kit-choices') && /[?&]q=(&|$)/.test(request.url())) {
+            emptyTextRequests.push(request.url());
+        }
+    };
+    page.on('request', countEmptyText);
+    await page.$eval('#kit-form-client', (input) => {
+        input.value = '';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    await pause(500);
+    page.off('request', countEmptyText);
+    assert.deepEqual(
+        {requests: emptyTextRequests.length, options: (await clientState()).options.length},
+        {requests: 0, options: 20},
+        'the text erased asks the first choices again, or does not show them',
+    );
     await page.keyboard.press('Escape');
 
     // A slow server: Enter while the choices of the text are asked chooses nothing (the ones shown are of an older
@@ -1046,6 +1084,28 @@ try {
     assert.deepEqual([(await dialog('kit-drawer')).open, await page.evaluate(() => document.getElementById('kit-drawer-saved-panel').hidden)], [true, true], 'Escape in a dropdown closes the drawer around it');
     await page.keyboard.press('Escape');
     assert.equal((await dialog('kit-drawer')).open, false, 'Escape does not close the drawer');
+    // A list with search that opens while the drawer slides in (a transform, the reference of position: fixed during
+    // the animation only): once the drawer is in place, the list is under its field again.
+    await page.evaluate(() => {
+        document.getElementById('kit-drawer-open').click();
+        document.getElementById('kit-drawer-status').focus();
+    });
+    await page.waitForFunction(() => getComputedStyle(document.getElementById('kit-drawer')).translate === 'none' && !document.getElementById('kit-drawer-status_listbox').hidden, {timeout: 3000});
+    const drawerList = await page.evaluate(async () => {
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const list = document.getElementById('kit-drawer-status_listbox').getBoundingClientRect();
+        const field = document.getElementById('kit-drawer-status').closest('.crudit-ui-combobox__field').getBoundingClientRect();
+
+        return {
+            focus: document.activeElement.id,
+            left: Math.round(list.left) === Math.round(field.left),
+            nextToField: Math.abs(list.top - field.bottom - 4) < 2 || Math.abs(field.top - list.bottom - 4) < 2,
+        };
+    });
+    assert.deepEqual(drawerList, {focus: 'kit-drawer-status', left: true, nextToField: true}, `the list opened while the drawer slides in stays shifted (${JSON.stringify(drawerList)})`);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    assert.equal((await dialog('kit-drawer')).open, false, 'Escape does not close the list, then the drawer');
 
     // The value "open": shown modal when the dialog connects (a form sent back with its errors).
     const atLoad = await page.evaluate(async () => {

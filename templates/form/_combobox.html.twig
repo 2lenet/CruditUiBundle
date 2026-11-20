@@ -7,7 +7,8 @@
  # aria-describedby, aria-invalid, aria-required, placeholder…), selected (the choices made: [{value, label, disabled}],
  # disabled optional: a choice made that cannot be removed). The reset of the form gives these choices back.
  # The choices: options ([{value, label, disabled}], filtered in the page, a disabled one shown but not chosen; the value
- # is sent by a hidden <select>), or url (asked
+ # is sent by a hidden <select>, data-disabled on its options: a browser never sends a disabled option, a disabled
+ # choice already made would be lost), or url (asked
  # to the server, min_length characters typed first; the value is sent by a hidden input, the values joined by
  # separator).
  #}
@@ -80,7 +81,7 @@
         <select name="{{ name }}"{% if multiple %} multiple{% endif %}{% if disabled %} disabled{% endif %} hidden data-{{ controller }}-target="value">
             {%- if not multiple %}<option value=""></option>{% endif -%}
             {%- for option in options|default([]) -%}
-                <option value="{{ option.value }}"{% if (option.value ~ '') in values %} selected{% endif %}{% if option.disabled|default(false) %} disabled{% endif %}>{{ option.label }}</option>
+                <option value="{{ option.value }}"{% if (option.value ~ '') in values %} selected{% endif %}{% if option.disabled|default(false) %} data-disabled{% endif %}>{{ option.label }}</option>
             {%- endfor -%}
         </select>
     {%- else -%}
