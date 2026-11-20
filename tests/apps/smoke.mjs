@@ -1395,6 +1395,104 @@ try {
     assert.equal(await page.$eval('#kit-table-sort-off [role="status"]', (status) => status.textContent), 'The order cannot change while a filter is active.');
 
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // Pager: links that change the page, no dead link on the first page, "2 / 5" on a phone, the rows per page reload the
+    // list at once and go back to the first page, the arrows are mirrored in right to left.
+    {
+        const pager = await browser.newPage();
+        await pager.setViewport({width: 1280, height: 800});
+        await pager.goto(new URL('crudit-ui/kit?middle=6&middle_limit=30', url).href, {waitUntil: 'networkidle0'});
+        const root = '#kit-pager-middle';
+        assert.equal(await pager.$eval(`${root} .crudit-ui-pager__summary`, (e) => e.textContent.trim()), '151 to 180 of 360 visits', 'pager: summary');
+        assert.deepEqual(await pager.$$eval(`${root} .crudit-ui-pager__number`, (items) => items.map((item) => item.textContent.replace(/\s+/g, ' ').trim())),
+            ['Page 1', '…', 'Page 5', 'Page 6', 'Page 7', '…', 'Page 12'], 'pager: numbers');
+        assert.equal(await pager.$eval(`${root} [aria-current="page"]`, (e) => e.tagName), 'SPAN', 'pager: the current page is a link');
+        assert.equal(await pager.$$eval('#kit-pager-first [aria-disabled="true"]', (items) => items.filter((item) => item.tagName === 'A').length), 0, 'pager: a dead link on the first page');
+        assert.equal(await pager.$$eval('#kit-pager-first [aria-disabled="true"]', (items) => items.length), 2, 'pager: first and previous are not disabled on the first page');
+        assert.equal(await pager.$eval('#kit-pager-first .crudit-ui-pager__status', (e) => getComputedStyle(e).display), 'none', 'pager: "1 / 5" shows on a wide screen');
+        // the focus ring and the size of a target (24 px at least)
+        const link = await pager.$(`${root} a[href*="middle=7"]`);
+        const box = await link.boundingBox();
+        assert.ok(box.width >= 24 && box.height >= 24, `pager: a target of ${box.width}x${box.height}`);
+        // the rows per page: the list reloads at once, back to the first page, the other parameters stay
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.$eval(`${root} select`, (select) => { select.value = '50'; select.dispatchEvent(new Event('change', {bubbles: true})); })]);
+        const query = new URL(pager.url()).searchParams;
+        assert.equal(query.get('middle_limit'), '50', 'pager: the rows per page are not sent');
+        assert.equal(query.get('middle'), '1', 'pager: the form does not send the first page');
+        assert.equal(await pager.$eval(`${root} .crudit-ui-pager__summary`, (e) => e.textContent.trim()), '1 to 50 of 360 visits');
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '50', 'pager: the selector forgets the choice');
+        // the keyboard: an arrow changes the choice without reloading the list, Enter sends it
+        await pager.goto(new URL('crudit-ui/kit?middle=6&middle_limit=30', url).href, {waitUntil: 'networkidle0'});
+        await pager.focus(`${root} select`);
+        await pager.keyboard.press('ArrowDown');
+        await pager.keyboard.press('ArrowDown');
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '30', 'pager: an arrow key reloaded the list');
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '100', 'pager: the arrows did not change the choice');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.keyboard.press('Enter')]);
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '100', 'pager: Enter did not send the choice');
+        // a choice taken back by the keys sends nothing, at the end of the focus (blur() on the select, not Tab: Tab leads
+        // to a link of the pager, which drops the choice) nor with Enter
+        const reopen = async () => {
+            await pager.goto(new URL('crudit-ui/kit?middle=6&middle_limit=30', url).href, {waitUntil: 'networkidle0'});
+            await pager.focus(`${root} select`);
+        };
+        const quiet = () => new Promise((resolve) => setTimeout(resolve, 400));
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await pager.keyboard.press('ArrowUp');
+        await pager.$eval(`${root} select`, (e) => e.blur());
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle'), '6', 'pager: a choice taken back reloaded the list (blur)');
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await pager.keyboard.press('ArrowUp');
+        await pager.keyboard.press('Enter');
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle'), '6', 'pager: a choice taken back reloaded the list (Enter)');
+        // a choice made by a key and the end of the focus: sent
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.$eval(`${root} select`, (e) => e.blur())]);
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '50', 'pager: the end of the focus did not send the choice');
+        // a digit typed waits
+        await reopen();
+        await pager.keyboard.type('1');
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '30', 'pager: a digit typed reloaded the list');
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '100', 'pager: the digit did not choose 100');
+        // a choice waiting, then Shift+Tab to the last link of the pager: leaving the field sends the choice
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.keyboard.press('Shift+Tab')]);
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '50', 'pager: Shift+Tab dropped the choice');
+        // a choice waiting, then a press on a page link that is cancelled (slid off the link): the field shows the list again
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        const slide = await pager.$(`${root} a[href*="middle=7"]`);
+        const where = await slide.boundingBox();
+        await pager.mouse.move(where.x + where.width / 2, where.y + where.height / 2);
+        await pager.mouse.down();
+        await pager.mouse.move(where.x + where.width / 2, where.y - 80);
+        await pager.mouse.up();
+        await quiet();
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '30', 'pager: the field keeps a choice that was dropped');
+        // a choice waiting, then a click on a page: the link wins, the choice is dropped (no second visit later)
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.click(`${root} a[href*="middle=7"]`)]);
+        const landed = new URL(pager.url()).searchParams;
+        assert.equal(landed.get('middle'), '7', 'pager: the link was not followed');
+        assert.equal(landed.get('middle_limit'), '30', 'pager: the choice waiting went with the link');
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle'), '7', 'pager: a second visit came after the link');
+        // a phone: previous, "2 / 5", next
+        await pager.setViewport({width: 360, height: 800});
+        assert.equal(await pager.$eval('#kit-pager-last .crudit-ui-pager__status', (e) => getComputedStyle(e).display !== 'none'), true, 'pager: no "5 / 5" on a phone');
+        assert.equal(await pager.$eval('#kit-pager-last .crudit-ui-pager__number', (e) => getComputedStyle(e).display), 'none', 'pager: the numbers show on a phone');
+        assert.equal(await pager.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'pager: the page scrolls sideways on a phone');
+        await pager.close();
+    }
+
     // SelectionBar: the rows checked by the server count, the pager carries the selection (and "all the results"), a sort
     // or a reload do not, the links carry the ids, the focus is not lost.
     {
@@ -1425,7 +1523,7 @@ try {
         assert.match(await text(), /^All 137 results are selected/, 'selection bar: all the results are not offered');
         assert.equal(await bar.$eval('#kit-selection-export', (a) => new URL(a.href).searchParams.get('all_page')), '1');
         // another page of the pager (other rows): the mode and the rows checked follow, the rows of the page are all checked
-        await go('#kit-pager-2');
+        await go('#kit-table-pager a[href$="page=2"]');
         assert.match(await text(), /^All 137 results are selected/, 'selection bar: "all the results" does not follow the pager');
         assert.deepEqual(await boxes(), [true, true, true, true], 'selection bar: the rows of the next page are not checked in the mode "all"');
         // unchecking a row leaves the mode, and says so: the 4 rows of the page 1 and 3 of the page 2 are left
@@ -1433,9 +1531,9 @@ try {
         assert.match(await text(), /^7 rows selected/, 'selection bar: unchecking a row does not leave the mode "all", or the rows of the page 1 are lost');
         assert.match(await live(), /ended: 7 rows still selected/, 'selection bar: the end of the mode "all" is not announced');
         // back to the page 1 (already seen: under Turbo, shown from its cache first), then to the page 2 again
-        await go('#kit-pager-1');
+        await go('#kit-table-pager a[href$="page=1"]');
         assert.deepEqual(await boxes(), [true, true, true, true], 'selection bar: the rows do not follow the pager');
-        await go('#kit-pager-2');
+        await go('#kit-table-pager a[href$="page=2"]');
         assert.deepEqual(await boxes(), [false, true, true, true], 'selection bar: the rows do not follow the pager when the page was seen already (cache of Turbo)');
         assert.match(await text(), /^7 rows selected/);
         // a sort starts again from the rows the server checked

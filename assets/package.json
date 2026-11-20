@@ -73,6 +73,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "pager": {
+                "main": "dist/controllers/pager_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "saved-filters": {
                 "main": "dist/controllers/saved_filters_controller.js",
                 "webpackMode": "eager",

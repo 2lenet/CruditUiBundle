@@ -79,6 +79,17 @@ crudit_ui:
             full: "Maximum number of characters reached"
     language:
         label: Language
+    pager:
+        label: "Pagination of the %label%"
+        first: "First page"
+        previous: "Previous page"
+        next: "Next page"
+        last: "Last page (%count%)"
+        page: "Page"
+        summary: "%from% to %to% of %total% %label%"
+        per_page: "Rows per page"
+        per_page_help: "The list updates as soon as you choose; with the keyboard, confirm with Enter or by leaving the field."
+        apply: "Apply"
     selection:
         label: "Actions on the selection"
         one: "%count% row selected"
