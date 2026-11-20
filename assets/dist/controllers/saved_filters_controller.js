@@ -11,6 +11,8 @@ import { Controller } from '@hotwired/stimulus';
  *   GET of the filters would carry them in the address: the name has no `name` attribute (a field that is disabled
  *   cannot be typed in) and the others are disabled. "arm" (click on "Save") gives them back, and they are taken away
  *   again at the end of the click, once the form has read its data (the submit comes before).
+ * - `required` is on the name only for the click on "Save" (see arm()): the browser then asks for the name, in a field that is
+ *   visible. Left on, it would stop every send of the filters (button "Apply", Enter, chips) while the name is empty.
  * - A name already taken (names, without regard to the case) turns "Save" into "Replace" and says so; with the maximum
  *   reached, a new name cannot be saved (the server refuses too).
  * - Enter in the name saves: the form of the filters would send them (a GET) instead.
@@ -20,7 +22,7 @@ import { Controller } from '@hotwired/stimulus';
  * Values: names (the names of the sets), max, texts ({help, replaceHelp, save, replace, maxReached}).
  */
 export default class extends Controller {
-    static targets = ['toggle', 'region', 'name', 'help', 'submit', 'field', 'confirm', 'cancel'];
+    static targets = ['toggle', 'region', 'name', 'help', 'submit', 'field', 'confirm', 'cancel', 'bin'];
 
     static values = {names: Array, max: Number, texts: Object};
 
@@ -77,13 +79,18 @@ export default class extends Controller {
             event.preventDefault();
             return;
         }
+        // The name is checked now, by the browser, and sent as it was compared: the spaces cleaned. `required` is only on for
+        // this click: a `required` field, even without `name`, would stop every other send of the form while it is empty.
+        this.nameTarget.value = this.cleanName(this.nameTarget.value);
         this.nameTarget.name = 'name';
+        this.nameTarget.required = true;
         this.fieldTargets.forEach((field) => {
             field.disabled = false;
         });
         // The click is followed by the validation and the send of the form, in the same task: a timer is after them.
         setTimeout(() => {
             this.nameTarget.removeAttribute('name');
+            this.nameTarget.required = false;
             this.fieldTargets.forEach((field) => {
                 field.disabled = true;
             });
@@ -126,7 +133,7 @@ export default class extends Controller {
         if (confirm) {
             confirm.hidden = true;
         }
-        item?.querySelector('.crudit-ui-icon-btn')?.focus();
+        this.binTargets.find((bin) => item?.contains(bin))?.focus();
     }
 
     closeConfirms() {

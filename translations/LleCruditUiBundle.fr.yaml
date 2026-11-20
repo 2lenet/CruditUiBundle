@@ -43,11 +43,11 @@ crudit_ui:
             cancel: "Annuler"
             save: "Enregistrer ces filtres"
             name_label: "Nom des filtres"
-            name_help: "Les critères du panneau sont enregistrés puis appliqués. %max% jeux au plus."
+            name_help: "Les critères du panneau sont enregistrés puis appliqués. {1} 1 jeu au plus.|]1,Inf[ %max% jeux au plus."
             replace_help: "Un jeu porte déjà ce nom : il sera remplacé."
             save_button: "Enregistrer"
             replace: "Remplacer"
-            max_reached: "%max% jeux au plus : supprimez-en un pour en enregistrer un autre."
+            max_reached: "{1} 1 jeu au plus : supprimez-le pour en enregistrer un autre.|]1,Inf[ %max% jeux au plus : supprimez-en un pour en enregistrer un autre."
         period:
             today: "Aujourd'hui"
             last_7_days: "7 derniers jours"

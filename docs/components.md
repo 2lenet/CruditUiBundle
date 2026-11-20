@@ -843,6 +843,18 @@ gives **POST forms** with `token` (a CSRF token, `_token`) and `redirect` (the a
   `disabled` until "Save" is clicked (controller `saved-filters`, action `arm`): a GET of the filters, which is the form's usual send,
   must not carry them. A name already taken (without regard to the case) turns "Save" into "Replace" and says so; Enter in the name
   saves, Escape folds the field without closing the panel. The controller needs JavaScript; the server checks everything again.
+  `required` is set on the name only for the click on "Save" (a `required` field, even without `name`, would stop every send of the
+  filters while it is empty). The name is sent as it was compared: spaces merged and trimmed (`cleanName()`).
+- **What the server must do** (CruditBundle does it): compare names the way the field does, spaces merged, trimmed and lower-cased
+  (`preg_replace('/\s+/u', ' ')`, `mb_strtolower()`), or "Replace" would say the wrong thing; **validate `redirect`** (an address
+  of the site: one slash, no host), it comes from a form the user can edit, or it is an open redirect; check the token, the maximum
+  and the owner.
+- **A period and its name** (`<name>_preset`, "this_month"): a date typed by hand empties the name; a ready-made period fills both.
+  The draft that a send leaves out keeps the name with the dates (a hidden field never looks changed, so the draft takes every
+  hidden field of a changed filter). When both come to the server, the name wins if it is one of `PeriodPreset`, and the dates are
+  worked out again from it; an unknown name is dropped and the dates stay.
+- `ui_period_presets()` works out "today" in the time zone of Twig (`twig.date.timezone`), not that of PHP.
+- The texts that tell the maximum use the plural of the translator (`%count%`): "1 set at most", "3 sets at most".
 - Controller `saved-filters` (`eager`, to enable in `controllers.json` with Flex; values `names`, `max`, `texts`, set by the
   component). Texts: `crudit_ui.filter.saved.*` (fr, en, de, it).
 

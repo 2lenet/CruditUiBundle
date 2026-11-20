@@ -7,6 +7,8 @@ namespace Lle\CruditUiBundle\Twig;
 use Lle\CruditUiBundle\Filter\PeriodPreset;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Attribute\AsTwigFunction;
+use Twig\Environment;
+use Twig\Extension\CoreExtension;
 
 /**
  * Function `ui_period_presets()`: the ready-made periods of `Filter:Period` (id, label, from, to), from today.
@@ -15,6 +17,7 @@ class FilterExtension
 {
     public function __construct(
         protected TranslatorInterface $translator,
+        protected Environment $twig,
     ) {
     }
 
@@ -24,7 +27,8 @@ class FilterExtension
     #[AsTwigFunction('ui_period_presets')]
     public function periodPresets(?\DateTimeInterface $now = null): array
     {
-        $now ??= new \DateTimeImmutable('today');
+        // Today in the time zone of Twig (`twig.date.timezone`), the one of its filter `date`, not that of PHP.
+        $now ??= new \DateTimeImmutable('today', $this->twig->getExtension(CoreExtension::class)->getTimezone());
         $periods = [];
         foreach (PeriodPreset::cases() as $preset) {
             $periods[] = [

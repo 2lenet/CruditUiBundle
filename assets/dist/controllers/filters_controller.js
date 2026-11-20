@@ -254,9 +254,11 @@ export default class extends Controller {
     }
 
     // The changes left out of a send would vanish with the page: they are kept once for the next one, which puts them
-    // back in the panel (still a draft: the server has not seen them).
+    // back in the panel (still a draft: the server has not seen them). A hidden field of a changed filter goes too: its
+    // `defaultValue` follows its `value`, so it never looks changed (the name of a period, "this_month", which a date
+    // typed by hand empties: it must come back with its dates, in the order of the form, after them).
     saveDraft(inputs) {
-        const changes = inputs.filter((input) => input.name && this.modified(input)).map((input) => ({
+        const changes = inputs.filter((input) => input.name && (input.type === 'hidden' || this.modified(input))).map((input) => ({
             name: input.name,
             value: input.value,
             type: input instanceof HTMLSelectElement ? 'select' : input.type,
@@ -310,7 +312,11 @@ export default class extends Controller {
             } else {
                 input.value = value;
             }
-            // The scripts of the fields (condition, summary of a period) follow, as for a change by the user.
+            // The scripts of the fields (condition, summary of a period) follow, as for a change by the user. Not a hidden
+            // field (the name of a period): it has no script, and it comes after the dates, which emptied it.
+            if (input.type === 'hidden') {
+                return;
+            }
             input.dispatchEvent(new Event('input', {bubbles: true}));
         });
     }

@@ -276,39 +276,45 @@ class FilterTest extends TestCase
         self::assertSame('2lenet--crudit-ui-bundle--filters', $form->getAttribute('data-controller'));
         self::assertNull($form->querySelector('.crudit-ui-filter-saved'));
         self::assertNull($form->querySelector('.crudit-ui-filter-save'));
-        self::assertNull($form->ownerDocument->getElementById('b-saved-form'));
+        self::assertNull($this->html($this->render(new TestKernel(), '<twig:LleCruditUi:Filter:Bar id="b" label="L" :filters="[]" />'))->getElementById('b-saved-form'));
     }
 
     public function testTheBarHasMyFiltersAndSaveTheseFilters(): void
     {
         $page = $this->savedPage();
         $form = $page->querySelector('form.crudit-ui-filter-bar');
+        self::assertNotNull($form);
 
-        self::assertSame('2lenet--crudit-ui-bundle--filters 2lenet--crudit-ui-bundle--saved-filters', $form?->getAttribute('data-controller'));
+        self::assertSame('2lenet--crudit-ui-bundle--filters 2lenet--crudit-ui-bundle--saved-filters', $form->getAttribute('data-controller'));
         self::assertSame('["Late <b>visits<\/b>","This week"]', html_entity_decode((string) $form->getAttribute('data-2lenet--crudit-ui-bundle--saved-filters-names-value')));
         self::assertSame('3', $form->getAttribute('data-2lenet--crudit-ui-bundle--saved-filters-max-value'));
 
         // The save region is hidden in the panel, its three fields are off: a GET of the filters must not carry them.
         $region = $form->querySelector('dialog .crudit-ui-filter-save');
-        self::assertTrue($region?->hasAttribute('hidden'));
+        self::assertNotNull($region);
+        self::assertTrue($region->hasAttribute('hidden'));
         foreach (['_token', 'redirect'] as $name) {
             self::assertTrue($region->querySelector('[name="' . $name . '"]')?->hasAttribute('disabled'), $name . ' is off');
         }
         $name = $region->querySelector('input#b-save-name');
-        self::assertFalse($name?->hasAttribute('name'), 'the name field is sent by no GET: no name until "Save"');
+        self::assertNotNull($name);
+        self::assertFalse($name->hasAttribute('name'), 'the name field is sent by no GET: no name until "Save"');
         self::assertFalse($name->hasAttribute('disabled'), 'it can be typed in');
-        self::assertTrue($name->hasAttribute('required'));
-        self::assertSame('Name of the filters', $region->querySelector('label')?->textContent);
-        self::assertSame('b-save-name', $region->querySelector('label')->getAttribute('for'));
-        self::assertSame('b-save-help', $region->querySelector('input#b-save-name')?->getAttribute('aria-describedby'));
+        self::assertFalse($name->hasAttribute('required'), 'required only for the click on "Save": it would stop every send of the filters');
+        $label = $region->querySelector('label');
+        self::assertSame('Name of the filters', $label?->textContent);
+        self::assertSame('b-save-name', $label->getAttribute('for'));
+        self::assertSame('b-save-help', $name->getAttribute('aria-describedby'));
         $save = $region->querySelector('button[type=submit]');
-        self::assertSame('/crudit/filters/visit/saved', $save?->getAttribute('formaction'));
+        self::assertNotNull($save);
+        self::assertSame('/crudit/filters/visit/saved', $save->getAttribute('formaction'));
         self::assertSame('post', $save->getAttribute('formmethod'));
-        self::assertSame('Save', trim($save->textContent));
+        self::assertSame('Save', trim((string) $save->textContent));
 
         // The button of the panel that shows the field, and its state.
         $toggle = $form->querySelector('dialog button[aria-controls=b-save]');
-        self::assertSame('false', $toggle?->getAttribute('aria-expanded'));
+        self::assertNotNull($toggle);
+        self::assertSame('false', $toggle->getAttribute('aria-expanded'));
         self::assertStringContainsString('Save these filters', (string) $toggle->textContent);
         self::assertSame('button', $toggle->getAttribute('type'));
     }
@@ -338,9 +344,11 @@ class FilterTest extends TestCase
     {
         $page = $this->savedPage();
         $saved = $page->querySelector('.crudit-ui-filter-saved');
-        $button = $saved?->querySelector('.crudit-ui-dropdown > button');
+        self::assertNotNull($saved);
+        $button = $saved->querySelector('.crudit-ui-dropdown > button');
+        self::assertNotNull($button);
 
-        self::assertStringContainsString('crudit-ui-filter-saved__button--active', (string) $button?->getAttribute('class'));
+        self::assertStringContainsString('crudit-ui-filter-saved__button--active', (string) $button->getAttribute('class'));
         self::assertSame('Late <b>visits</b>', $button->querySelector('.crudit-ui-filter-saved__label')?->textContent, 'a name is text, never HTML');
         self::assertNull($saved->querySelector('.crudit-ui-filter-saved__name b'));
         self::assertStringContainsString('(My filters)', (string) $button->textContent, 'the accessible name keeps what the button is');
@@ -379,8 +387,9 @@ class FilterTest extends TestCase
     {
         $page = $this->savedPage("{saveUrl: '/s', token: 't', redirect: '/v', max: 10, items: []}");
         $saved = $page->querySelector('.crudit-ui-filter-saved');
+        self::assertNotNull($saved);
 
-        self::assertStringContainsString('Open “Filters”', (string) $saved?->querySelector('.crudit-ui-filter-saved__empty')?->textContent);
+        self::assertStringContainsString('Open “Filters”', (string) $saved->querySelector('.crudit-ui-filter-saved__empty')?->textContent);
         self::assertNull($saved->querySelector('.crudit-ui-filter-saved__list'));
         self::assertNull($saved->querySelector('.crudit-ui-filter-saved__button--active'));
         self::assertSame('My filters', $saved->querySelector('.crudit-ui-filter-saved__label')?->textContent);
@@ -390,7 +399,7 @@ class FilterTest extends TestCase
     {
         $page = $this->savedPage("{saveUrl: '/s', token: 't', redirect: '/v', max: 1, items: [{id: 1, name: 'One', summary: '', current: false, applyUrl: '/a', deleteUrl: '/d'}]}");
 
-        self::assertStringContainsString('1 sets at most', (string) $page->querySelector('.crudit-ui-filter-saved__note')?->textContent);
+        self::assertStringContainsString('1 set at most', (string) $page->querySelector('.crudit-ui-filter-saved__note')?->textContent);
     }
 
     public function testTheBarIsAGetFormNamedByItsLabel(): void

@@ -21,7 +21,6 @@
 {%- set barId = id -%}
 {%- set barLabel = label -%}
 {%- set filtersController = '2lenet--crudit-ui-bundle--filters' -%}
-{%- set savedController = '2lenet--crudit-ui-bundle--saved-filters' -%}
 {%- set visible = filters|filter(item => not (item.hidden|default(false))) -%}
 {%- set quick = visible|filter(item => item.primary|default(false)) -%}
 {%- set others = visible|filter(item => not (item.primary|default(false))) -%}
@@ -31,7 +30,25 @@
 {#- The actions of the bar, then those of the project (data-action it passes): the two work. -#}
 {%- set barActions = 'change->' ~ filtersController ~ '#changed input->' ~ filtersController ~ '#typed 2lenet--crudit-ui-bundle--filter-period:change->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--filter-field:operator->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--dropdown:close->' ~ filtersController ~ '#closed keydown->' ~ filtersController ~ '#keydown submit->' ~ filtersController ~ '#submitted' -%}
 {%- set projectActions = attributes.all['data-action']|default(null) -%}
-<form {{ attributes.without('data-action').defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController ~ (saved ? ' ' ~ savedController : ''), ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': barActions ~ (projectActions ? ' ' ~ projectActions : '')}) }}{% if saved %} data-{{ savedController }}-names-value="{{ (saved.items|default([])|map(item => item.name))|json_encode }}" data-{{ savedController }}-max-value="{{ saved.max|default(10) }}" data-{{ savedController }}-texts-value="{{ {help: 'crudit_ui.filter.saved.name_help'|trans({'%max%': saved.max|default(10)}, 'LleCruditUiBundle'), replaceHelp: 'crudit_ui.filter.saved.replace_help'|trans({}, 'LleCruditUiBundle'), save: 'crudit_ui.filter.saved.save_button'|trans({}, 'LleCruditUiBundle'), replace: 'crudit_ui.filter.saved.replace'|trans({}, 'LleCruditUiBundle'), maxReached: 'crudit_ui.filter.saved.max_reached'|trans({'%max%': saved.max|default(10)}, 'LleCruditUiBundle')}|json_encode }}"{% endif %}{% if action is not null %} action="{{ action }}"{% endif %}>
+{%- set savedMax = saved ? saved.max|default(10) : 10 -%}
+{%- set savedController = '2lenet--crudit-ui-bundle--saved-filters' -%}
+{%- if saved -%}
+    {%- set trans = 'LleCruditUiBundle' -%}
+    {%- set savedAttributes = {
+        ('data-' ~ savedController ~ '-names-value'): saved.items|default([])|map(item => item.name)|json_encode,
+        ('data-' ~ savedController ~ '-max-value'): savedMax,
+        ('data-' ~ savedController ~ '-texts-value'): {
+            help: 'crudit_ui.filter.saved.name_help'|trans({'%count%': savedMax, '%max%': savedMax}, trans),
+            replaceHelp: 'crudit_ui.filter.saved.replace_help'|trans({}, trans),
+            save: 'crudit_ui.filter.saved.save_button'|trans({}, trans),
+            replace: 'crudit_ui.filter.saved.replace'|trans({}, trans),
+            maxReached: 'crudit_ui.filter.saved.max_reached'|trans({'%count%': savedMax, '%max%': savedMax}, trans),
+        }|json_encode,
+    } -%}
+{%- else -%}
+    {%- set savedAttributes = {} -%}
+{%- endif -%}
+<form {{ attributes.without('data-action').defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController ~ (saved ? ' ' ~ savedController : ''), ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': barActions ~ (projectActions ? ' ' ~ projectActions : '')}).defaults(savedAttributes) }}{% if action is not null %} action="{{ action }}"{% endif %}>
     {%- if applyName %}<input type="hidden" name="{{ applyName }}" value="filter">{% endif %}
     <div class="crudit-ui-filter-bar__toolbar">
         {%- if search %}
@@ -87,13 +104,14 @@
             {%- endfor %}
         </div>
         {%- if saved %}
-            {#- Save these filters: what is in the panel (the draft), sent by a POST of this form. The name has no `name` and the two
-             # hidden fields are off until the button is clicked (the controller): a send of the filters, a GET, must not carry them. -#}
+            {#- Save these filters: what is in the panel (the draft), sent by a POST of this form. The name has no `name` and no `required`, and the two
+             # hidden fields are off, until the button is clicked (the controller): a send of the filters, a GET, must not carry them,
+             # and a `required` field, even without `name`, would stop every send of the form while it is empty. -#}
             <div id="{{ barId }}-save" class="crudit-ui-filter-save" data-{{ savedController }}-target="region" hidden>
                 <div class="crudit-ui-filter-save__field">
                     <label for="{{ barId }}-save-name">{{ 'crudit_ui.filter.saved.name_label'|trans({}, 'LleCruditUiBundle') }}</label>
-                    <input type="text" id="{{ barId }}-save-name" class="crudit-ui-input" maxlength="100" autocomplete="off" required aria-describedby="{{ barId }}-save-help" data-{{ savedController }}-target="name" data-action="input->{{ savedController }}#nameChanged keydown.enter->{{ savedController }}#enter keydown.esc->{{ savedController }}#cancelSave">
-                    <p id="{{ barId }}-save-help" class="crudit-ui-filter-save__help" aria-live="polite" data-{{ savedController }}-target="help">{{ 'crudit_ui.filter.saved.name_help'|trans({'%max%': saved.max|default(10)}, 'LleCruditUiBundle') }}</p>
+                    <input type="text" id="{{ barId }}-save-name" class="crudit-ui-input" maxlength="100" autocomplete="off" aria-describedby="{{ barId }}-save-help" data-{{ savedController }}-target="name" data-action="input->{{ savedController }}#nameChanged keydown.enter->{{ savedController }}#enter keydown.esc->{{ savedController }}#cancelSave">
+                    <p id="{{ barId }}-save-help" class="crudit-ui-filter-save__help" aria-live="polite" data-{{ savedController }}-target="help">{{ 'crudit_ui.filter.saved.name_help'|trans({'%count%': savedMax, '%max%': savedMax}, 'LleCruditUiBundle') }}</p>
                 </div>
                 <input type="hidden" name="_token" value="{{ saved.token }}" disabled data-{{ savedController }}-target="field">
                 <input type="hidden" name="redirect" value="{{ saved.redirect|default('') }}" disabled data-{{ savedController }}-target="field">

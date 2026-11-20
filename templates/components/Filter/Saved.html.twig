@@ -13,6 +13,7 @@
  # Contract: docs/components.md.
  #}
 {% props id, saved, resetUrl = null %}
+{%- set savedMax = saved.max|default(10) -%}
 {%- set items = saved.items|default([]) -%}
 {%- set current = (items|filter(item => item.current|default(false))|first) ?: null -%}
 {%- set savedController = '2lenet--crudit-ui-bundle--saved-filters' -%}
@@ -47,7 +48,7 @@
                                 {%- else %}
                                     <button type="submit" form="{{ formId }}" formaction="{{ item.applyUrl }}" class="crudit-ui-filter-saved__apply">{{ content }}</button>
                                 {%- endif %}
-                                <twig:LleCruditUi:IconButton icon="delete" size="small" label="{{ 'crudit_ui.filter.saved.delete'|trans({'%name%': item.name}, trans) }}" data-action="{{ savedController }}#askDelete" />
+                                <twig:LleCruditUi:IconButton icon="delete" size="small" label="{{ 'crudit_ui.filter.saved.delete'|trans({'%name%': item.name}, trans) }}" data-action="{{ savedController }}#askDelete" data-2lenet--crudit-ui-bundle--saved-filters-target="bin" />
                             </div>
                             {#- Asked in place: the dropdown stays open, and a dialog would close it. -#}
                             <div class="crudit-ui-filter-saved__confirm" role="group" aria-label="{{ 'crudit_ui.filter.saved.delete'|trans({'%name%': item.name}, trans) }}" data-{{ savedController }}-target="confirm" data-action="keydown.esc->{{ savedController }}#cancelDelete" hidden>
@@ -63,8 +64,8 @@
             {%- else %}
                 <p class="crudit-ui-filter-saved__empty">{{ 'crudit_ui.filter.saved.empty'|trans({}, trans) }}</p>
             {%- endif %}
-            {%- if items|length >= saved.max|default(10) %}
-                <p class="crudit-ui-filter-saved__note">{{ 'crudit_ui.filter.saved.max_reached'|trans({'%max%': saved.max|default(10)}, trans) }}</p>
+            {%- if items|length >= savedMax %}
+                <p class="crudit-ui-filter-saved__note">{{ 'crudit_ui.filter.saved.max_reached'|trans({'%count%': savedMax, '%max%': savedMax}, trans) }}</p>
             {%- endif %}
         </div>
     </twig:LleCruditUi:Dropdown>
