@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lle\CruditUiBundle\Tests\Functional;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -400,6 +401,29 @@ class FilterTest extends TestCase
         $page = $this->savedPage("{saveUrl: '/s', token: 't', redirect: '/v', max: 1, items: [{id: 1, name: 'One', summary: '', current: false, applyUrl: '/a', deleteUrl: '/d'}]}");
 
         self::assertStringContainsString('1 set at most', (string) $page->querySelector('.crudit-ui-filter-saved__note')?->textContent);
+    }
+
+    /**
+     * @return iterable<string, array{int, string, string}>
+     */
+    public static function maxTexts(): iterable
+    {
+        yield 'one' => [1, 'The criteria of the panel are saved, then applied. 1 set at most.', '1 set at most: delete it to save another.'];
+        yield 'three' => [3, 'The criteria of the panel are saved, then applied. 3 sets at most.', '3 sets at most: delete one to save another.'];
+        yield 'none' => [0, 'The criteria of the panel are saved, then applied. 1 set at most.', '1 set at most: delete it to save another.'];
+    }
+
+    #[DataProvider('maxTexts')]
+    public function testTheTextsOfTheMaximumAreWholeInTheSingularAndThePlural(int $max, string $help, string $reached): void
+    {
+        $page = $this->savedPage("{saveUrl: '/s', token: 't', redirect: '/v', max: " . $max . ", items: []}");
+
+        self::assertSame($help, $page->getElementById('b-save-help')?->textContent);
+        $form = $page->querySelector('form.crudit-ui-filter-bar');
+        $texts = json_decode(html_entity_decode((string) $form?->getAttribute('data-2lenet--crudit-ui-bundle--saved-filters-texts-value')), true);
+        self::assertIsArray($texts);
+        self::assertSame($help, $texts['help']);
+        self::assertSame($reached, $texts['maxReached']);
     }
 
     public function testTheBarIsAGetFormNamedByItsLabel(): void

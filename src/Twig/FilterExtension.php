@@ -17,18 +17,17 @@ class FilterExtension
 {
     public function __construct(
         protected TranslatorInterface $translator,
-        protected Environment $twig,
     ) {
     }
 
     /**
      * @return list<array{id: string, label: string, from: string, to: string}>
      */
-    #[AsTwigFunction('ui_period_presets')]
-    public function periodPresets(?\DateTimeInterface $now = null): array
+    #[AsTwigFunction('ui_period_presets', needsEnvironment: true)]
+    public function periodPresets(Environment $twig, ?\DateTimeInterface $now = null): array
     {
         // Today in the time zone of Twig (`twig.date.timezone`), the one of its filter `date`, not that of PHP.
-        $now ??= new \DateTimeImmutable('today', $this->twig->getExtension(CoreExtension::class)->getTimezone());
+        $now ??= new \DateTimeImmutable('today', $twig->getExtension(CoreExtension::class)->getTimezone());
         $periods = [];
         foreach (PeriodPreset::cases() as $preset) {
             $periods[] = [

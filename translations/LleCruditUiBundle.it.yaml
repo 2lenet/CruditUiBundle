@@ -43,11 +43,11 @@ crudit_ui:
             cancel: "Annulla"
             save: "Salva questi filtri"
             name_label: "Nome dei filtri"
-            name_help: "I criteri del pannello vengono salvati, poi applicati. {1} Al massimo 1 serie.|]1,Inf[ Al massimo %max% serie."
+            name_help: "[0,1] I criteri del pannello vengono salvati, poi applicati. Al massimo 1 serie.|]1,Inf[ I criteri del pannello vengono salvati, poi applicati. Al massimo %max% serie."
             replace_help: "Una serie ha già questo nome: sarà sostituita."
             save_button: "Salva"
             replace: "Sostituisci"
-            max_reached: "{1} Al massimo 1 serie: eliminatela per salvarne un’altra.|]1,Inf[ Al massimo %max% serie: eliminatene una per salvarne un’altra."
+            max_reached: "[0,1] Al massimo 1 serie: eliminatela per salvarne un’altra.|]1,Inf[ Al massimo %max% serie: eliminatene una per salvarne un’altra."
         period:
             today: "Oggi"
             last_7_days: "Ultimi 7 giorni"
