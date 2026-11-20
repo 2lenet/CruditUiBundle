@@ -80,8 +80,16 @@ in place of Tom Select):
 - the input `input#<id>.crudit-ui-combobox__input`, `role="combobox"`, attached to `ul#<id>_listbox` (`role="listbox"`,
   `aria-multiselectable` with several answers), to the help and the error; `aria-required` instead of `required`;
   the placeholder of the field, else *Search…*;
-- a live region that tells the count of choices, a choice added or removed, no result, an error;
+- a live region that tells the count of choices, a choice added or removed, no result, an error, *Loading…* when
+  Enter is pressed before the choices of the text are there;
 - the value is sent by a hidden `<select>` with the name of the field (its options are the choices).
+
+The choices are those of the field, groups flattened. The preferred choices that are not among the others
+(`duplicate_preferred_choices: false`) come first, as in a native list. A disabled choice (`choice_attr` with
+`disabled`) is shown (`aria-disabled`) but cannot be chosen; already chosen, it keeps its token without a button. The
+options of the hidden `<select>` are read again each time the list opens: a script may change them (a field that
+depends on another one). The reset of the form gives back the choices made of the server (also after a restore from the
+cache of Turbo).
 
 The keyboard: the list opens on the focus, a click and the arrows; up and down move the active option
 (`aria-activedescendant`, the focus stays in the input), Enter chooses it without sending the form, Escape closes the
@@ -103,7 +111,9 @@ phone, above the virtual keyboard (`visualViewport`).
 `{"items": [{"id", "text"}], "next_offset": <n>, "total_count": <n>}` (the answer of the route `autocomplete` of
 CruditBundle). The first choices are asked when the list opens (`combobox_min_length`: characters typed before a
 request, 0), the ones of the text 200 ms after the last key, the next ones when the list is scrolled to its end;
-the request still running is cancelled by a newer one. The value is sent by a hidden input, the values joined by a comma
+the request still running is cancelled by a newer one. The first page of the empty text is kept: the list opens again on
+it without a request (Tab through a form). The list asks no more once `next_offset` reaches `total_count`, or when a
+page is empty. The value is sent by a hidden input, the values joined by a comma
 (`combobox_separator`): the field type reads this text (a data transformer, as `EntityToIdTransformer` of CruditBundle),
 so a value must not contain the separator (ids do not). A `ChoiceType` reads a list: on it, `combobox_url` is ignored and
 its choices stay in the page.

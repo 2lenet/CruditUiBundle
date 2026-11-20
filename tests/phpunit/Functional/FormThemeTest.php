@@ -572,6 +572,68 @@ class FormThemeTest extends TestCase
         self::assertSame(['n', 's'], array_map(fn ($option) => $option->getAttribute('value'), iterator_to_array($select?->querySelectorAll('option') ?? [])));
     }
 
+    public function testADisabledChoiceOfAListWithSearchIsShownButCannotBeChosen(): void
+    {
+        $form = $this->form()
+            ->add('zones', ChoiceType::class, [
+                'choices' => ['North' => 'n', 'South' => 's', 'East' => 'e'],
+                'choice_attr' => fn (string $value) => in_array($value, ['s', 'e'], true) ? ['disabled' => 'disabled'] : [],
+                'multiple' => true,
+                'data' => ['s'],
+            ])
+            ->getForm();
+        $html = $this->renderTemplate($form, '{{ form_row(form.zones, {combobox: true}) }}');
+
+        $select = $html->querySelector('.crudit-ui-combobox select');
+        self::assertNotNull($select);
+        self::assertSame(['n', 's', 'e'], array_map(fn ($option) => $option->getAttribute('value'), iterator_to_array($select->querySelectorAll('option'))));
+        self::assertFalse($select->querySelector('option[value="n"]')?->hasAttribute('disabled'));
+        self::assertTrue($select->querySelector('option[value="e"]')?->hasAttribute('disabled'), 'the script reads it and does not choose it');
+        // The disabled choice already made keeps its token, without a button
+        $token = $html->querySelector('.crudit-ui-combobox__token[data-value="s"]');
+        self::assertTrue($token?->hasAttribute('data-disabled'));
+        self::assertNull($token->querySelector('button'));
+        self::assertSame(
+            [['value' => 's', 'label' => 'South', 'disabled' => true]],
+            json_decode((string) $html->querySelector('.crudit-ui-combobox')?->getAttribute('data-2lenet--crudit-ui-bundle--combobox-initial-value'), true),
+            'the choices of the server, for the reset of the form',
+        );
+    }
+
+    public function testThePreferredChoicesNotDuplicatedAreInTheListWithSearch(): void
+    {
+        $form = $this->form()
+            ->add('zones', ChoiceType::class, [
+                'choices' => ['North' => 'n', 'South' => 's', 'Côte d’Azur' => 'cst'],
+                'preferred_choices' => ['cst'],
+                'duplicate_preferred_choices' => false,
+                'group_by' => fn (string $value) => 'cst' === $value ? 'Coast' : 'Mainland',
+                'multiple' => true,
+                'data' => ['cst'],
+            ])
+            ->getForm();
+        $html = $this->renderTemplate($form, '{{ form_row(form.zones, {combobox: true}) }}');
+
+        // The preferred choice first (as in a native list), once; its token shown
+        $select = $html->querySelector('.crudit-ui-combobox select');
+        self::assertNotNull($select);
+        self::assertSame(['cst', 'n', 's'], array_map(fn ($option) => $option->getAttribute('value'), iterator_to_array($select->querySelectorAll('option'))));
+        self::assertSame(['cst'], array_map(fn ($option) => $option->getAttribute('value'), iterator_to_array($select->querySelectorAll('option[selected]'))));
+        self::assertSame('Côte d’Azur', $html->querySelector('.crudit-ui-combobox__token[data-value="cst"] .crudit-ui-combobox__token-label')?->textContent);
+    }
+
+    public function testAClickInTheListOfAListWithSearchLeavesTheFocusInTheInput(): void
+    {
+        $form = $this->form()->add('zones', ChoiceType::class, ['choices' => ['North' => 'n'], 'multiple' => true])->getForm();
+        $html = $this->renderTemplate($form, '{{ form_row(form.zones, {combobox: true}) }}');
+
+        self::assertStringContainsString(
+            'mousedown->2lenet--crudit-ui-bundle--combobox#keepFocus',
+            (string) $html->querySelector('[role="listbox"]')?->getAttribute('data-action'),
+            'a click on its message or its scrollbar does not close it',
+        );
+    }
+
     public function testADisabledListWithSearchHasNoButtonToRemoveAChoice(): void
     {
         $form = $this->form()

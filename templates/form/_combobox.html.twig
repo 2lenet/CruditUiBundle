@@ -4,8 +4,10 @@
  #
  # id (of the input, the label points to it), name (of the hidden field that sends the value), label (names the
  # listbox and the list of the choices made), multiple, disabled, invalid, class (of the root), attr (of the input:
- # aria-describedby, aria-invalid, aria-required, placeholder…), selected (the choices made: [{value, label}]).
- # The choices: options ([{value, label}], filtered in the page; the value is sent by a hidden <select>), or url (asked
+ # aria-describedby, aria-invalid, aria-required, placeholder…), selected (the choices made: [{value, label, disabled}],
+ # disabled optional: a choice made that cannot be removed). The reset of the form gives these choices back.
+ # The choices: options ([{value, label, disabled}], filtered in the page, a disabled one shown but not chosen; the value
+ # is sent by a hidden <select>), or url (asked
  # to the server, min_length characters typed first; the value is sent by a hidden input, the values joined by
  # separator).
  #}
@@ -35,13 +37,15 @@
     data-{{ controller }}-count-one-text-value="{{ 'crudit_ui.combobox.count.one'|trans({}, domain) }}"
     data-{{ controller }}-count-other-text-value="{{ 'crudit_ui.combobox.count.other'|trans({}, domain) }}"
     data-{{ controller }}-more-text-value="{{ 'crudit_ui.combobox.more'|trans({}, domain) }}"
+    {#- The choices of the server, never changed by the script: the reset of the form, also after a restore of Turbo #}
+    data-{{ controller }}-initial-value="{{ selected|map(item => {value: item.value ~ '', label: item.label ~ '', disabled: item.disabled|default(false)})|json_encode }}"
 >
     <div class="crudit-ui-combobox__field" data-action="click->{{ controller }}#focus">
         <ul class="crudit-ui-combobox__tokens" aria-label="{{ 'crudit_ui.combobox.selected'|trans({'%label%': label}, domain) }}"{% if selected is empty %} hidden{% endif %} data-{{ controller }}-target="tokens">
             {%- for item in selected -%}
-                <li class="crudit-ui-combobox__token" data-value="{{ item.value }}">
+                <li class="crudit-ui-combobox__token" data-value="{{ item.value }}"{% if item.disabled|default(false) %} data-disabled{% endif %}>
                     <span class="crudit-ui-combobox__token-label">{{ item.label }}</span>
-                    {%- if not disabled -%}
+                    {%- if not disabled and not item.disabled|default(false) -%}
                         <button type="button" class="crudit-ui-combobox__remove" data-action="{{ controller }}#remove">
                             {{- ui_icon('close', 'crudit-ui-combobox__remove-icon') -}}
                             <span class="crudit-ui-visually-hidden">{{ 'crudit_ui.combobox.remove'|trans({'%label%': item.label}, domain) }}</span>
@@ -63,7 +67,8 @@
     </div>
     <ul id="{{ id }}_listbox" class="crudit-ui-combobox__listbox" role="listbox" aria-label="{{ label }}"{% if multiple %} aria-multiselectable="true"{% endif %} hidden
         data-{{ controller }}-target="listbox"
-        data-action="scroll->{{ controller }}#scroll"
+        {#- A click in the list (an option, its message, its scrollbar) leaves the focus in the input #}
+        data-action="scroll->{{ controller }}#scroll mousedown->{{ controller }}#keepFocus"
     ></ul>
     <p class="crudit-ui-visually-hidden" role="status" aria-live="polite" data-{{ controller }}-target="status"></p>
     <template data-{{ controller }}-target="icons">
@@ -75,7 +80,7 @@
         <select name="{{ name }}"{% if multiple %} multiple{% endif %}{% if disabled %} disabled{% endif %} hidden data-{{ controller }}-target="value">
             {%- if not multiple %}<option value=""></option>{% endif -%}
             {%- for option in options|default([]) -%}
-                <option value="{{ option.value }}"{% if (option.value ~ '') in values %} selected{% endif %}>{{ option.label }}</option>
+                <option value="{{ option.value }}"{% if (option.value ~ '') in values %} selected{% endif %}{% if option.disabled|default(false) %} disabled{% endif %}>{{ option.label }}</option>
             {%- endfor -%}
         </select>
     {%- else -%}

@@ -284,22 +284,39 @@
             {%- set crudit_ui_name = crudit_ui_name|trans(label_translation_parameters, translation_domain) -%}
         {%- endif -%}
     {%- endif -%}
-    {#- The choices of the field (groups flattened) and the choices made, in the order of the field -#}
+    {#- The choices of the field (groups flattened) and the choices made, in the order of the field. The preferred
+     # choices that are not among the choices (duplicate_preferred_choices: false) come first, as in a native list.
+     # A disabled choice (choice_attr) is shown but cannot be chosen. -#}
     {%- set crudit_ui_options = [] -%}
     {%- set crudit_ui_selected = combobox_selected|default([]) -%}
     {%- if crudit_ui_url is null -%}
         {%- set crudit_ui_selected = [] -%}
+        {%- set crudit_ui_choices = [] -%}
         {%- for crudit_ui_entry in choices -%}
             {%- for crudit_ui_choice in (crudit_ui_entry.choices is defined ? crudit_ui_entry.choices : [crudit_ui_entry]) -%}
-                {%- set crudit_ui_option = {
-                    value: crudit_ui_choice.value,
-                    label: choice_translation_domain is same as(false) ? crudit_ui_choice.label : crudit_ui_choice.label|trans(crudit_ui_choice.labelTranslationParameters, choice_translation_domain),
-                } -%}
-                {%- set crudit_ui_options = crudit_ui_options|merge([crudit_ui_option]) -%}
-                {%- if crudit_ui_choice is selectedchoice(value) -%}
-                    {%- set crudit_ui_selected = crudit_ui_selected|merge([crudit_ui_option]) -%}
+                {%- set crudit_ui_choices = crudit_ui_choices|merge([crudit_ui_choice]) -%}
+            {%- endfor -%}
+        {%- endfor -%}
+        {%- set crudit_ui_values = crudit_ui_choices|map(c => c.value ~ '') -%}
+        {%- set crudit_ui_preferred = [] -%}
+        {%- for crudit_ui_entry in preferred_choices|default([]) -%}
+            {%- for crudit_ui_choice in (crudit_ui_entry.choices is defined ? crudit_ui_entry.choices : [crudit_ui_entry]) -%}
+                {%- if (crudit_ui_choice.value ~ '') not in crudit_ui_values -%}
+                    {%- set crudit_ui_values = crudit_ui_values|merge([crudit_ui_choice.value ~ '']) -%}
+                    {%- set crudit_ui_preferred = crudit_ui_preferred|merge([crudit_ui_choice]) -%}
                 {%- endif -%}
             {%- endfor -%}
+        {%- endfor -%}
+        {%- for crudit_ui_choice in crudit_ui_preferred|merge(crudit_ui_choices) -%}
+            {%- set crudit_ui_option = {
+                value: crudit_ui_choice.value,
+                label: choice_translation_domain is same as(false) ? crudit_ui_choice.label : crudit_ui_choice.label|trans(crudit_ui_choice.labelTranslationParameters, choice_translation_domain),
+                disabled: (crudit_ui_choice.attr.disabled ?? false) is not same as(false),
+            } -%}
+            {%- set crudit_ui_options = crudit_ui_options|merge([crudit_ui_option]) -%}
+            {%- if crudit_ui_choice is selectedchoice(value) -%}
+                {%- set crudit_ui_selected = crudit_ui_selected|merge([crudit_ui_option]) -%}
+            {%- endif -%}
         {%- endfor -%}
     {%- endif -%}
     {#- The help and the error attached to the input, as widget_attributes does -#}

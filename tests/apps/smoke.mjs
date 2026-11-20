@@ -430,6 +430,7 @@ try {
     await page.keyboard.type('colmar');
     await new Promise((resolve) => setTimeout(resolve, 300));
     await page.keyboard.press('Enter');
+    assert.equal(await page.$eval('.crudit-ui-combobox:has(#kit-form-client) [role="status"]', (status) => new Promise((resolve) => setTimeout(() => resolve(status.textContent), 150))), 'Loading…', 'Enter while the choices are asked is not answered');
     client = await clientState();
     assert.equal(client.value, '3', `Enter while the choices are asked chooses one of an older text (${JSON.stringify(client)})`);
     assert.equal(client.expanded, 'true', 'Enter while the choices are asked closes the list');
@@ -456,6 +457,42 @@ try {
     assert.equal(await clientToken(), 'Mairie de Colmar 18', 'back to the text whose choices are shown, Enter chooses nothing');
     await page.unroute('**/crudit-ui/kit-choices**', slowChoices);
     await page.$eval('#kit-form-client', (input) => input.blur());
+
+    // The first choices of the empty text are asked once: the field takes the focus again without a request.
+    await page.$eval('#kit-form-client', (input) => {
+        input.value = '';
+    });
+    let emptyRequests = 0;
+    const countEmpty = (request) => {
+        if (request.url().includes('kit-choices') && request.url().includes('q=&')) {
+            emptyRequests++;
+        }
+    };
+    page.on('request', countEmpty);
+    await page.focus('#kit-form-client');
+    await page.waitForFunction(() => document.querySelectorAll('#kit-form-client_listbox [role="option"]').length > 0, {timeout: 5000}).catch(() => null);
+    await page.$eval('#kit-form-client', (input) => input.blur());
+    await page.focus('#kit-form-client');
+    await pause(300);
+    page.off('request', countEmpty);
+    assert.ok((await clientState()).options.length > 0, 'the first choices are not shown again');
+    assert.ok(emptyRequests <= 1, `the first choices are asked at each focus (${emptyRequests} requests)`);
+
+    // A click in the list but not on an option (its message): the list stays open, the input keeps the focus.
+    await page.keyboard.type('none');
+    await page.waitForFunction(() => document.querySelector('#kit-form-client_listbox [data-message]')?.textContent === 'No result.', {timeout: 5000}).catch(() => null);
+    await page.click('#kit-form-client_listbox [data-message]');
+    await pause(50);
+    assert.deepEqual(
+        await page.evaluate(() => ({expanded: document.querySelector('#kit-form-client').getAttribute('aria-expanded'), focus: document.activeElement?.id})),
+        {expanded: 'true', focus: 'kit-form-client'},
+        'a click on the message of the list closes it',
+    );
+    await page.keyboard.press('Escape');
+    await page.$eval('#kit-form-client', (input) => {
+        input.value = '';
+        input.blur();
+    });
 
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});
