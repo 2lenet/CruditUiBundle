@@ -1430,19 +1430,45 @@ try {
         assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '100', 'pager: the arrows did not change the choice');
         await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.keyboard.press('Enter')]);
         assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '100', 'pager: Enter did not send the choice');
-        // a choice taken back by the keys, or typed (a digit), waits too; back to the first value, nothing is sent
-        await pager.goto(new URL('crudit-ui/kit?middle=6&middle_limit=30', url).href, {waitUntil: 'networkidle0'});
-        await pager.focus(`${root} select`);
+        // a choice taken back by the keys sends nothing, at the end of the focus (blur() on the select, not Tab: Tab leads
+        // to a link of the pager, which drops the choice) nor with Enter
+        const reopen = async () => {
+            await pager.goto(new URL('crudit-ui/kit?middle=6&middle_limit=30', url).href, {waitUntil: 'networkidle0'});
+            await pager.focus(`${root} select`);
+        };
+        const quiet = () => new Promise((resolve) => setTimeout(resolve, 400));
+        await reopen();
         await pager.keyboard.press('ArrowDown');
         await pager.keyboard.press('ArrowUp');
-        await pager.keyboard.press('Tab');
-        await new Promise((resolve) => setTimeout(resolve, 400));
-        assert.equal(new URL(pager.url()).searchParams.get('middle'), '6', 'pager: a choice taken back reloaded the list');
-        await pager.focus(`${root} select`);
-        await pager.keyboard.type('5');
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await pager.$eval(`${root} select`, (e) => e.blur());
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle'), '6', 'pager: a choice taken back reloaded the list (blur)');
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await pager.keyboard.press('ArrowUp');
+        await pager.keyboard.press('Enter');
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle'), '6', 'pager: a choice taken back reloaded the list (Enter)');
+        // a choice made by a key and the end of the focus: sent
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.$eval(`${root} select`, (e) => e.blur())]);
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '50', 'pager: the end of the focus did not send the choice');
+        // a digit typed waits
+        await reopen();
+        await pager.keyboard.type('1');
+        await quiet();
         assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '30', 'pager: a digit typed reloaded the list');
-        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '50', 'pager: the digit did not choose 50');
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '100', 'pager: the digit did not choose 100');
+        // a choice waiting, then a click on a page: the link wins, the choice is dropped (no second visit later)
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.click(`${root} a[href*="middle=7"]`)]);
+        const landed = new URL(pager.url()).searchParams;
+        assert.equal(landed.get('middle'), '7', 'pager: the link was not followed');
+        assert.equal(landed.get('middle_limit'), '30', 'pager: the choice waiting went with the link');
+        await quiet();
+        assert.equal(new URL(pager.url()).searchParams.get('middle'), '7', 'pager: a second visit came after the link');
         // a phone: previous, "2 / 5", next
         await pager.setViewport({width: 360, height: 800});
         assert.equal(await pager.$eval('#kit-pager-last .crudit-ui-pager__status', (e) => getComputedStyle(e).display !== 'none'), true, 'pager: no "5 / 5" on a phone');

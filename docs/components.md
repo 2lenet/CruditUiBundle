@@ -753,9 +753,11 @@ of Crudit: it counts the pages from `total` and `perPage`, and builds its addres
   (controller `pager`; Turbo handles the form like any other); a help text read by the screen reader says so.
   - **Keyboard**: a closed `<select>` fires `change` at each arrow, and at each letter or digit typed, on some
     browsers (Chrome and Firefox on Windows). A change made by a key waits for Enter or for the focus to leave the
-    field, and is sent only if the choice differs from the one the list shows. A choice made with the mouse or the
-    touch screen, or in the open list, is sent at once. If the focus goes to a link of the pager, nothing is sent: the
-    link leads to the page.
+    field, and is sent only if the choice differs from the one the server rendered (the option `defaultSelected`:
+    Firefox and the snapshots of Turbo may restore another value in the field). A choice made with the mouse or the
+    touch screen, or in the open list, is sent at once. If the user goes to a link of the pager (focus, or a press of
+    the pointer: Safari and Firefox on macOS do not focus a link), the waiting choice is dropped and nothing is sent
+    later.
   - Without JavaScript, a button "Apply" shows (`<noscript>`).
   - The form **sends the first page** (the page parameter at `1`, or `0` in the mode `offset`): the list goes back
     to the first page, and a server that keeps the page in its session does not read the old one.

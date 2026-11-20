@@ -31,7 +31,7 @@
 {%- set choices = ui_pager_choices(perPageChoices, size) -%}
 {%- set hasChoices = choices and total > min(choices) -%}
 {%- if total > 0 -%}
-<div {{ attributes.defaults({id: id, class: 'crudit-ui-pager', 'data-controller': hasChoices ? controller : null}) }}>
+<div {{ attributes.defaults({id: id, class: 'crudit-ui-pager', 'data-controller': hasChoices ? controller : null, 'data-action': hasChoices ? 'pointerdown->' ~ controller ~ '#pointer' : null}) }}>
     <p class="crudit-ui-pager__summary">{{ 'crudit_ui.pager.summary'|trans({'%from%': first|ui_number, '%to%': last|ui_number, '%total%': total|ui_number, '%label%': label}, domain) }}</p>
 
     {%- if count > 1 -%}

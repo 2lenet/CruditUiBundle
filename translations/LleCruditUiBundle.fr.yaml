@@ -88,7 +88,7 @@ crudit_ui:
         page: "Page"
         summary: "%from% à %to% sur %total% %label%"
         per_page: "Lignes par page"
-        per_page_help: "La liste se met à jour dès que vous choisissez ; au clavier, validez avec Entrée."
+        per_page_help: "La liste se met à jour dès que vous choisissez ; au clavier, validez avec Entrée ou en quittant le champ."
         apply: "Appliquer"
     selection:
         label: "Actions sur la sélection"
