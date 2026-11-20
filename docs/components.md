@@ -755,14 +755,16 @@ of Crudit: it counts the pages from `total` and `perPage`, and builds its addres
     browsers (Chrome and Firefox on Windows). A change made by a key waits for Enter or for the focus to leave the
     field, and is sent only if the choice differs from the one the server rendered (the option `defaultSelected`:
     Firefox and the snapshots of Turbo may restore another value in the field). A choice made with the mouse or the
-    touch screen, or in the open list, is sent at once. If the user goes to a link of the pager (focus, or a press of
-    the pointer: Safari and Firefox on macOS do not focus a link), the waiting choice is dropped and nothing is sent
-    later.
+    touch screen, or in the open list, is sent at once. If the user presses a link of the pager (the pointer, not the focus:
+    Safari and Firefox on macOS do not focus a link), the waiting choice is dropped, the field shows the value of the
+    list again and nothing is sent later. Shift+Tab to the last link is not that: it leaves the field, the choice is sent.
   - Without JavaScript, a button "Apply" shows (`<noscript>`).
   - The form **sends the first page** (the page parameter at `1`, or `0` in the mode `offset`): the list goes back
     to the first page, and a server that keeps the page in its session does not read the old one.
   - The rows per page in use is **always one of the choices** (added, in order, without doubles), so the selector
     shows what the list shows. With `perPage` 5 and 8 results, the selector stays for the choices above 5.
+- The attributes of the root (`class`, `id`, `data-` …) are the project's; a `data-action` it passes is **added** to the
+  one of the pager (the press on a link), as in `Filter:Bar`.
 - **The selection of the table follows the pager** (3.1.c): the table recognises a link that only changes the page by its
   parameter, `page` or a name ending with `_offset`. With another `pageParam`, the selection is not kept from one page
   to the other.

@@ -1460,6 +1460,22 @@ try {
         await quiet();
         assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '30', 'pager: a digit typed reloaded the list');
         assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '100', 'pager: the digit did not choose 100');
+        // a choice waiting, then Shift+Tab to the last link of the pager: leaving the field sends the choice
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.keyboard.press('Shift+Tab')]);
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '50', 'pager: Shift+Tab dropped the choice');
+        // a choice waiting, then a press on a page link that is cancelled (slid off the link): the field shows the list again
+        await reopen();
+        await pager.keyboard.press('ArrowDown');
+        const slide = await pager.$(`${root} a[href*="middle=7"]`);
+        const where = await slide.boundingBox();
+        await pager.mouse.move(where.x + where.width / 2, where.y + where.height / 2);
+        await pager.mouse.down();
+        await pager.mouse.move(where.x + where.width / 2, where.y - 80);
+        await pager.mouse.up();
+        await quiet();
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '30', 'pager: the field keeps a choice that was dropped');
         // a choice waiting, then a click on a page: the link wins, the choice is dropped (no second visit later)
         await reopen();
         await pager.keyboard.press('ArrowDown');

@@ -168,6 +168,15 @@ class PagerTest extends TestCase
         self::assertStringContainsString('Last page (1,235)', (string) $root->textContent, 'the name of the last page uses the same number');
     }
 
+    public function testTheActionOfTheProjectIsAddedToTheOneOfThePager(): void
+    {
+        $root = $this->pager(':total="131" :perPage="30" :perPageChoices="[10, 30]" data-action="click->project#log"');
+
+        self::assertSame('pointerdown->' . self::PAGER . '#pointer click->project#log', $root->getAttribute('data-action'));
+        $without = $this->pager(':total="131" :perPage="30" data-action="click->project#log"');
+        self::assertSame('click->project#log', $without->getAttribute('data-action'), 'no selector, no action of the pager');
+    }
+
     public function testNoSelectorWhenEverythingFitsTheSmallestChoice(): void
     {
         $root = $this->pager(':total="8" :perPage="10" :perPageChoices="[10, 30, 50]"');
