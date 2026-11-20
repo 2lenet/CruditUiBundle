@@ -11,5 +11,5 @@
         {{- include(item.template, item.context|default({})) -}}
     </div>
 {%- else -%}
-    <twig:LleCruditUi:Filter:Field id="{{ id }}" data-filter-id="{{ item.id }}" :name="item.name" :label="item.label" :type="item.type|default('text')" :operators="item.operators|default([])" :operator="item.operator|default(null)" :value="item.value|default(null)" :to="item.to|default(null)" :choices="item.choices|default([])" :unit="item.unit|default(null)" :placeholder="item.placeholder|default(null)" :inline="inline" />
+    <twig:LleCruditUi:Filter:Field id="{{ id }}" data-filter-id="{{ item.id }}" :name="item.name" :label="item.label" :type="item.type|default('text')" :operators="item.operators|default([])" :operator="item.operator|default(null)" :value="item.value|default(null)" :to="item.to|default(null)" :preset="item.preset|default(null)" :choices="item.choices|default([])" :unit="item.unit|default(null)" :placeholder="item.placeholder|default(null)" :inline="inline" />
 {%- endif -%}

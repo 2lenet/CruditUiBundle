@@ -1439,6 +1439,83 @@ try {
     }), [360, 740, 'none'], 'the palette is not the whole screen on a phone, or the keys are shown');
     await page.keyboard.press('Escape');
 
+    // Filter:Bar with `saved`: the field "Name of the filters" must not get in the way of the filters. The form is not really
+    // sent: the test records what each send carries (a GET of the filters, or the POST of "Save" with its formaction).
+    // `kit-saved-bar` has its three sets out of three (its "Save" is refused: aria-disabled); `kit-saved-empty` has none.
+    const savedSent = () => page.evaluate(() => window.__savedSent);
+    const openSavedBar = async (id) => {
+        await page.setViewport({width: 1280, height: 900});
+        await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
+        await page.evaluate((selector) => {
+            window.__savedSent = [];
+            const form = document.querySelector(selector);
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                window.__savedSent.push({
+                    method: event.submitter?.getAttribute('formmethod') ?? form.method,
+                    action: event.submitter?.getAttribute('formaction') ?? form.getAttribute('action'),
+                    entries: [...new FormData(form, event.submitter)].map(([key, value]) => `${key}=${value}`),
+                });
+            });
+            form.scrollIntoView({block: 'start'});
+        }, `form:has(#${id}-panel)`);
+        await page.click(`form:has(#${id}-panel) [data-2lenet--crudit-ui-bundle--filters-target="toggle"]`);
+    };
+    const savedState = (id) => page.evaluate((selector) => {
+        const name = document.querySelector(selector);
+
+        return [name.required, name.hasAttribute('name')];
+    }, `#${id}-save-name`);
+
+    // The filters are sent, by "Apply" and by the search, while the name is empty.
+    await openSavedBar('kit-saved-bar');
+    assert.deepEqual(await savedState('kit-saved-bar'), [false, false], 'saved filters: the name has no `required` and no `name`');
+    await page.click('#kit-saved-bar-panel [data-2lenet--crudit-ui-bundle--filters-target="apply"]');
+    let calls = await savedSent();
+    assert.equal(calls.length, 1, 'saved filters: "Apply" sends the form with the name empty');
+    assert.ok(calls[0].entries.some((entry) => entry.startsWith('filter_visit_title_value=')), 'saved filters: "Apply" sends the filters');
+    assert.deepEqual(calls[0].entries.filter((entry) => /^(name|_token|redirect)=/.test(entry)), [], 'saved filters: a send of the filters carries nothing of the save');
+    await page.evaluate(() => { window.__savedSent = []; });
+    await page.fill('form:has(#kit-saved-bar-panel) input[type="search"]', 'ab');
+    await page.waitForFunction(() => window.__savedSent.length === 1, {timeout: 3000});
+    assert.ok((await savedSent())[0].entries.includes('visit_search=ab'), 'saved filters: the search is sent (requestSubmit stops silently at an invalid field)');
+    // The maximum is reached: "Save" is refused, whatever the name.
+    await page.click('[aria-controls="kit-saved-bar-save"]');
+    await page.fill('#kit-saved-bar-save-name', 'One more');
+    await page.evaluate(() => { window.__savedSent = []; });
+    await page.click('#kit-saved-bar-save button[type="submit"]');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.deepEqual(await savedSent(), [], 'saved filters: "Save" at the maximum sends nothing');
+
+    // Save without a name: refused by the browser, nothing is sent, and the filters can be sent again afterwards.
+    await openSavedBar('kit-saved-empty');
+    await page.click('[aria-controls="kit-saved-empty-save"]');
+    await page.click('#kit-saved-empty-save button[type="submit"]');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.deepEqual(await savedSent(), [], 'saved filters: "Save" without a name sends nothing');
+    assert.deepEqual(await savedState('kit-saved-empty'), [false, false], 'saved filters: the name is out of the validation again after a refused "Save"');
+    await page.click('#kit-saved-empty-panel [data-2lenet--crudit-ui-bundle--filters-target="apply"]');
+    assert.equal((await savedSent()).length, 1, 'saved filters: "Apply" works after a refused "Save"');
+    // Save with a name, by the button then by Enter: the POST carries the cleaned name, the token and the address to come back to.
+    for (const how of ['button', 'enter']) {
+        await page.evaluate(() => { window.__savedSent = []; });
+        await page.fill('#kit-saved-empty-save-name', '  My   week  ');
+        if (how === 'button') {
+            await page.click('#kit-saved-empty-save button[type="submit"]');
+        } else {
+            await page.focus('#kit-saved-empty-save-name');
+            await page.keyboard.press('Enter');
+        }
+        calls = await savedSent();
+        assert.equal(calls.length, 1, `saved filters: "Save" sends the form (${how})`);
+        assert.equal(calls[0].method, 'post', `saved filters: "Save" is a POST (${how})`);
+        assert.ok(calls[0].action.endsWith('/kit-saved'), `saved filters: "Save" goes to saveUrl (${how}): ${calls[0].action}`);
+        assert.ok(['name=My week', '_token=kit-token', 'redirect=/crudit-ui/kit'].every((entry) => calls[0].entries.includes(entry)), `saved filters: the POST carries the cleaned name, the token and the address (${how}): ${calls[0].entries}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.deepEqual(await savedState('kit-saved-empty'), [false, false], 'saved filters: after "Save" the name is left out of the form again');
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll('#kit-saved-empty-save input[type="hidden"]')].every((field) => field.disabled)), true, 'saved filters: and so are the hidden fields');
+
     // Table: selection, groups, manual order (saved, refused by the server, disabled), sticky header, cards on a phone.
     await page.setViewport({width: 1280, height: 800});
     await page.goto(new URL('crudit-ui/kit', url).href, {waitUntil: 'networkidle0'});
@@ -1721,7 +1798,7 @@ try {
             [...new FormData(document.querySelector('#kit-filter-period-period-value').closest('form')).keys()].filter((key) => key.startsWith('filter_visit_period')),
         ];
     }, period);
-    assert.deepEqual(periodState, [true, true, ['filter_visit_period_op', 'filter_visit_period_value', 'filter_visit_period_to']], 'filter: period');
+    assert.deepEqual(periodState, [true, true, ['filter_visit_period_op', 'filter_visit_period_value', 'filter_visit_period_to', 'filter_visit_period_preset']], 'filter: period');
     assert.deepEqual(await page.evaluate(() => [...new FormData(document.querySelector('#kit-filter-text-value').closest('form')).getAll('filter_visit_status_value[]')]), ['planned', 'done'], 'filter: choice');
 
     // Filter:Bar: the panel opens in the page from md (not modal), the search and the main filters send at once, a chip
@@ -1817,7 +1894,7 @@ try {
     await page.click(`${periodQuick} .crudit-ui-period__period`);
     await page.waitForFunction(() => window.__sent.length === 1, {timeout: 3000});
     const readyMade = (await barSent())[0].filter((entry) => entry.startsWith('filter_visit_period_'));
-    assert.ok(readyMade.length === 3 && readyMade.every((entry) => !entry.endsWith('=')) && readyMade[1].split('=')[1] === readyMade[2].split('=')[1] && /^\d{4}-\d{2}-\d{2}$/.test(readyMade[1].split('=')[1]), `filter bar: the first ready-made period (today) fills both dates: ${readyMade}`);
+    assert.ok(readyMade.length === 4 && readyMade.every((entry) => !entry.endsWith('=')) && readyMade[3] === 'filter_visit_period_preset=today' && readyMade[1].split('=')[1] === readyMade[2].split('=')[1] && /^\d{4}-\d{2}-\d{2}$/.test(readyMade[1].split('=')[1]), `filter bar: the first ready-made period (today) fills both dates and sends its name: ${readyMade}`);
 
     // A chip of an "is empty" filter takes the condition back to one that has a value.
     await openBarPage(1280, 900);
