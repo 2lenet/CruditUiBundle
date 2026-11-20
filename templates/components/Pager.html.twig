@@ -57,7 +57,7 @@
                     {%- endif -%}
                 {%- endfor -%}
                 <li class="crudit-ui-pager__status" aria-hidden="true">{{ current|ui_number }} / {{ count|ui_number }}</li>
-                {%- for step in [{icon: 'next', to: current + 1, text: 'crudit_ui.pager.next'|trans({}, domain), edge: false}, {icon: 'last', to: count, text: 'crudit_ui.pager.last'|trans({'%count%': count}, domain), edge: true}] -%}
+                {%- for step in [{icon: 'next', to: current + 1, text: 'crudit_ui.pager.next'|trans({}, domain), edge: false}, {icon: 'last', to: count, text: 'crudit_ui.pager.last'|trans({'%count%': count|ui_number}, domain), edge: true}] -%}
                     <li{% if step.edge %} class="crudit-ui-pager__edge"{% endif %}>
                         {%- if current < count -%}
                             <a class="crudit-ui-pager__link" href="{{ pager.address(path, kept, pageParam, mode, size, step.to, tail) }}">{{ ui_icon(step.icon) }}<span class="crudit-ui-visually-hidden">{{ step.text }}</span></a>
@@ -75,7 +75,7 @@
             {%- for pair in ui_query_pairs(fields) %}<input type="hidden" name="{{ pair.name }}" value="{{ pair.value }}">{% endfor -%}
             <input type="hidden" name="{{ pageParam }}" value="{{ mode == 'offset' ? 0 : 1 }}">
             <label class="crudit-ui-pager__per-page-label" for="{{ id }}-limit">{{ 'crudit_ui.pager.per_page'|trans({}, domain) }}</label>
-            <select class="crudit-ui-select crudit-ui-pager__select" id="{{ id }}-limit" name="{{ limitParam }}" aria-describedby="{{ id }}-limit-help" data-action="change->{{ controller }}#submit keydown->{{ controller }}#key keyup->{{ controller }}#release blur->{{ controller }}#leave">
+            <select class="crudit-ui-select crudit-ui-pager__select" id="{{ id }}-limit" name="{{ limitParam }}" aria-describedby="{{ id }}-limit-help" data-action="change->{{ controller }}#submit keydown->{{ controller }}#key blur->{{ controller }}#leave">
                 {%- for choice in choices %}<option value="{{ choice }}"{% if choice == size %} selected{% endif %}>{{ choice }}</option>{% endfor -%}
             </select>
             <span class="crudit-ui-visually-hidden" id="{{ id }}-limit-help">{{ 'crudit_ui.pager.per_page_help'|trans({}, domain) }}</span>

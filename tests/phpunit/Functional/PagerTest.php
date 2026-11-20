@@ -130,7 +130,7 @@ class PagerTest extends TestCase
         self::assertSame('Rows per page', trim((string) $form->querySelector('label[for="visits-pager-limit"]')?->textContent));
         self::assertSame('visits-pager-limit-help', $select->getAttribute('aria-describedby'));
         self::assertNotNull($root->querySelector('#visits-pager-limit-help'));
-        self::assertSame('change->' . self::PAGER . '#submit keydown->' . self::PAGER . '#key keyup->' . self::PAGER . '#release blur->' . self::PAGER . '#leave', $select->getAttribute('data-action'), 'the keyboard: an arrow waits for Enter or for the end of the focus');
+        self::assertSame('change->' . self::PAGER . '#submit keydown->' . self::PAGER . '#key blur->' . self::PAGER . '#leave', $select->getAttribute('data-action'), 'the keyboard: an arrow waits for Enter or for the end of the focus');
         self::assertStringContainsString('<noscript>', $this->render(new TestKernel(), '<twig:LleCruditUi:Pager id="p" label="v" :total="131" :perPage="30" :perPageChoices="[10, 30]" path="/v"/>'));
     }
 
@@ -164,6 +164,7 @@ class PagerTest extends TestCase
 
         self::assertSame('12,331 to 12,340 of 12,345 visits', trim((string) $root->querySelector('.crudit-ui-pager__summary')?->textContent));
         self::assertSame('1,234 / 1,235', trim((string) $root->querySelector('.crudit-ui-pager__status')?->textContent));
+        self::assertStringContainsString('Last page (1,235)', (string) $root->textContent, 'the name of the last page uses the same number');
     }
 
     public function testNoSelectorWhenEverythingFitsTheSmallestChoice(): void
