@@ -6,6 +6,7 @@ use Lle\CruditUiBundle\Format\Formatter;
 use Lle\CruditUiBundle\Icon\IconFinder;
 use Lle\CruditUiBundle\Icon\IconLibrary;
 use Lle\CruditUiBundle\Locale\RequestLocale;
+use Lle\CruditUiBundle\Twig\FilterExtension;
 use Lle\CruditUiBundle\Twig\FormatExtension;
 use Lle\CruditUiBundle\Twig\IconExtension;
 use Lle\CruditUiBundle\Twig\LocaleExtension;
@@ -44,6 +45,8 @@ return static function (ContainerConfigurator $container): void {
     $services->set(Formatter::class);
 
     $services->set(FormatExtension::class);
+
+    $services->set(FilterExtension::class);
 
     $services->set(LocaleExtension::class)
         ->arg('$rtlLanguages', param('lle_crudit_ui.rtl_languages'));

@@ -1,0 +1,72 @@
+{#
+ # Filter:Saved: the button "My filters" of the bar (Filter:Bar, prop `saved`): a Dropdown with the sets of filters the
+ # user saved for this list. A click on a set replaces the filters in use with its own (a POST); a click on the set in
+ # use removes its filters (the link `resetUrl`); a bin asks, in place, to delete it. The set in use is checked, its name
+ # is in the button and the bookmark is full. Below md the button keeps the bookmark only: its name is in the label,
+ # hidden visually.
+ #
+ # The buttons send the form `<id>-saved-form` (Filter:Bar: the CSRF token and the address to come back to), not the
+ # form of the filters, which is a GET: nothing of the filters travels with them.
+ #
+ # Props: id (required: base of the ids, the one of the Filter:Bar), saved (required: {items: [{id, name, summary,
+ # current, applyUrl, deleteUrl}], max}), resetUrl (address that clears the filters). Controller: saved-filters.
+ # Contract: docs/components.md.
+ #}
+{% props id, saved, resetUrl = null %}
+{%- set savedMax = saved.max|default(10) -%}
+{%- set items = saved.items|default([]) -%}
+{%- set current = (items|filter(item => item.current|default(false))|first) ?: null -%}
+{%- set savedController = '2lenet--crudit-ui-bundle--saved-filters' -%}
+{%- set formId = id ~ '-saved-form' -%}
+{%- set trans = 'LleCruditUiBundle' -%}
+{%- set title = 'crudit_ui.filter.saved.title'|trans({}, trans) -%}
+<div {{ attributes.defaults({class: 'crudit-ui-filter-saved'}) }}>
+    <twig:LleCruditUi:Dropdown label="{{ current ? 'crudit_ui.filter.saved.title_named'|trans({'%name%': current.name}, trans) : title }}" align="start" floating trigger:class="crudit-ui-btn crudit-ui-btn--secondary crudit-ui-filter-saved__button{{ current ? ' crudit-ui-filter-saved__button--active' : '' }}">
+        <twig:block name="trigger">
+            {{- ui_icon(current ? 'bookmark-active' : 'bookmark', 'crudit-ui-filter-saved__icon') -}}
+            <span class="crudit-ui-filter-saved__label">{{ current ? current.name : title }}</span>
+            {%- if current %}<span class="crudit-ui-visually-hidden">&nbsp;({{ title }})</span>{% endif -%}
+            {{- ui_icon('dropdown', 'crudit-ui-dropdown__chevron') -}}
+        </twig:block>
+        <div class="crudit-ui-filter-saved__panel">
+            {%- if items %}
+                <ul class="crudit-ui-filter-saved__list" aria-label="{{ title }}">
+                    {% for item in items %}
+                        {%- set isCurrent = item.current|default(false) -%}
+                        <li class="crudit-ui-filter-saved__item" data-saved-id="{{ item.id }}">
+                            <div class="crudit-ui-filter-saved__row">
+                                {%- set content -%}
+                                    <span class="crudit-ui-filter-saved__check">{% if isCurrent %}{{ ui_icon('check') }}{% endif %}</span>
+                                    <span class="crudit-ui-filter-saved__text">
+                                        <span class="crudit-ui-filter-saved__name">{{ item.name }}</span>
+                                        {%- if item.summary|default('') %}<span class="crudit-ui-filter-saved__summary">{{ item.summary }}</span>{% endif -%}
+                                        {%- if isCurrent %}<span class="crudit-ui-filter-saved__state">{{ 'crudit_ui.filter.saved.applied'|trans({}, trans) }}</span>{% endif -%}
+                                    </span>
+                                {%- endset -%}
+                                {%- if isCurrent and resetUrl %}
+                                    <a href="{{ resetUrl }}" class="crudit-ui-filter-saved__apply" aria-current="true">{{ content }}</a>
+                                {%- else %}
+                                    <button type="submit" form="{{ formId }}" formaction="{{ item.applyUrl }}" class="crudit-ui-filter-saved__apply">{{ content }}</button>
+                                {%- endif %}
+                                <twig:LleCruditUi:IconButton icon="delete" size="small" label="{{ 'crudit_ui.filter.saved.delete'|trans({'%name%': item.name}, trans) }}" data-action="{{ savedController }}#askDelete" data-2lenet--crudit-ui-bundle--saved-filters-target="bin" />
+                            </div>
+                            {#- Asked in place: the dropdown stays open, and a dialog would close it. -#}
+                            <div class="crudit-ui-filter-saved__confirm" role="group" aria-label="{{ 'crudit_ui.filter.saved.delete'|trans({'%name%': item.name}, trans) }}" data-{{ savedController }}-target="confirm" data-action="keydown.esc->{{ savedController }}#cancelDelete" hidden>
+                                <p class="crudit-ui-filter-saved__confirm-text">{{ 'crudit_ui.filter.saved.delete_confirm'|trans({'%name%': item.name}, trans) }}</p>
+                                <div class="crudit-ui-filter-saved__confirm-actions">
+                                    <twig:LleCruditUi:Button variant="danger" size="small" type="submit" form="{{ formId }}" formaction="{{ item.deleteUrl }}">{{ 'crudit_ui.filter.saved.delete_yes'|trans({}, trans) }}</twig:LleCruditUi:Button>
+                                    <twig:LleCruditUi:Button size="small" data-action="{{ savedController }}#cancelDelete" data-2lenet--crudit-ui-bundle--saved-filters-target="cancel">{{ 'crudit_ui.filter.saved.cancel'|trans({}, trans) }}</twig:LleCruditUi:Button>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {%- else %}
+                <p class="crudit-ui-filter-saved__empty">{{ 'crudit_ui.filter.saved.empty'|trans({}, trans) }}</p>
+            {%- endif %}
+            {%- if items|length >= savedMax %}
+                <p class="crudit-ui-filter-saved__note">{{ 'crudit_ui.filter.saved.max_reached'|trans({'%count%': savedMax, '%max%': savedMax}, trans) }}</p>
+            {%- endif %}
+        </div>
+    </twig:LleCruditUi:Dropdown>
+</div>

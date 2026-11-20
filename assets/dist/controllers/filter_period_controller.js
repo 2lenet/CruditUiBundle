@@ -2,7 +2,8 @@ import { Controller } from '@hotwired/stimulus';
 
 /*
  * Filter:Period. The two dates (targets "start" and "end") are what the form sends, so the controller only helps:
- * - a ready-made period (action "choose", data-from / data-to in Y-m-d) fills the two dates;
+ * - a ready-made period (action "choose", data-from / data-to in Y-m-d) fills the two dates, and its name
+ *   (data-preset, "this_month") goes in the hidden field (target "preset"), emptied when a date is typed;
  * - the summary (target "summary") follows the dates ("<from> → <to>", "From <date>", "Until <date>", "All dates");
  *   its texts come from Twig (value "texts", with %from%, %to% and %date%), the dates are written in the language of
  *   the page.
@@ -13,19 +14,29 @@ import { Controller } from '@hotwired/stimulus';
  * other one may still come).
  */
 export default class extends Controller {
-    static targets = ['start', 'end', 'summary'];
+    static targets = ['start', 'end', 'summary', 'preset'];
 
     static values = {texts: Object};
 
     choose(event) {
-        const {from, to} = event.currentTarget.dataset;
+        const {from, to, preset} = event.currentTarget.dataset;
         this.startTarget.value = from;
         this.endTarget.value = to;
+        // The name of the period goes with its dates, so that a project can store "this month" and not two dates.
+        this.setPreset(preset ?? '');
         this.update(true);
     }
 
     changed() {
+        // A date typed by hand is no longer a ready-made period.
+        this.setPreset('');
         this.update(false);
+    }
+
+    setPreset(name) {
+        if (this.hasPresetTarget) {
+            this.presetTarget.value = name;
+        }
     }
 
     update(chosen) {

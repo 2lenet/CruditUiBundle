@@ -774,10 +774,10 @@ string separated by commas (the format the 1.x of Crudit stores). **The form sen
 CruditBundle (lot 3.1.e). A `period` is a `Filter:Period` (below); it needs the script to edit the dates, but the dates are sent
 by the form even when its panel is closed.
 
-`Filter:Period` props: `name`, `label`, `value` and `to` (`Y-m-d`), `id`, `inline` (the dates and the periods shown directly, for
-a menu that already is a panel), `disabled` (the dates are not sent: an "is empty" condition; `Filter:Field` sets it), `periods` (list of `{label, from, to}`: today, the last 7 and 30 days, this month, last month,
-next month and this year by default, computed on the server's today). Controller `filter-period`: a ready-made period fills the
-two dates, the summary of the button follows them; event `2lenet--crudit-ui-bundle--filter-period:change` (`detail.start`, `detail.end`, `detail.chosen`: true for a ready-made period, false for a date typed).
+`Filter:Period` props: `name`, `label`, `value` and `to` (`Y-m-d`), `preset` (the name of the ready-made period chosen, sent as `<name>_preset`), `id`, `inline` (the dates and the periods shown directly, for
+a menu that already is a panel), `disabled` (the dates are not sent: an "is empty" condition; `Filter:Field` sets it), `periods` (list of `{label, from, to}` and, to be stored by name, `id`: today, the last 7 and 30 days, this month, last month,
+next month and this year by default, from the Twig function `ui_period_presets()` and the enum `Lle\CruditUiBundle\Filter\PeriodPreset`, computed on the server's today; `PeriodPreset::fromName($name)?->range($now)` works the dates out again later, so a stored "this month" stays true). Controller `filter-period`: a ready-made period fills the
+two dates and the hidden field `<name>_preset` (emptied when a date is typed), the summary of the button follows them; event `2lenet--crudit-ui-bundle--filter-period:change` (`detail.start`, `detail.end`, `detail.chosen`: true for a ready-made period, false for a date typed).
 
 Controller `filter-field`: keeps the pictogram and the name of the button in step with the choice; an `isnull` / `isnotnull`
 kind of condition (`noValue: true`) replaces the input by the label of the condition and **disables** the input, so the old
@@ -819,12 +819,44 @@ nothing of Crudit: the project (the `FilterBrick`) gives the filters as data, th
 Props: `id` (required: base of the ids; the panel is `<id>-panel`), `label` (required: names the search region, "Filter the visits"),
 `filters` (required, see below), `action` (the address of the form; the current page), `resetUrl` ("Reset" and "Clear all"),
 `applyName` (a hidden field sent with every submit, `<set>_filter` in Crudit: it takes the list back to page 1), `search`
-(`{name, value, label}`; none, no search), `title` (title of the panel; "Filters"). Block: `tools` (the tools of the list, kept
+(`{name, value, label}`; none, no search), `title` (title of the panel; "Filters"), `saved` (the sets of the user, below). Block: `tools` (the tools of the list, kept
 on the line of the button "Filters"). Controller `filters`. A `data-action` given to the component is added after those of the bar.
 
 Each filter of `filters`: the keys of `Filter:Field` (`name`, `label`, `type`, `operators`, `operator`, `value`, `to`, `choices`,
 `unit`, `placeholder`) and `id` (names the filter for a chip), `primary` (in the bar; **none primary, no main filter**), `hidden`,
 `active` (the filter has a value: counts in the button, makes a chip), `summary` (its value in words, for the chip and the button).
+
+**Saved filters** (prop `saved`, none without: nothing of what follows is shown). `saved` is `{saveUrl, token, redirect, max, items}`, with
+`items` a list of `{id, name, summary, current, applyUrl, deleteUrl}` (the sets of the user for this list, by name; `summary` the
+first criteria in words, `current` true for the set whose criteria are the ones in use). The component sends nothing itself: it
+gives **POST forms** with `token` (a CSRF token, `_token`) and `redirect` (the address to come back to), and the server does the rest
+(CruditBundle: `SavedFiltersController`, lot 3.1.f).
+
+- **"My filters"** (`Filter:Saved`, a Dropdown next to "Filters"): a click on a set sends the form `<id>-saved-form` to its `applyUrl`;
+  the set in use is checked, its name is in the button, the bookmark is full, and a click on it is the link `resetUrl` (its filters
+  are removed). The bin asks **in place** ("Delete the filters “X”?", the focus on "Cancel", Escape folds it): a dialog would close
+  the dropdown. Without a set the button says where to save one; with `max` sets it says so. Below 768 px the button keeps the
+  bookmark, the name stays in its accessible name. **Those buttons belong to a second form, outside the GET form of the filters**
+  (attribute `form`), so that the token and the sets never travel in the address of the list.
+- **"Save these filters"** (a button of the panel) shows "Name of the filters" under the filters, which are **saved as they are in the
+  panel** (the draft too) by a POST of the form of the filters to `saveUrl`. The name, `_token` and `redirect` of that form are
+  `disabled` until "Save" is clicked (controller `saved-filters`, action `arm`): a GET of the filters, which is the form's usual send,
+  must not carry them. A name already taken (without regard to the case) turns "Save" into "Replace" and says so; Enter in the name
+  saves, Escape folds the field without closing the panel. The controller needs JavaScript; the server checks everything again.
+  `required` is set on the name only for the click on "Save" (a `required` field, even without `name`, would stop every send of the
+  filters while it is empty). The name is sent as it was compared: spaces merged and trimmed (`cleanName()`).
+- **What the server must do** (CruditBundle does it): compare names the way the field does, spaces merged, trimmed and lower-cased
+  (`preg_replace('/\s+/u', ' ')`, `mb_strtolower()`), or "Replace" would say the wrong thing; **validate `redirect`** (an address
+  of the site: one slash, no host), it comes from a form the user can edit, or it is an open redirect; check the token, the maximum
+  and the owner.
+- **A period and its name** (`<name>_preset`, "this_month"): a date typed by hand empties the name; a ready-made period fills both.
+  The draft that a send leaves out keeps the name with the dates (a hidden field never looks changed, so the draft takes every
+  hidden field of a changed filter). When both come to the server, the name wins if it is one of `PeriodPreset`, and the dates are
+  worked out again from it; an unknown name is dropped and the dates stay.
+- `ui_period_presets()` works out "today" in the time zone of Twig (`twig.date.timezone`), not that of PHP.
+- The texts that tell the maximum use the plural of the translator (`%count%`): "1 set at most", "3 sets at most".
+- Controller `saved-filters` (`eager`, to enable in `controllers.json` with Flex; values `names`, `max`, `texts`, set by the
+  component). Texts: `crudit_ui.filter.saved.*` (fr, en, de, it).
 
 Accessibility: the form is `role="search"`, named by `label`; the panel is a named dialog; the button "Filters" reads "Filters,
 2" (the number is read with the word); a chip's button says what it removes; the main filters in the panel keep their label; the

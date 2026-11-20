@@ -12,10 +12,12 @@
  # hidden, active, summary}; the keys of Filter:Field, with `summary` the text of the value for the chip and the
  # button), action (address of the form; the current page), resetUrl (address that clears the filters: "Reset", "Clear
  # all"), applyName (a hidden field sent with every submit: `<set>_filter`, which takes the list back to page 1),
- # search ({name, value, label}: the search field, none without), title (title of the panel; "Filters").
- # Controller: filters. Contract: docs/components.md.
+ # search ({name, value, label}: the search field, none without), title (title of the panel; "Filters"), saved (the
+ # sets of filters of the user, none without: {saveUrl, token, redirect, max, items: [{id, name, summary, current,
+ # applyUrl, deleteUrl}]}: the button "My filters" and, in the panel, "Save these filters", see Filter:Saved).
+ # Controllers: filters, and saved-filters with `saved`. Contract: docs/components.md.
  #}
-{% props id, label, filters, action = null, resetUrl = null, applyName = null, search = null, title = null %}
+{% props id, label, filters, action = null, resetUrl = null, applyName = null, search = null, title = null, saved = null %}
 {%- set barId = id -%}
 {%- set barLabel = label -%}
 {%- set filtersController = '2lenet--crudit-ui-bundle--filters' -%}
@@ -28,7 +30,25 @@
 {#- The actions of the bar, then those of the project (data-action it passes): the two work. -#}
 {%- set barActions = 'change->' ~ filtersController ~ '#changed input->' ~ filtersController ~ '#typed 2lenet--crudit-ui-bundle--filter-period:change->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--filter-field:operator->' ~ filtersController ~ '#changed 2lenet--crudit-ui-bundle--dropdown:close->' ~ filtersController ~ '#closed keydown->' ~ filtersController ~ '#keydown submit->' ~ filtersController ~ '#submitted' -%}
 {%- set projectActions = attributes.all['data-action']|default(null) -%}
-<form {{ attributes.without('data-action').defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController, ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': barActions ~ (projectActions ? ' ' ~ projectActions : '')}) }}{% if action is not null %} action="{{ action }}"{% endif %}>
+{%- set savedMax = saved ? saved.max|default(10) : 10 -%}
+{%- set savedController = '2lenet--crudit-ui-bundle--saved-filters' -%}
+{%- if saved -%}
+    {%- set trans = 'LleCruditUiBundle' -%}
+    {%- set savedAttributes = {
+        ('data-' ~ savedController ~ '-names-value'): saved.items|default([])|map(item => item.name)|json_encode,
+        ('data-' ~ savedController ~ '-max-value'): savedMax,
+        ('data-' ~ savedController ~ '-texts-value'): {
+            help: 'crudit_ui.filter.saved.name_help'|trans({'%count%': savedMax, '%max%': savedMax}, trans),
+            replaceHelp: 'crudit_ui.filter.saved.replace_help'|trans({}, trans),
+            save: 'crudit_ui.filter.saved.save_button'|trans({}, trans),
+            replace: 'crudit_ui.filter.saved.replace'|trans({}, trans),
+            maxReached: 'crudit_ui.filter.saved.max_reached'|trans({'%count%': savedMax, '%max%': savedMax}, trans),
+        }|json_encode,
+    } -%}
+{%- else -%}
+    {%- set savedAttributes = {} -%}
+{%- endif -%}
+<form {{ attributes.without('data-action').defaults({class: 'crudit-ui-filter-bar', method: 'get', role: 'search', 'aria-label': barLabel, 'data-controller': filtersController ~ (saved ? ' ' ~ savedController : ''), ('data-' ~ filtersController ~ '-id-value'): barId, 'data-action': barActions ~ (projectActions ? ' ' ~ projectActions : '')}).defaults(savedAttributes) }}{% if action is not null %} action="{{ action }}"{% endif %}>
     {%- if applyName %}<input type="hidden" name="{{ applyName }}" value="filter">{% endif %}
     <div class="crudit-ui-filter-bar__toolbar">
         {%- if search %}
@@ -69,6 +89,9 @@
                 </div>
             {%- endfor %}
 
+            {%- if saved %}
+                <twig:LleCruditUi:Filter:Saved :id="barId" :saved="saved" :resetUrl="resetUrl" />
+            {%- endif %}
             <twig:LleCruditUi:Button icon="filter" :count="activeFilters|length ?: null" aria-expanded="false" aria-controls="{{ barId }}-panel" data-action="2lenet--crudit-ui-bundle--filters#toggle" data-2lenet--crudit-ui-bundle--filters-target="toggle">{{ 'crudit_ui.filter.filters'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
             {%- block tools %}{% endblock -%}
         </div>
@@ -80,9 +103,35 @@
                 <twig:LleCruditUi:Filter:Item :item="item" id="{{ barId }}-{{ item.id }}" />
             {%- endfor %}
         </div>
+        {%- if saved %}
+            {#- Save these filters: what is in the panel (the draft), sent by a POST of this form. The name has no `name` and no `required`, and the two
+             # hidden fields are off, until the button is clicked (the controller): a send of the filters, a GET, must not carry them,
+             # and a `required` field, even without `name`, would stop every send of the form while it is empty. -#}
+            <div id="{{ barId }}-save" class="crudit-ui-filter-save" data-{{ savedController }}-target="region" hidden>
+                <div class="crudit-ui-filter-save__field">
+                    <label for="{{ barId }}-save-name">{{ 'crudit_ui.filter.saved.name_label'|trans({}, 'LleCruditUiBundle') }}</label>
+                    <input type="text" id="{{ barId }}-save-name" class="crudit-ui-input" maxlength="100" autocomplete="off" aria-describedby="{{ barId }}-save-help" data-{{ savedController }}-target="name" data-action="input->{{ savedController }}#nameChanged keydown.enter->{{ savedController }}#enter keydown.esc->{{ savedController }}#cancelSave">
+                    <p id="{{ barId }}-save-help" class="crudit-ui-filter-save__help" aria-live="polite" data-{{ savedController }}-target="help">{{ 'crudit_ui.filter.saved.name_help'|trans({'%count%': savedMax, '%max%': savedMax}, 'LleCruditUiBundle') }}</p>
+                </div>
+                <input type="hidden" name="_token" value="{{ saved.token }}" disabled data-{{ savedController }}-target="field">
+                <input type="hidden" name="redirect" value="{{ saved.redirect|default('') }}" disabled data-{{ savedController }}-target="field">
+                <div class="crudit-ui-filter-save__actions">
+                    <twig:LleCruditUi:Button type="submit" formaction="{{ saved.saveUrl }}" formmethod="post" data-action="click->{{ savedController }}#arm" data-2lenet--crudit-ui-bundle--saved-filters-target="submit">{{ 'crudit_ui.filter.saved.save_button'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
+                    <twig:LleCruditUi:Button variant="ghost" data-action="{{ savedController }}#cancelSave">{{ 'crudit_ui.filter.saved.cancel'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
+                </div>
+            </div>
+        {%- endif %}
         <twig:block name="footer">
+            {%- if saved %}<twig:LleCruditUi:Button icon="bookmark" aria-expanded="false" aria-controls="{{ barId }}-save" data-action="{{ savedController }}#toggleSave" data-2lenet--crudit-ui-bundle--saved-filters-target="toggle">{{ 'crudit_ui.filter.saved.save'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>{% endif %}
             {%- if resetUrl %}<twig:LleCruditUi:Button variant="ghost" href="{{ resetUrl }}">{{ 'crudit_ui.filter.reset'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>{% endif %}
             <twig:LleCruditUi:Button variant="primary" type="submit" data-2lenet--crudit-ui-bundle--filters-target="apply">{{ 'crudit_ui.filter.apply'|trans({}, 'LleCruditUiBundle') }}</twig:LleCruditUi:Button>
         </twig:block>
     </twig:LleCruditUi:Dialog>
 </form>
+{%- if saved %}
+    {#- The buttons of "My filters" send this form (attribute `form`), outside the GET form of the filters: only the token and the address to come back to are sent. -#}
+    <form id="{{ barId }}-saved-form" method="post" hidden>
+        <input type="hidden" name="_token" value="{{ saved.token }}">
+        <input type="hidden" name="redirect" value="{{ saved.redirect|default('') }}">
+    </form>
+{%- endif %}

@@ -28,6 +28,15 @@ return static function (RoutingConfigurator $routes): void {
         ])
         ->methods(['GET']);
 
+    // Target of the sets of saved filters of the kit (POST): 204, nothing is saved, the page stays as it is.
+    $routes->add('crudit_ui_kit_saved', '/crudit-ui/kit-saved')
+        ->controller(TemplateController::class)
+        ->defaults([
+            'template' => '@LleCruditUi/kit/_sent.html.twig',
+            'statusCode' => 204,
+        ])
+        ->methods(['POST']);
+
     // Target of the manual order of the tables of the kit: 204, the order is "saved".
     $routes->add('crudit_ui_kit_table_sort', '/crudit-ui/kit-table-sort')
         ->controller(TemplateController::class)

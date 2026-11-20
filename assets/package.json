@@ -73,6 +73,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "saved-filters": {
+                "main": "dist/controllers/saved_filters_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "selection-bar": {
                 "main": "dist/controllers/selection_bar_controller.js",
                 "webpackMode": "eager",
