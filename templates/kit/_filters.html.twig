@@ -46,3 +46,21 @@
     {id: 'date', label: 'Visit date', name: 'filter_visit_date', type: 'date', operators: [{value: 'eq', label: 'Is', icon: 'operator-equals'}, {value: 'before', label: 'Before', icon: 'operator-less-than'}], operator: 'eq'},
     {id: 'notes', label: 'Notes', name: 'filter_visit_notes', type: 'text', hidden: true, active: true, summary: 'seen'},
 ]" />
+
+<h3 class="crudit-ui-kit__subtitle">Saved filters</h3>
+<p class="crudit-ui-kit__text">"My filters" (a Dropdown) lists the sets of the user: a click replaces the filters in use, a click on the set in use removes its filters, the bin asks in place. "Save these filters", in the panel, shows the field "Name of the filters": a name already taken turns "Save" into "Replace", and the maximum (3 here) blocks a new name. The buttons send a POST to a page that answers 204 (nothing is saved in the kit). Below 768 px the button keeps the bookmark.</p>
+{% set savedConditions = [{value: 'contains', label: 'Contains', icon: 'operator-contains'}, {value: 'eq', label: 'Is', icon: 'operator-equals'}] %}
+{% set savedSets = [
+    {id: 1, name: 'To plan this week', summary: 'Status: Planned · Urgent: Yes', current: true, applyUrl: path('crudit_ui_kit_saved'), deleteUrl: path('crudit_ui_kit_saved')},
+    {id: 2, name: 'Late visits', summary: 'Title: boiler', current: false, applyUrl: path('crudit_ui_kit_saved'), deleteUrl: path('crudit_ui_kit_saved')},
+    {id: 3, name: 'A set with a very long name that goes on and on to see how the list copes with it', summary: 'Status: Draft, Planned +2 · Title: boiler · Duration: > 45', current: false, applyUrl: path('crudit_ui_kit_saved'), deleteUrl: path('crudit_ui_kit_saved')},
+] %}
+<twig:LleCruditUi:Filter:Bar id="kit-saved-bar" label="Filter the visits (saved sets)" action="{{ path('crudit_ui_kit_sent') }}" resetUrl="{{ path('crudit_ui_kit_sent') }}" applyName="visit_filter" :search="{name: 'visit_search', value: '', label: 'Search the visits'}" :saved="{saveUrl: path('crudit_ui_kit_saved'), token: 'kit-token', redirect: '/crudit-ui/kit', max: 3, items: savedSets}" :filters="[
+    {id: 'title', label: 'Title', name: 'filter_visit_title', type: 'text', active: true, summary: 'boiler', operators: savedConditions, operator: 'contains', value: 'boiler'},
+    {id: 'urgent', label: 'Urgent', name: 'filter_visit_urgent', type: 'boolean', active: true, summary: 'Yes', value: 'true'},
+]" />
+
+<p class="crudit-ui-kit__text">Without a set: the button says where to save one.</p>
+<twig:LleCruditUi:Filter:Bar id="kit-saved-empty" label="Filter the visits (no saved set)" action="{{ path('crudit_ui_kit_sent') }}" resetUrl="{{ path('crudit_ui_kit_sent') }}" :saved="{saveUrl: path('crudit_ui_kit_saved'), token: 'kit-token', redirect: '/crudit-ui/kit', max: 10, items: []}" :filters="[
+    {id: 'title', label: 'Title', name: 'filter_visit_title', type: 'text', operators: savedConditions, operator: 'contains'},
+]" />

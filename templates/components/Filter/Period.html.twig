@@ -11,22 +11,13 @@
  # otherwise), inline (false), disabled (false: the dates are not sent, an "is empty" condition), periods (list of {label, from, to}; the ones above by default).
  # Controller: filter-period. Contract: docs/components.md.
  #}
-{% props name, label, value = null, to = null, id = null, inline = false, disabled = false, periods = null %}
+{% props name, label, value = null, to = null, preset = null, id = null, inline = false, disabled = false, periods = null %}
 {%- set base = id ?? ('crudit-ui-period-' ~ random()) -%}
 {%- set filterName = name -%}
 {%- set filterLabel = label -%}
 {%- set start = value -%}
 {%- set end = to -%}
-{%- set today = 'today'|date('Y-m-d') -%}
-{%- set periods = periods ?? [
-    {label: 'crudit_ui.filter.period.today'|trans({}, 'LleCruditUiBundle'), from: today, to: today},
-    {label: 'crudit_ui.filter.period.last_7_days'|trans({}, 'LleCruditUiBundle'), from: '-6 days'|date('Y-m-d'), to: today},
-    {label: 'crudit_ui.filter.period.last_30_days'|trans({}, 'LleCruditUiBundle'), from: '-29 days'|date('Y-m-d'), to: today},
-    {label: 'crudit_ui.filter.period.this_month'|trans({}, 'LleCruditUiBundle'), from: 'first day of this month'|date('Y-m-d'), to: 'last day of this month'|date('Y-m-d')},
-    {label: 'crudit_ui.filter.period.last_month'|trans({}, 'LleCruditUiBundle'), from: 'first day of last month'|date('Y-m-d'), to: 'last day of last month'|date('Y-m-d')},
-    {label: 'crudit_ui.filter.period.next_month'|trans({}, 'LleCruditUiBundle'), from: 'first day of next month'|date('Y-m-d'), to: 'last day of next month'|date('Y-m-d')},
-    {label: 'crudit_ui.filter.period.this_year'|trans({}, 'LleCruditUiBundle'), from: 'first day of january this year'|date('Y-m-d'), to: 'last day of december this year'|date('Y-m-d')},
-] -%}
+{%- set periods = periods ?? ui_period_presets() -%}
 {%- if start and end -%}
     {%- set summary = 'crudit_ui.filter.period.range'|trans({'%from%': start|ui_date, '%to%': end|ui_date}, 'LleCruditUiBundle') -%}
 {%- elseif start -%}
@@ -54,9 +45,10 @@
             <input type="date" id="{{ base }}-to" name="{{ filterName }}_to" value="{{ end }}" data-{{ periodController }}-target="end" data-action="{{ periodController }}#changed"{{ disabled ? ' disabled' : '' }}>
         </div>
     </div>
+    <input type="hidden" name="{{ filterName }}_preset" value="{{ preset }}" data-{{ periodController }}-target="preset"{{ disabled ? ' disabled' : '' }}>
     <ul class="crudit-ui-period__periods" aria-label="{{ 'crudit_ui.filter.period.ready_made'|trans({'%label%': filterLabel}, 'LleCruditUiBundle') }}">
         {% for period in periods %}
-            <li><button type="button" class="crudit-ui-period__period" data-from="{{ period.from }}" data-to="{{ period.to }}" data-action="{{ periodController }}#choose">{{ period.label }}</button></li>
+            <li><button type="button" class="crudit-ui-period__period" data-from="{{ period.from }}" data-to="{{ period.to }}"{% if period.id|default(null) %} data-preset="{{ period.id }}"{% endif %} data-action="{{ periodController }}#choose">{{ period.label }}</button></li>
         {% endfor %}
     </ul>
 {%- endset -%}

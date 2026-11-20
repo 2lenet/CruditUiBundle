@@ -518,3 +518,178 @@
         grid-template-columns: repeat(auto-fill, minmax(max(14rem, calc((100% - 3 * var(--space-4)) / 4)), 1fr));
     }
 }
+
+// "My filters" (component Filter:Saved): the button of the bar and the list of the sets of the user in its dropdown.
+.crudit-ui-filter-saved {
+    &__button--active {
+        border-color: var(--c-primary);
+        background-color: var(--c-primary-subtle);
+        color: var(--c-primary-text);
+    }
+
+    &__button {
+        max-width: 18rem;
+    }
+
+    &__label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        // The bookmark alone on a phone: the name stays in the accessible name of the button.
+        @include media('<md') {
+            @include sr-only;
+        }
+    }
+
+    &__panel {
+        width: min(22rem, calc(100vw - 2 * var(--gutter)));
+        padding: var(--space-2);
+    }
+
+    &__list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+    }
+
+    &__apply {
+        display: flex;
+        min-width: 0;
+        min-height: var(--control-h);
+        flex: 1;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border: 0;
+        border-radius: var(--radius-md);
+        background-color: transparent;
+        color: var(--c-text);
+        font: inherit;
+        text-align: start;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--c-surface-hover);
+            color: var(--c-text);
+            text-decoration: none;
+        }
+
+        &:focus-visible {
+            @include focus-ring(-2px);
+        }
+    }
+
+    // The room of the check is always kept, so the names line up.
+    &__check {
+        display: inline-flex;
+        width: 1rem;
+        flex: none;
+        color: var(--c-primary-text);
+    }
+
+    &__text {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+    }
+
+    &__name {
+        overflow: hidden;
+        font-weight: var(--font-weight-semibold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__summary,
+    &__state {
+        overflow: hidden;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // Asked in place, under the set: a bin in a menu must not delete at the first click.
+    &__confirm {
+        padding: var(--space-2) var(--space-3);
+        margin-block-end: var(--space-1);
+        border: 1px solid var(--c-danger-border);
+        border-radius: var(--radius-md);
+        background-color: var(--c-danger-bg);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    &__confirm-text {
+        margin: 0 0 var(--space-2);
+        color: var(--c-danger-text);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__confirm-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    &__empty,
+    &__note {
+        padding: var(--space-2) var(--space-3);
+        margin: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+}
+
+// "Save these filters", under the filters of the panel: the name of the set, its help, its buttons.
+.crudit-ui-filter-save {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding-block-start: var(--space-4);
+    margin-block-start: var(--space-4);
+    border-block-start: 1px solid var(--c-border);
+
+    &[hidden] {
+        display: none;
+    }
+
+    &__field {
+        display: flex;
+        min-width: min(100%, 16rem);
+        flex: 1 1 16rem;
+        flex-direction: column;
+        gap: var(--space-1);
+        max-width: 28rem;
+
+        label {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    &__help {
+        margin: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        // Level with the input, not with its label.
+        padding-block-start: calc(var(--font-size-sm) * var(--line-height-base, 1.5) + var(--space-1));
+    }
+}
