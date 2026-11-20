@@ -79,6 +79,17 @@ crudit_ui:
             full: "Nombre maximal de caractères atteint"
     language:
         label: Langue
+    pager:
+        label: "Pagination des %label%"
+        first: "Première page"
+        previous: "Page précédente"
+        next: "Page suivante"
+        last: "Dernière page (%count%)"
+        page: "Page"
+        summary: "%from% à %to% sur %total% %label%"
+        per_page: "Lignes par page"
+        per_page_help: "La liste se met à jour au choix."
+        apply: "Appliquer"
     selection:
         label: "Actions sur la sélection"
         one: "%count% ligne sélectionnée"

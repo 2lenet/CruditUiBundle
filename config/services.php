@@ -10,6 +10,7 @@ use Lle\CruditUiBundle\Twig\FilterExtension;
 use Lle\CruditUiBundle\Twig\FormatExtension;
 use Lle\CruditUiBundle\Twig\IconExtension;
 use Lle\CruditUiBundle\Twig\LocaleExtension;
+use Lle\CruditUiBundle\Twig\PagerExtension;
 use Lle\CruditUiBundle\Twig\ThemeExtension;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -38,6 +39,8 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$map', param('lle_crudit_ui.icons.map'));
 
     $services->set(ThemeExtension::class);
+
+    $services->set(PagerExtension::class);
 
     $services->set(RequestLocale::class)
         ->arg('$defaultLocale', param('kernel.default_locale'));

@@ -711,6 +711,53 @@ The cards repeat the cells of the table in the page, hidden by the CSS: the HTML
 `[data-cell-id="<id>"]`: the page has each id once, and the table and the card stay in step. The content of the
 cell, in the HTML you give, must not carry an `id`.
 
+### LleCruditUi:Pager
+
+Where the user is among the pages of a list, and the way to the other pages: the summary ("1 to 30 of 131 visits"),
+the pages and the rows per page. **At the bottom of a `Table`, in its `footer` block, never above it.** It knows nothing
+of Crudit: it counts the pages from `total` and `perPage`, and builds its addresses from `path` and `query`.
+
+```twig
+<twig:LleCruditUi:Table id="visits" caption="Visits" :columns="columns" :rows="rows">
+    <twig:block name="footer">
+        <twig:LleCruditUi:Pager id="visits-pager" label="visits" :total="131" :perPage="30" :page="2"
+            :perPageChoices="[10, 30, 50, 100]" path="/visits" :query="app.request.query.all"/>
+    </twig:block>
+</twig:LleCruditUi:Table>
+```
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `id` | string | required | base of the ids (`<id>-limit`, the selector of the rows per page) |
+| `label` | string | required | the elements, plural and translated: "visits" (summary and name of the `nav`) |
+| `total` | int | required | all the results, not only the page. **Nothing is rendered when it is 0**: the empty state of the table says it |
+| `page` | int | `1` | the current page; past the last one, the last one |
+| `perPage` | int | required | rows per page |
+| `perPageChoices` | list of int | `[]` | the choices of the selector; none, or a list that fits the smallest choice: no selector |
+| `path` | string | required | the address without its query |
+| `query` | map | `{}` | the other parameters (filters, sort, other lists…), nested or not. The page and the rows per page of the query are replaced, not repeated |
+| `pageParam` | string | `page` | name of the page parameter (Crudit: `<list>_offset`) |
+| `mode` | `page` \| `offset` | `page` | `offset`: the parameter holds the number of the first row, `(page - 1) × perPage` (Crudit) |
+| `limitParam` | string | `limit` | name of the rows per page parameter (Crudit: `<list>_limit`) |
+| `anchor` | string | none | `#tab`, added to every address (a list in a tab) |
+
+- The pages are **links** (GET): they work without JavaScript and open in another tab. First, previous, then 1 … 4 5 6 … 12
+  (the first, the last and the neighbours of the current page), next, last. The current page is `aria-current="page"`
+  and is not a link; **first and previous on the first page** (next and last on the last) are `aria-disabled` and
+  not links. The names are read ("Page 4", "Last page (12)").
+- Below 768 px: previous, "2 / 5" (hidden from screen readers: the current page is `aria-current`), next. The
+  summary and the selector wrap.
+- **The rows per page** is a native `<select>` in a GET form. The list reloads at once when the choice changes
+  (controller `pager`; Turbo handles the form like any other); a help text read by the screen reader says so
+  ("The list updates as soon as you choose"). Without JavaScript, a button "Apply" shows (`<noscript>`). The form does not
+  carry the page: **the list goes back to the first page**.
+- **The selection of the table follows the pager** (3.1.c): the table recognises a link that only changes the page by its
+  parameter, `page` or a name ending with `_offset`. With another `pageParam`, the selection is not kept from one page
+  to the other.
+- Texts in the `crudit_ui.pager.*` keys (fr, en, de, it); the arrows are the icons `first`, `back`, `next`, `last`, mirrored
+  in right to left. Hidden when printing.
+- A Twig function, `ui_query_pairs(query)`, turns a query into the hidden fields of a form (`a[b]` for nested values).
+
 ### LleCruditUi:SelectionBar
 
 The bar of the actions on the rows checked in a `Table` (controller `selection-bar`), stuck at the bottom of the screen and
