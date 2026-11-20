@@ -88,7 +88,7 @@ crudit_ui:
         page: "Page"
         summary: "%from% to %to% of %total% %label%"
         per_page: "Rows per page"
-        per_page_help: "The list updates as soon as you choose."
+        per_page_help: "The list updates as soon as you choose; with the keyboard, confirm with Enter."
         apply: "Apply"
     selection:
         label: "Actions on the selection"

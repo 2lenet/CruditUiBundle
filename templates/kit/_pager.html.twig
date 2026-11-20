@@ -1,3 +1,4 @@
+{# The offset example opens on the page 2 when its parameter is absent (30 is the first row of the page 2), to show a page in the middle. #}
 {# Pager (3.1.d): the summary, the pages and the rows per page, at the bottom of a Table. Each example has its own page parameter: its links really change the page. #}
 {% set path = app.request is not null ? app.request.pathinfo : '/' %}
 {% set others = app.request is not null ? app.request.query.all : {} %}

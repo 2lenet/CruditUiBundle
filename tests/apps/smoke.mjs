@@ -1420,6 +1420,16 @@ try {
         assert.equal(query.get('middle'), '1', 'pager: the form does not send the first page');
         assert.equal(await pager.$eval(`${root} .crudit-ui-pager__summary`, (e) => e.textContent.trim()), '1 to 50 of 360 visits');
         assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '50', 'pager: the selector forgets the choice');
+        // the keyboard: an arrow changes the choice without reloading the list, Enter sends it
+        await pager.goto(new URL('crudit-ui/kit?middle=6&middle_limit=30', url).href, {waitUntil: 'networkidle0'});
+        await pager.focus(`${root} select`);
+        await pager.keyboard.press('ArrowDown');
+        await pager.keyboard.press('ArrowDown');
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '30', 'pager: an arrow key reloaded the list');
+        assert.equal(await pager.$eval(`${root} select`, (e) => e.value), '100', 'pager: the arrows did not change the choice');
+        await Promise.all([pager.waitForNavigation({waitUntil: 'networkidle0'}), pager.keyboard.press('Enter')]);
+        assert.equal(new URL(pager.url()).searchParams.get('middle_limit'), '100', 'pager: Enter did not send the choice');
         // a phone: previous, "2 / 5", next
         await pager.setViewport({width: 360, height: 800});
         assert.equal(await pager.$eval('#kit-pager-last .crudit-ui-pager__status', (e) => getComputedStyle(e).display !== 'none'), true, 'pager: no "5 / 5" on a phone');

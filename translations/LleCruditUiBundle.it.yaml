@@ -88,7 +88,7 @@ crudit_ui:
         page: "Pagina"
         summary: "da %from% a %to% di %total% %label%"
         per_page: "Righe per pagina"
-        per_page_help: "L'elenco si aggiorna appena si sceglie."
+        per_page_help: "L'elenco si aggiorna appena si sceglie; con la tastiera, confermare con Invio."
         apply: "Applica"
     selection:
         label: "Azioni sulla selezione"
