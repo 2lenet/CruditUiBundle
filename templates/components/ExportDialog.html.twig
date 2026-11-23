@@ -12,7 +12,8 @@
  # error, the login) is an error shown at once and the page does not move. The server answers the file with a cookie
  # `crudit_export=<token>`, which tells the download has begun: the dialog closes and a toast says so. Without it after
  # `timeout` ms: an error and a way to try again (the token is still watched: a late file still closes the dialog).
- # Without JavaScript, the browser downloads the file and the dialog stays open.
+ # Without JavaScript there is no frame: a download leaves the page as it is (the dialog stays open), a page answered
+ # in place of the file (an error, the login) replaces the page.
  # Contract: docs/components.md.
  #}
 {% props id, title, description = null, action, formats = [], format = null, params = {}, timeout = 60000 %}
@@ -28,7 +29,8 @@
               data-{{ exportCtl }}-timeout-value="{{ timeout }}"
               data-{{ exportCtl }}-busy-value="{{ 'crudit_ui.export.busy'|trans(domain: domain) }}"
               data-{{ exportCtl }}-done-value="{{ 'crudit_ui.export.done'|trans(domain: domain) }}"
-              data-{{ exportCtl }}-failed-value="{{ 'crudit_ui.export.failed'|trans(domain: domain) }}">
+              data-{{ exportCtl }}-failed-value="{{ 'crudit_ui.export.failed'|trans(domain: domain) }}"
+              data-{{ exportCtl }}-inline-value="{{ 'crudit_ui.export.inline'|trans(domain: domain) }}">
             <fieldset class="crudit-ui-export__formats">
                 <legend class="crudit-ui-export__legend">{{ 'crudit_ui.export.format'|trans(domain: domain) }}</legend>
                 {%- for item in formats -%}

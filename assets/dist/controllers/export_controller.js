@@ -13,8 +13,11 @@ import { Controller } from '@hotwired/stimulus';
  *   JavaScript there is no frame: the browser downloads the file, or shows the page the server answered.
  *
  * Not heard of within `timeout` ms (the server hangs): an error is shown and the form can be sent again, **but the
- * token is still watched** (ten times the delay): a file that comes late still closes the dialog and says it is done,
- * so that nobody exports twice because the server was slow.
+ * token is still watched** (ten times the delay): a file that comes late closes the dialog and says it is done, so that
+ * nobody exports twice because the server was slow. Each attempt has its own token: a late file of an older attempt only
+ * shows the toast, the attempt in progress goes on.
+ * - The file must come with `Content-Disposition: attachment`. Shown inline, the frame loads it (as a page): the cookie
+ *   is there but nothing was downloaded, which is said (a message, and a warning in the console for the developer).
  *
  * - Busy: the submit button (outside the form: found by its attribute "form") is put in loading by its own controller
  *   `button` (spinner, `aria-busy`, `aria-disabled`: it keeps the focus). The status line (a polite live region) says
@@ -30,6 +33,7 @@ export default class extends Controller {
         busy: String,
         done: String,
         failed: String,
+        inline: String,
         cookie: { type: String, default: 'crudit_export' },
         timeout: { type: Number, default: 60000 },
     };
@@ -98,11 +102,19 @@ export default class extends Controller {
                 address = 'page';
             }
             // the empty page the frame starts with
-            if (address !== 'about:blank') {
-                this.pending.delete(token);
-                if (token === this.token && this.waiting) {
-                    this.fail();
-                }
+            if (address === 'about:blank') {
+                return;
+            }
+            this.pending.delete(token);
+            // The cookie came with this page: the server made the file but sent it to be shown (no
+            // `Content-Disposition: attachment`), so the frame displayed it and nothing was downloaded.
+            const inline = this.hasCookie(token);
+            if (inline) {
+                document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
+                console.warn('crudit-ui export: the server answered the file without "Content-Disposition: attachment", the browser showed it in the hidden frame instead of downloading it.');
+            }
+            if (token === this.token && this.waiting) {
+                this.fail(inline ? this.inlineValue : this.failedValue);
             }
         });
     }
@@ -113,12 +125,16 @@ export default class extends Controller {
         }
     }
 
+    hasCookie(token) {
+        return document.cookie.split('; ').includes(`${this.cookieValue}=${token}`);
+    }
+
     check() {
-        const cookies = document.cookie.split('; ');
         for (const [token, until] of this.pending) {
-            if (cookies.includes(`${this.cookieValue}=${token}`)) {
+            if (this.hasCookie(token)) {
                 document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
-                this.done();
+                this.pending.delete(token);
+                this.done(token === this.token);
 
                 return;
             }
@@ -127,27 +143,31 @@ export default class extends Controller {
             }
         }
         if (this.waiting && Date.now() > this.deadline) {
-            this.fail();
+            this.fail(this.failedValue);
         }
         if (this.pending.size === 0 && !this.waiting) {
             this.unwatch();
         }
     }
 
-    // The download begins: whatever attempt it is (a late one too).
-    done() {
-        this.pending.clear();
-        this.unwatch();
-        this.finish();
-        this.clearError();
-        this.dialog?.close();
+    // A download begins. If it is the attempt in progress (or the last one, that had timed out): the dialog is over. If it
+    // is an older one (A timed out, the user sent B, then A arrives): the toast only, B goes on.
+    done(current) {
+        if (current) {
+            this.finish();
+            this.clearError();
+            this.dialog?.close();
+        }
+        if (this.pending.size === 0 && !this.waiting) {
+            this.unwatch();
+        }
         document.dispatchEvent(new CustomEvent('crudit-ui:toast', { detail: { message: this.doneValue, tone: 'success' } }));
     }
 
     // The attempt is over without a file: the error, and the form can be sent again.
-    fail() {
+    fail(message) {
         this.finish();
-        this.errorTarget.textContent = this.failedValue;
+        this.errorTarget.textContent = message;
         this.errorTarget.hidden = false;
     }
 

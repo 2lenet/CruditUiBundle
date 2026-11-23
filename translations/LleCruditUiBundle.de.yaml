@@ -34,7 +34,8 @@ crudit_ui:
         action: "Exportieren"
         busy: "Export läuft …"
         done: "Export abgeschlossen."
-        failed: "Der Export wurde nicht gestartet. Bitte erneut versuchen."
+        failed: "Der Export wurde nicht gestartet. Versuchen Sie es erneut oder laden Sie die Seite neu, falls Ihre Sitzung abgelaufen ist."
+        inline: "Die Datei wurde erstellt, aber nicht heruntergeladen. Wenden Sie sich an den Administrator."
     filter:
         operator_for: "Bedingung für %label%: %operator%"
         operator_legend: "Bedingung für %label%"

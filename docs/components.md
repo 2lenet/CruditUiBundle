@@ -805,13 +805,24 @@ button of the page (`commandfor="<id>" command="show-modal"`).
   - **The cookie.** The server answers the file with a cookie `crudit_export=<token>`; seen, the dialog closes and a toast
     "Export done." is shown (event `crudit-ui:toast`), whether the dialog is still open or not.
   - **The frame.** A file does not fire `load` on the frame; **a page does**: an error (500, 403), the login after the
-    session ended, a redirect to the list with a message. The error "The export did not start. Try again." is then shown
-    at once, in a `role="alert"` element, and the form can be sent again. It goes when the dialog opens again.
+    session ended, a redirect to the list with a message. The error "The export did not start. Try again, or reload the page if your session has expired." is then shown at once (an
+    expired session is the usual cause, hence the hint), in a `role="alert"` element, and the form can be sent again. It goes
+    when the dialog opens again.
   - **Nothing for `timeout` ms** (the server hangs): the same error. **The token is still watched** (ten times the delay):
     a file that comes late closes the dialog and shows the toast, so that nobody exports twice because the server was slow.
-  - Without JavaScript there is no frame: the browser downloads the file, or shows the page the server answered, and
-    the dialog is gone.
-- **The contract of the server** (the helper of CruditBundle does it: `DownloadCookie`). The cookie must be **readable by the
+    Each attempt has its own token: if the user has sent the form again, a late file of the first attempt only shows the
+    toast, the attempt in progress goes on.
+  - **A file shown inline** (no `Content-Disposition: attachment`): the frame loads it like a page, so `load` fires although
+    the cookie came. Nothing was downloaded: the dialog says so ("The file was made but not downloaded. Contact the
+    administrator.") and the console warns the developer. **The `attachment` disposition is part of the contract.**
+  - Without JavaScript there is no frame. A download leaves the page as it is (the dialog stays open); a page answered in
+    place of the file (an error, the login) replaces the page.
+  - **Content Security Policy**: the hidden frame is a navigation to the address of the export, so the page must allow
+    `frame-src 'self'` (or `default-src 'self'`). With `frame-src 'none'` the browser blocks it and every export fails,
+    although the server answers well. An `X-Frame-Options: DENY` on the **file** would too; on an error page or the login
+    it is harmless (the page is an error anyway).
+- **The contract of the server** (CruditBundle 2.0 has a helper for it, `Lle\CruditBundle\Exporter\DownloadCookie::attach()`).
+  The file comes with `Content-Disposition: attachment`, and the cookie must be **readable by the
   script** (`HttpOnly` false: `Cookie::create()` of Symfony is HttpOnly by default, and then every export ends in an
   error), at the **path `/`** (the controller deletes it there), and its value is the token **and nothing else**. The
   token comes from the client and ends in a header: accept only `[A-Za-z0-9-]{8,64}`.
