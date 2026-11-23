@@ -54,6 +54,16 @@
         @include focus-ring;
     }
 
+    // Forced colors (Windows high contrast): the background and the shadow are gone, so the checked card says it by its
+    // border (thicker: the padding gives the pixel back, the card does not move).
+    @media (forced-colors: active) {
+        &__input:checked + &__body {
+            padding: calc(var(--space-3) - 1px);
+            border-width: 2px;
+            border-color: Highlight;
+        }
+    }
+
     &__icon {
         display: inline-flex;
         width: 1.5rem;

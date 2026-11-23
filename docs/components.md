@@ -82,7 +82,7 @@ or link.
 | `type` | `button`, `submit`, `reset` | `button` | |
 | `disabled` | bool | `false` | `disabled` on a button; a link loses its `href` and gets `aria-disabled` |
 | `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form). A loading link loses its `href`, as a disabled one: neither followed (click, middle click, Ctrl+click) nor focused |
-| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">`, which sends nothing (it closes its dialog). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
+| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">`, which sends nothing (it closes its dialog). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file. A submit button keeps the template of its spinner either way: a script puts it in loading with the controller (`busy()`, `restore()`) |
 | `count` | int | `null` | counter after the label, read with it (`Filters 3`) |
 
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
@@ -796,15 +796,35 @@ button of the page (`commandfor="<id>" command="show-modal"`).
 | `timeout` | int | `60000` | ms to wait for the download to begin before the error |
 
 - The form is a **GET** with `data-turbo="false"` (the answer is a file, not a page), so it works without JavaScript and
-  is a normal download. The button is **not** put in loading by the `Button` (`busyOnSubmit` false): the controller `export`
-  does it, because it is the one that knows when the download begins.
-- **Controller `export`** (on the form): it puts a random token in `download_token` and shows the status "Export in
-  progress…" (a polite live region), the button `aria-busy` and `aria-disabled` (not `disabled`: it keeps the focus; a
-  second click does nothing). **The server answers the file with a cookie `crudit_export=<token>`** (readable by the script,
-  not HttpOnly; the token is random and the cookie holds nothing else): seen, the dialog closes and a toast "Export done."
-  is shown (event `crudit-ui:toast`). Without the cookie after `timeout` ms (60 000), an error is shown in an
-  `role="alert"` element and the form can be sent again. Without JavaScript, the browser downloads and the dialog stays open.
-- The formats are radio buttons in a `<fieldset>` with a `<legend>` "Format"; the focus ring is on the card.
+  is a normal download. The button is **not** put in loading by its own `busyOnSubmit` (`false`): the controller `export`
+  does it with the controller of the button (`busy()`, `restore()`: the spinner), because it is the one that knows when
+  the download begins.
+- **Controller `export`** (on the form). It puts a random token in `download_token` and shows the status "Export in
+  progress…" (a polite live region), the button in loading (a second click does nothing), and sends the form **into a
+  hidden `<iframe>`**, so that the page never moves. Two signals end the wait:
+  - **The cookie.** The server answers the file with a cookie `crudit_export=<token>`; seen, the dialog closes and a toast
+    "Export done." is shown (event `crudit-ui:toast`), whether the dialog is still open or not.
+  - **The frame.** A file does not fire `load` on the frame; **a page does**: an error (500, 403), the login after the
+    session ended, a redirect to the list with a message. The error "The export did not start. Try again." is then shown
+    at once, in a `role="alert"` element, and the form can be sent again. It goes when the dialog opens again.
+  - **Nothing for `timeout` ms** (the server hangs): the same error. **The token is still watched** (ten times the delay):
+    a file that comes late closes the dialog and shows the toast, so that nobody exports twice because the server was slow.
+  - Without JavaScript there is no frame: the browser downloads the file, or shows the page the server answered, and
+    the dialog is gone.
+- **The contract of the server** (the helper of CruditBundle does it: `DownloadCookie`). The cookie must be **readable by the
+  script** (`HttpOnly` false: `Cookie::create()` of Symfony is HttpOnly by default, and then every export ends in an
+  error), at the **path `/`** (the controller deletes it there), and its value is the token **and nothing else**. The
+  token comes from the client and ends in a header: accept only `[A-Za-z0-9-]{8,64}`.
+
+  ```php
+  $token = (string) $request->query->get('download_token', '');
+  if (preg_match('/^[A-Za-z0-9-]{8,64}$/', $token) === 1) {
+      $response->headers->setCookie(Cookie::create('crudit_export', $token, path: '/', httpOnly: false, sameSite: Cookie::SAMESITE_LAX));
+  }
+  ```
+- `format` and `download_token` are the fields of the dialog: a `params` of that name is left out. A `format` that is not
+  among the formats checks the first one.
+- The formats are radio buttons in a `<fieldset>` with a `<legend>` "Format"; the focus ring is on the card. In forced colors (Windows high contrast) the checked card has a thicker border in `Highlight`.
 - Texts in the `crudit_ui.export.*` keys (fr, en, de, it).
 
 ### LleCruditUi:SelectionBar

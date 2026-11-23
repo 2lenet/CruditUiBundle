@@ -7,6 +7,8 @@
  # - A disabled or loading link has no href: neither followed (click, middle click, Ctrl+click) nor focused.
  # - Loading keeps the focus on a button (aria-disabled, not disabled); the controller "button" ignores the click.
  # - busyOnSubmit: the controller puts the button in loading when it sends its form.
+ # - A submit button always has the template of its spinner: a script that sends the form itself (the export) puts it
+ #   in loading with the controller (busy(), restore()), with busyOnSubmit false.
  #}
 {%- set defaults = {class: class, 'data-controller': '2lenet--crudit-ui-bundle--button'}|merge(extra) -%}
 {%- if href is not null and (disabled or loading) -%}
@@ -24,6 +26,6 @@
 {%- else -%}
     <button type="{{ type }}"{% if disabled %} disabled{% endif %} {{ attributes.defaults(defaults) }}>
 {%- endif -%}
-{%- if busyOnSubmit and href is null and not loading -%}
+{%- if (busyOnSubmit or type == 'submit') and href is null and not loading -%}
     <template data-2lenet--crudit-ui-bundle--button-target="spinner">{{ ui_icon('loading') }}</template>
 {%- endif -%}

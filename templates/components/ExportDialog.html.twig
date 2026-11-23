@@ -6,17 +6,21 @@
  # Props: id (required, target of commandfor), title (required: names the elements, "Export the visits"), description
  # (what the file will hold: "The 137 visits that match the current filters."), action (address of the export),
  # formats (list of {value, label, description, icon}), format (the one checked; else the first), params (other
- # fields sent, name => value), timeout (ms to wait for the download to begin, 60000).
- # Controller export (on the form): a token in `download_token`, the button busy and a status read by the screen
- # reader while the file is made; the server answers the file with a cookie `crudit_export=<token>`, which tells the
- # download has begun: the dialog closes and a toast says so. Without the cookie after `timeout` ms: an error and a
- # way to try again. Without JavaScript, the browser downloads the file and the dialog stays open.
+ # fields sent, name => value; `format` and `download_token` are left out), timeout (ms to wait for the download to begin, 60000).
+ # Controller export (on the form): a token in `download_token`, the button in loading and a status read by the screen
+ # reader while the file is made; the form is sent into a hidden frame, so that a page answered in place of a file (an
+ # error, the login) is an error shown at once and the page does not move. The server answers the file with a cookie
+ # `crudit_export=<token>`, which tells the download has begun: the dialog closes and a toast says so. Without it after
+ # `timeout` ms: an error and a way to try again (the token is still watched: a late file still closes the dialog).
+ # Without JavaScript, the browser downloads the file and the dialog stays open.
  # Contract: docs/components.md.
  #}
 {% props id, title, description = null, action, formats = [], format = null, params = {}, timeout = 60000 %}
 {%- set domain = 'LleCruditUiBundle' -%}
 {%- set exportCtl = '2lenet--crudit-ui-bundle--export' -%}
-{%- set checked = format ?? (formats|first).value ?? null -%}
+{#- The checked one is the given format if the dialog offers it, else the first: a form without a format would send none. -#}
+{%- set values = formats|map(item => item.value) -%}
+{%- set checked = format in values ? format : (formats|first).value ?? null -%}
 <twig:LleCruditUi:Dialog id="{{ id }}" :title="title" :description="description" {{ ...attributes }}>
     <twig:block name="content">
         <form id="{{ id }}-form" class="crudit-ui-export" method="get" action="{{ action }}" data-turbo="false" novalidate
@@ -40,7 +44,8 @@
                     </label>
                 {%- endfor -%}
             </fieldset>
-            {%- for name, value in params %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor -%}
+            {#- `format` and `download_token` are the dialog's own fields: a param of that name is left out. -#}
+            {%- for name, value in params|filter((value, name) => name not in ['format', 'download_token']) %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor -%}
             <input type="hidden" name="download_token" value="" data-{{ exportCtl }}-target="token" disabled>
             <p class="crudit-ui-export__status" role="status" data-{{ exportCtl }}-target="status"></p>
             <p class="crudit-ui-export__error" role="alert" data-{{ exportCtl }}-target="error" hidden></p>

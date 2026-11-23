@@ -65,6 +65,23 @@ class ExportDialogTest extends TestCase
         self::assertTrue($radios[1]->hasAttribute('checked'));
     }
 
+    public function testAFormatThatIsNotOfferedFallsBackOnTheFirst(): void
+    {
+        $radios = $this->dialog('format="doc"')->querySelectorAll('input[type=radio]');
+
+        self::assertTrue($radios[0]->hasAttribute('checked'));
+        self::assertFalse($radios[1]->hasAttribute('checked'));
+    }
+
+    public function testTheFieldsOfTheDialogCannotBeOverriddenByParams(): void
+    {
+        $dialog = $this->dialog(':params="{format: \'x\', download_token: \'y\', scope: \'z\'}"');
+
+        self::assertCount(0, $dialog->querySelectorAll('input[name=format][type=hidden]'), 'no hidden format');
+        self::assertSame('', (string) $dialog->querySelector('input[name=download_token]')?->getAttribute('value'));
+        self::assertSame('z', $dialog->querySelector('input[type=hidden][name=scope]')?->getAttribute('value'));
+    }
+
     public function testTheSubmitButtonBelongsToTheFormAndTheTokenIsDisabledUntilTheExport(): void
     {
         $dialog = $this->dialog();
