@@ -49,6 +49,7 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Date or time in lists | `widget: 'choice'` or `'text'`: the lists or the inputs on one line (`.crudit-ui-date-lists`), wrapped when the room is short; an input as wide as its digits (two, four for the year: `.crudit-ui-input--year`), with the digit pad (`inputmode="numeric"`); the legend names the field, each list (or input of `widget: 'text'`) its part, `aria-label` *Day*, *Month*, *Year*, *Hour*, *Minute*, *Second* |
 | List | `select.crudit-ui-select`; the empty option of a required list is disabled: once a value is chosen, it cannot be chosen again |
 | Long text | `textarea.crudit-ui-input.crudit-ui-textarea` |
+| List with search | a list (not `expanded`) with the variable `combobox`: see [List with search](#list-with-search) |
 | Checkboxes, radios | `ul.crudit-ui-check-list > li > label.crudit-ui-check` (input and label); each input is attached to the help and the error of the field |
 | Segmented control | short choices, one answer (`expanded`, not `multiple`), asked with the variable `segmented` (like `counter`, a variable of the call to `form_row()`, as `label` or `help`: no `crudit_ui_` prefix, but do not define a variable of these names in a theme stacked with `{% use %}`): `{{ form_row(form.size, {segmented: true}) }}` (CruditBundle: the option `segmented` of a choice). `div.crudit-ui-segmented > label.crudit-ui-segmented__option` with the native radio (`__input`, invisible over its label: the arrows of the keyboard, sent with the form) and its label (`__label`); each radio is attached to the help and the error. Not required: an empty choice first ("None", the option `placeholder` to name it, `placeholder: false` to take it away). Made for a few short choices: on one line, they go on the next lines when the room is short (a phone, each choice 6rem at least) |
 | A checkbox alone | its label next to it, inside the widget: `label_attr` goes on this `label.crudit-ui-check` |
@@ -67,6 +68,60 @@ controller, the first count may differ a little; the controller counts again whe
 values put back by a reset of the form; a value changed by a script is shown after an `input` event
 (`input.dispatchEvent(new Event('input', {bubbles: true}))`).
 
+## List with search
+
+A list with the variable `combobox` (`{{ form_row(form.zones, {combobox: true}) }}`; CruditBundle sets it on a choice
+with several answers) is a list with search, the ARIA combobox pattern (the field `UiCombobox` of the crudit-v2 mockup,
+in place of Tom Select):
+
+- `div.crudit-ui-combobox` (`--invalid`, `--disabled`), with the controller `combobox`;
+- the choices made, `ul.crudit-ui-combobox__tokens` named "*Zones*: choices made", each `li.crudit-ui-combobox__token`
+  with a button *Remove …* (none when the field is disabled);
+- the input `input#<id>.crudit-ui-combobox__input`, `role="combobox"`, attached to `ul#<id>_listbox` (`role="listbox"`,
+  `aria-multiselectable` with several answers), to the help and the error; `aria-required` instead of `required`;
+  the placeholder of the field, else *Search…*;
+- a live region that tells the count of choices, a choice added or removed, no result, an error, *Loading…* when
+  Enter is pressed before the choices of the text are there;
+- the value is sent by a hidden `<select>` with the name of the field (its options are the choices).
+
+The choices are those of the field, groups flattened. The preferred choices that are not among the others
+(`duplicate_preferred_choices: false`) come first, as in a native list. A disabled choice (`choice_attr` with
+`disabled`) is shown (`aria-disabled`) but cannot be chosen; already chosen, it keeps its token without a button. The
+options of the hidden `<select>` are read again each time the list opens: a script may change them (a field that
+depends on another one). The reset of the form gives back the choices made of the server (also after a restore from the
+cache of Turbo).
+
+The keyboard: the list opens on the focus, a click and the arrows; up and down move the active option
+(`aria-activedescendant`, the focus stays in the input), Enter chooses it without sending the form, Escape closes the
+list (not a dialog around it), Backspace in an empty input removes the last choice. With several answers the list stays
+open, else a choice replaces the other one and closes it. What is typed filters the choices, accents and case left
+aside, and is marked in them. With one answer too, Backspace in an empty input removes the choice, as its button does
+(as the mockup): a required field left empty is refused by the validation when the form is sent.
+
+The first 50 choices that match are shown, then a line tells how many there are (*First 50 results of 1234: refine the
+search.*); the count read by a screen reader is the total. For more than a few hundred choices, prefer the choices from
+the server (`AutocompleteType` of CruditBundle): all the choices of the page are in the HTML.
+
+The list is in `position: fixed`, under the field, or above it when there is no room below: a dialog, a card or a table
+that scrolls does not cut it. It follows the field when the page scrolls, and stays in the part of the page seen on a
+phone, above the virtual keyboard (`visualViewport`).
+
+**From the server**: a field type whose widget block renders `crudit_ui_combobox_widget` and sets `combobox_url` (and
+`combobox_selected`, the choices made: `[{value, label}]`), such as `AutocompleteType` of CruditBundle, asks its choices to `GET <url>?q=<text>&offset=<n>&limit=20`, answered by
+`{"items": [{"id", "text"}], "next_offset": <n>, "total_count": <n>}` (the answer of the route `autocomplete` of
+CruditBundle). The first choices are asked when the list opens (`combobox_min_length`: characters typed before a
+request, 0), the ones of the text 200 ms after the last key, the next ones when the list is scrolled to its end;
+the request still running is cancelled by a newer one. The first page of the empty text is kept: the list opens again on
+it without a request (Tab through a form). The list asks no more once `next_offset` reaches `total_count`, or when a
+page is empty. The value is sent by a hidden input, the values joined by a comma
+(`combobox_separator`): the field type reads this text (a data transformer, as `EntityToIdTransformer` of CruditBundle),
+so a value must not contain the separator (ids do not). A `ChoiceType` reads a list: on it, `combobox_url` is ignored and
+its choices stay in the page.
+
+The markup is in `@LleCruditUi/form/_combobox.html.twig`, which a page without a Symfony form can include with plain
+values (see its header; the kit does so). JavaScript is needed: without it the choices cannot be changed. The controller
+`combobox` is loaded when a page has one (`fetch: lazy`).
+
 The theme does not change the `<form>` tag. Without `novalidate` on it, the browser checks the required fields itself
 before sending the form and shows its own bubbles instead of the errors of the theme. To show only the messages of the
 server, add it to the form:
@@ -83,7 +138,9 @@ server, add it to the form:
 `crudit-ui-input-group--color`, `crudit-ui-field__count`, `crudit-ui-date-lists`, `crudit-ui-check-list`,
 `crudit-ui-check`, `crudit-ui-check__input`, `crudit-ui-check__label`, `crudit-ui-segmented`,
 `crudit-ui-segmented__option`, `crudit-ui-segmented__input`, `crudit-ui-segmented__label`, `crudit-ui-switch`,
-`crudit-ui-switch__input`, `crudit-ui-switch__state` (`--on`, `--off`).
+`crudit-ui-switch__input`, `crudit-ui-switch__state` (`--on`, `--off`), `crudit-ui-combobox` (`--invalid`,
+`--disabled`, `__field`, `__tokens`, `__token`, `__token-label`, `__remove`, `__input`, `__chevron`, `__listbox`,
+`__option`, `__option--active`, `__check`, `__label`, `__message`).
 They can be used without the theme, in a form written by hand.
 
 The help opened by a button next to a label is the component [Toggletip](components.md#llecrudituitoggletip).

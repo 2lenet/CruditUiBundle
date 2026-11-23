@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { fold, marked } from '../utils/text.js';
 
 const DEBOUNCE = 200;
 // The count is announced once the typing has stopped: not at every key.
@@ -15,23 +16,6 @@ function safe(address) {
     } catch {
         return false;
     }
-}
-
-// "Café" and "cafe" are the same word: the letters without their accents, in lower case, one for one (the position of
-// a match in the normalized text is the position in the text).
-function fold(text) {
-    return Array.from(text, (character) => Array.from(character.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase())[0] ?? character);
-}
-
-// Index of the first place where `words` (folded characters) appear in `folded`, -1 without.
-function find(folded, words) {
-    for (let start = 0; start + words.length <= folded.length; start++) {
-        if (words.every((character, offset) => folded[start + offset] === character)) {
-            return start;
-        }
-    }
-
-    return -1;
 }
 
 /*
@@ -235,7 +219,7 @@ export default class extends Controller {
 
         const title = document.createElement('span');
         title.className = 'crudit-ui-palette__title';
-        title.append(...this.marked(String(result.title ?? ''), words));
+        title.append(...marked(String(result.title ?? ''), words));
         option.append(title);
 
         if (result.subtitle) {
@@ -246,24 +230,6 @@ export default class extends Controller {
         }
 
         return option;
-    }
-
-    // The text with the words typed in <mark>: nodes, never a string of HTML.
-    marked(text, words) {
-        const folded = fold(text);
-        const characters = Array.from(text);
-        const start = words.length > 0 ? find(folded, words) : -1;
-        if (start < 0) {
-            return [document.createTextNode(text)];
-        }
-        const mark = document.createElement('mark');
-        mark.textContent = characters.slice(start, start + words.length).join('');
-
-        return [
-            document.createTextNode(characters.slice(0, start).join('')),
-            mark,
-            document.createTextNode(characters.slice(start + words.length).join('')),
-        ];
     }
 
     showMessage(text, role) {

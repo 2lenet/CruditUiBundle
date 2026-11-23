@@ -54,4 +54,14 @@ return static function (RoutingConfigurator $routes): void {
             'headers' => ['Content-Type' => 'application/json'],
         ])
         ->methods(['GET']);
+
+    // Choices of the list with search of the kit, from the server: the clients that contain ?q=, 20 at a time
+    // (?offset=, ?limit=), in JSON. "none" has no result, "error" answers an error.
+    $routes->add('crudit_ui_kit_choices', '/crudit-ui/kit-choices')
+        ->controller(TemplateController::class)
+        ->defaults([
+            'template' => '@LleCruditUi/kit/_choices.json.twig',
+            'headers' => ['Content-Type' => 'application/json'],
+        ])
+        ->methods(['GET']);
 };
