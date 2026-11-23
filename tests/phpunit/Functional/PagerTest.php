@@ -147,6 +147,14 @@ class PagerTest extends TestCase
         self::assertSame('visits_limit', $root->querySelector('select')?->getAttribute('name'));
     }
 
+    public function testASingleChoiceIsNoChoice(): void
+    {
+        $root = $this->pager(':total="131" :perPage="10" :perPageChoices="[10]"');
+
+        self::assertNull($root->querySelector('form'));
+        self::assertNull($root->getAttribute('data-controller'));
+    }
+
     public function testTheRowsPerPageInUseIsAlwaysAChoice(): void
     {
         $root = $this->pager(':total="131" :perPage="25" :perPageChoices="[50, 10, 30, 30]"');

@@ -29,7 +29,7 @@
 {%- set last = min(current * size, total) -%}
 {#- The rows per page of the list is always a choice: else the selector shows another number than the list does. -#}
 {%- set choices = ui_pager_choices(perPageChoices, size) -%}
-{%- set hasChoices = choices and total > min(choices) -%}
+{%- set hasChoices = choices|length > 1 and total > min(choices) -%}
 {#- The controller and the action of the pager, then those of the project (data-controller and data-action it passes): the two work. -#}
 {%- set projectActions = attributes.all['data-action']|default(null) -%}
 {%- set projectControllers = attributes.all['data-controller']|default(null) -%}
