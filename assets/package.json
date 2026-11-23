@@ -61,6 +61,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "export": {
+                "main": "dist/controllers/export_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "filter-field": {
                 "main": "dist/controllers/filter_field_controller.js",
                 "webpackMode": "eager",

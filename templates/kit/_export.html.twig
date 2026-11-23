@@ -1,0 +1,10 @@
+{# ExportDialog (3.1.g): the formats as cards, what the file holds, the status of the export. #}
+<h3 class="crudit-ui-kit__subtitle">Export dialog</h3>
+<div class="crudit-ui-kit__row">
+    <twig:LleCruditUi:Button id="kit-export-open" icon="download" commandfor="kit-export-dialog" command="show-modal">Export</twig:LleCruditUi:Button>
+</div>
+<twig:LleCruditUi:ExportDialog id="kit-export-dialog" title="Export the visits" description="The 137 visits that match the current filters, sorted as in the list." action="#kit-export-nothing" :formats="[
+    {value: 'xls', label: 'Excel', description: 'A spreadsheet to rework the data', icon: 'file-excel'},
+    {value: 'csv', label: 'CSV', description: 'A text file, separated by semicolons', icon: 'file-csv'},
+    {value: 'pdf', label: 'PDF', description: 'A document ready to print', icon: 'file-pdf'},
+]"/>

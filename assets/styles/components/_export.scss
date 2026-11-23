@@ -1,0 +1,87 @@
+@use '../tools/a11y' as *;
+
+// ExportDialog (component ExportDialog, controller export): the formats as cards (radio buttons) and the status of
+// the export. From the crudit-v2 mockup (`.option-card`, `.export-formats`).
+.crudit-ui-export {
+    display: grid;
+    gap: var(--space-3);
+
+    &__formats {
+        display: grid;
+        gap: var(--space-2);
+        padding: 0;
+        margin: 0;
+        border: 0;
+    }
+
+    &__legend {
+        padding: 0;
+        margin-block-end: var(--space-2);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__card {
+        position: relative;
+        display: flex;
+    }
+
+    &__input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    &__body {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+    }
+
+    &__input:checked + &__body {
+        border-color: var(--c-primary);
+        background-color: var(--c-primary-subtle);
+        box-shadow: inset 0 0 0 1px var(--c-primary);
+    }
+
+    &__input:focus-visible + &__body {
+        @include focus-ring;
+    }
+
+    &__icon {
+        display: inline-flex;
+        width: 1.5rem;
+        color: var(--c-primary-text);
+        font-size: var(--font-size-xl);
+    }
+
+    &__title {
+        display: block;
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__text {
+        display: block;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__status {
+        min-height: 1lh;
+        margin: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__error {
+        margin: 0;
+        color: var(--c-danger-text);
+        font-weight: var(--font-weight-semibold);
+    }
+}

@@ -778,6 +778,35 @@ of Crudit: it counts the pages from `total` and `perPage`, and builds its addres
 - The label is the plural of the elements: with one result the summary reads "1 to 1 of 1 visits"; give a label that
   reads well with any number ("results") when it matters.
 
+### LleCruditUi:ExportDialog
+
+The dialog of the export of a list (3.1.g): the format as cards (radio buttons), a sentence that says what the file will
+hold, "Cancel" and "Export". It knows nothing of Crudit: the caller gives the formats and the sentence. Opened by a
+button of the page (`commandfor="<id>" command="show-modal"`).
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `id` | string | required | target of `commandfor`; names the title (`<id>-title`) and the description |
+| `title` | string | required | names the elements: "Export the visits" |
+| `description` | string \| null | `null` | what the file holds: "The 137 visits that match the current filters." Read with the title |
+| `action` | string | required | address of the export |
+| `formats` | list | `[]` | `{value, label, description, icon}`; `icon` is an icon of the catalogue (`file-excel`, `file-csv`, `file-pdf`), optional |
+| `format` | string \| null | first | the format checked |
+| `params` | map | `{}` | other fields sent (`name => value`), hidden |
+| `timeout` | int | `60000` | ms to wait for the download to begin before the error |
+
+- The form is a **GET** with `data-turbo="false"` (the answer is a file, not a page), so it works without JavaScript and
+  is a normal download. The button is **not** put in loading by the `Button` (`busyOnSubmit` false): the controller `export`
+  does it, because it is the one that knows when the download begins.
+- **Controller `export`** (on the form): it puts a random token in `download_token` and shows the status "Export in
+  progress…" (a polite live region), the button `aria-busy` and `aria-disabled` (not `disabled`: it keeps the focus; a
+  second click does nothing). **The server answers the file with a cookie `crudit_export=<token>`** (readable by the script,
+  not HttpOnly; the token is random and the cookie holds nothing else): seen, the dialog closes and a toast "Export done."
+  is shown (event `crudit-ui:toast`). Without the cookie after `timeout` ms (60 000), an error is shown in an
+  `role="alert"` element and the form can be sent again. Without JavaScript, the browser downloads and the dialog stays open.
+- The formats are radio buttons in a `<fieldset>` with a `<legend>` "Format"; the focus ring is on the card.
+- Texts in the `crudit_ui.export.*` keys (fr, en, de, it).
+
 ### LleCruditUi:SelectionBar
 
 The bar of the actions on the rows checked in a `Table` (controller `selection-bar`), stuck at the bottom of the screen and

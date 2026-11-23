@@ -28,6 +28,13 @@ crudit_ui:
         count:
             one: "%count% risultato."
             other: "%count% risultati."
+    export:
+        format: "Formato"
+        cancel: "Annulla"
+        action: "Esporta"
+        busy: "Esportazione in corso…"
+        done: "Esportazione completata."
+        failed: "L’esportazione non è partita. Riprova."
     filter:
         operator_for: "Condizione per %label%: %operator%"
         operator_legend: "Condizione per %label%"

@@ -37,6 +37,10 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "export": {
+                "enabled": true,
+                "fetch": "eager"
+            },
             "filter-field": {
                 "enabled": true,
                 "fetch": "eager"
