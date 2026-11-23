@@ -31,6 +31,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "combobox": {
+                "main": "dist/controllers/combobox_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
+                "enabled": true
+            },
             "command-palette": {
                 "main": "dist/controllers/command_palette_controller.js",
                 "webpackMode": "eager",

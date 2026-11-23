@@ -15,6 +15,19 @@ crudit_ui:
         label: "Brotkrümelnavigation"
     chip:
         remove: "Filter %label% entfernen"
+    combobox:
+        placeholder: "Suchen…"
+        selected: "%label%: getroffene Auswahl"
+        remove: "%label% entfernen"
+        added: "Hinzugefügt: %label%."
+        removed: "Entfernt: %label%."
+        empty: "Kein Ergebnis."
+        loading: "Wird geladen…"
+        error: "Die Auswahl konnte nicht geladen werden. Versuchen Sie es erneut."
+        more: "Erste %shown% von %count% Ergebnissen: Suche verfeinern."
+        count:
+            one: "%count% Ergebnis."
+            other: "%count% Ergebnisse."
     filter:
         operator_for: "Bedingung für %label%: %operator%"
         operator_legend: "Bedingung für %label%"

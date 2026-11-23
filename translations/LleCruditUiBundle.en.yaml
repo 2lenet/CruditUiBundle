@@ -15,6 +15,19 @@ crudit_ui:
         label: "Breadcrumb"
     chip:
         remove: "Remove the filter %label%"
+    combobox:
+        placeholder: "Search…"
+        selected: "%label%: choices made"
+        remove: "Remove %label%"
+        added: "%label% added."
+        removed: "%label% removed."
+        empty: "No result."
+        loading: "Loading…"
+        error: "The choices could not be loaded. Try again."
+        more: "First %shown% results of %count%: refine the search."
+        count:
+            one: "%count% result."
+            other: "%count% results."
     filter:
         operator_for: "Condition for %label%: %operator%"
         operator_legend: "Condition for %label%"

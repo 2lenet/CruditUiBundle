@@ -1,0 +1,12 @@
+{#- Answer of crudit_ui_kit_choices: the clients of the list with search of the kit, 45 of them, 20 at a time. -#}
+{%- set query = app.request.query.get('q')|default('')|lower -%}
+{%- set offset = app.request.query.getInt('offset') -%}
+{%- set limit = app.request.query.getInt('limit', 20) -%}
+{%- set towns = ['de Colmar', 'd’Épinal', 'de Kaysersberg', 'de Mulhouse', 'de Sélestat', 'de Strasbourg', 'd’Obernai', 'de Guebwiller', 'de Thann'] -%}
+{%- set kinds = ['Boulangerie', 'Garage', 'Mairie', 'Hôtel'] -%}
+{%- set clients = [] -%}
+{%- for index in 1..45 -%}
+    {%- set clients = clients|merge([{id: index, text: kinds[index % 4] ~ ' ' ~ towns[index % 9] ~ ' ' ~ index}]) -%}
+{%- endfor -%}
+{%- set found = query == 'none' ? [] : clients|filter(c => query in c.text|lower)|merge([]) -%}
+{{- {total_count: found|length, next_offset: offset + limit, items: found|slice(offset, limit)}|json_encode|raw -}}

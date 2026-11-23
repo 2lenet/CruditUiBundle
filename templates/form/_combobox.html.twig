@@ -1,0 +1,90 @@
+{#
+ # List with search (block crudit_ui_combobox_widget of the form theme, controller combobox): the markup, from plain
+ # values, so that a page without a Symfony form can show one (the kit).
+ #
+ # id (of the input, the label points to it), name (of the hidden field that sends the value), label (names the
+ # listbox and the list of the choices made), multiple, disabled, invalid, class (of the root), attr (of the input:
+ # aria-describedby, aria-invalid, aria-required, placeholder…), selected (the choices made: [{value, label, disabled}],
+ # disabled optional: a choice made that cannot be removed). The reset of the form gives these choices back.
+ # The choices: options ([{value, label, disabled}], filtered in the page, a disabled one shown but not chosen; the value
+ # is sent by a hidden <select>, data-disabled on its options: a browser never sends a disabled option, a disabled
+ # choice already made would be lost), or url (asked
+ # to the server, min_length characters typed first; the value is sent by a hidden input, the values joined by
+ # separator).
+ #}
+{%- set controller = '2lenet--crudit-ui-bundle--combobox' -%}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set url = url|default(null) -%}
+{%- set multiple = multiple|default(false) -%}
+{%- set disabled = disabled|default(false) -%}
+{%- set selected = selected|default([]) -%}
+{%- set separator = separator|default(',') -%}
+{%- set attr = attr|default({}) -%}
+{%- if attr.placeholder is not defined %}{% set attr = attr|merge({placeholder: 'crudit_ui.combobox.placeholder'|trans({}, domain)}) %}{% endif -%}
+<div class="{{ ('crudit-ui-combobox ' ~ (invalid|default(false) ? 'crudit-ui-combobox--invalid ' : '') ~ (disabled ? 'crudit-ui-combobox--disabled ' : '') ~ class|default(''))|trim }}"
+    data-controller="{{ controller }}"
+    data-{{ controller }}-multiple-value="{{ multiple ? 'true' : 'false' }}"
+    {%- if url is not null %}
+    data-{{ controller }}-url-value="{{ url }}"
+    data-{{ controller }}-min-length-value="{{ min_length|default(0) }}"
+    data-{{ controller }}-separator-value="{{ separator }}"
+    {%- endif %}
+    data-{{ controller }}-remove-text-value="{{ 'crudit_ui.combobox.remove'|trans({}, domain) }}"
+    data-{{ controller }}-added-text-value="{{ 'crudit_ui.combobox.added'|trans({}, domain) }}"
+    data-{{ controller }}-removed-text-value="{{ 'crudit_ui.combobox.removed'|trans({}, domain) }}"
+    data-{{ controller }}-empty-text-value="{{ 'crudit_ui.combobox.empty'|trans({}, domain) }}"
+    data-{{ controller }}-loading-text-value="{{ 'crudit_ui.combobox.loading'|trans({}, domain) }}"
+    data-{{ controller }}-error-text-value="{{ 'crudit_ui.combobox.error'|trans({}, domain) }}"
+    data-{{ controller }}-count-one-text-value="{{ 'crudit_ui.combobox.count.one'|trans({}, domain) }}"
+    data-{{ controller }}-count-other-text-value="{{ 'crudit_ui.combobox.count.other'|trans({}, domain) }}"
+    data-{{ controller }}-more-text-value="{{ 'crudit_ui.combobox.more'|trans({}, domain) }}"
+    {#- The choices of the server, never changed by the script: the reset of the form, also after a restore of Turbo #}
+    data-{{ controller }}-initial-value="{{ selected|map(item => {value: item.value ~ '', label: item.label ~ '', disabled: item.disabled|default(false)})|json_encode }}"
+>
+    <div class="crudit-ui-combobox__field" data-action="click->{{ controller }}#focus">
+        <ul class="crudit-ui-combobox__tokens" aria-label="{{ 'crudit_ui.combobox.selected'|trans({'%label%': label}, domain) }}"{% if selected is empty %} hidden{% endif %} data-{{ controller }}-target="tokens">
+            {%- for item in selected -%}
+                <li class="crudit-ui-combobox__token" data-value="{{ item.value }}"{% if item.disabled|default(false) %} data-disabled{% endif %}>
+                    <span class="crudit-ui-combobox__token-label">{{ item.label }}</span>
+                    {%- if not disabled and not item.disabled|default(false) -%}
+                        <button type="button" class="crudit-ui-combobox__remove" data-action="{{ controller }}#remove">
+                            {{- ui_icon('close', 'crudit-ui-combobox__remove-icon') -}}
+                            <span class="crudit-ui-visually-hidden">{{ 'crudit_ui.combobox.remove'|trans({'%label%': item.label}, domain) }}</span>
+                        </button>
+                    {%- endif -%}
+                </li>
+            {%- endfor -%}
+        </ul>
+        <input type="text" id="{{ id }}" class="crudit-ui-combobox__input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ id }}_listbox" autocomplete="off" spellcheck="false"
+            {%- if disabled %} disabled{% endif %}
+            {#- What makes the input a combobox is not replaced by attr (an autocomplete of the project, a class) -#}
+            {%- for key, value in attr|filter((v, k) => k not in ['id', 'name', 'type', 'class', 'role', 'autocomplete', 'spellcheck', 'disabled', 'required', 'aria-autocomplete', 'aria-expanded', 'aria-controls', 'aria-activedescendant']) -%}
+                {%- if value is same as(true) %} {{ key }}{% elseif value is not same as(false) and value is not null %} {{ key }}="{{ value }}"{% endif -%}
+            {%- endfor %}
+            data-{{ controller }}-target="input"
+            data-action="input->{{ controller }}#search keydown->{{ controller }}#keydown focus->{{ controller }}#open click->{{ controller }}#open"
+        >
+        {{- ui_icon('dropdown', 'crudit-ui-combobox__chevron') -}}
+    </div>
+    <ul id="{{ id }}_listbox" class="crudit-ui-combobox__listbox" role="listbox" aria-label="{{ label }}"{% if multiple %} aria-multiselectable="true"{% endif %} hidden
+        data-{{ controller }}-target="listbox"
+        {#- A click in the list (an option, its message, its scrollbar) leaves the focus in the input #}
+        data-action="scroll->{{ controller }}#scroll mousedown->{{ controller }}#keepFocus"
+    ></ul>
+    <p class="crudit-ui-visually-hidden" role="status" aria-live="polite" data-{{ controller }}-target="status"></p>
+    <template data-{{ controller }}-target="icons">
+        {{- ui_icon('check', 'crudit-ui-combobox__check-icon') -}}
+        {{- ui_icon('close', 'crudit-ui-combobox__remove-icon') -}}
+    </template>
+    {%- if url is null -%}
+        {%- set values = selected|map(item => item.value ~ '') -%}
+        <select name="{{ name }}"{% if multiple %} multiple{% endif %}{% if disabled %} disabled{% endif %} hidden data-{{ controller }}-target="value">
+            {%- if not multiple %}<option value=""></option>{% endif -%}
+            {%- for option in options|default([]) -%}
+                <option value="{{ option.value }}"{% if (option.value ~ '') in values %} selected{% endif %}{% if option.disabled|default(false) %} data-disabled{% endif %}>{{ option.label }}</option>
+            {%- endfor -%}
+        </select>
+    {%- else -%}
+        <input type="hidden" name="{{ name }}" value="{{ selected|map(item => item.value)|join(separator) }}"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="value">
+    {%- endif -%}
+</div>
