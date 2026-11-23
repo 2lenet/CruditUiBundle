@@ -1,0 +1,116 @@
+@use '../tools/responsive' as *;
+
+// Pager (component Pager, controller pager): the summary, the pages and the rows per page, at the bottom of a Table.
+// From the crudit-v2 mockup (src/styles/components/_pagination.scss and _list-page.scss, `.list-footer`).
+// Below 768 px: previous, "2 / 5", next; the summary and the selector wrap.
+.crudit-ui-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin-block-start: var(--space-3);
+    font-size: var(--font-size-xs);
+
+    @media print {
+        display: none;
+    }
+
+    &__summary {
+        margin: 0;
+        color: var(--c-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__nav {
+        margin-inline: auto;
+    }
+
+    &__list {
+        display: flex;
+        align-items: center;
+        gap: 0.125rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    &__link {
+        display: inline-flex;
+        min-width: var(--control-h-small);
+        height: var(--control-h-small);
+        align-items: center;
+        justify-content: center;
+        padding: 0 var(--space-1);
+        border-radius: var(--radius-full);
+        color: var(--c-text);
+        font-size: var(--font-size-sm);
+        font-variant-numeric: tabular-nums;
+        text-decoration: none;
+
+        &:is(a):hover,
+        &:is(a).crudit-ui-is-hover {
+            background-color: var(--c-surface-hover);
+        }
+
+        &[aria-disabled='true'] {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+
+        // Current page: not a link, no hover and no pointer
+        &--current {
+            background-color: var(--c-primary);
+            color: var(--c-on-primary);
+            font-weight: var(--font-weight-semibold);
+            cursor: default;
+        }
+    }
+
+    &__ellipsis {
+        padding: 0 var(--space-1);
+        color: var(--c-text-muted);
+    }
+
+    // On a small screen: previous, "2 / 5", next
+    &__number,
+    &__edge {
+        @include media('<md') {
+            display: none;
+        }
+    }
+
+    &__status {
+        padding: 0 var(--space-1);
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+        font-variant-numeric: tabular-nums;
+
+        @include media('>md') {
+            display: none;
+        }
+    }
+
+    &__per-page {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-inline-start: auto;
+    }
+
+    // Without a page selector the pages stay on the end side, with it they stay in the middle
+    &__nav + &__per-page {
+        margin-inline-start: 0;
+    }
+
+    &__per-page-label {
+        color: var(--c-text-muted);
+        white-space: nowrap;
+    }
+
+    &__select {
+        // The field is as wide as its widest choice, not the width of its container
+        width: auto;
+        min-height: var(--control-h-small);
+        font-size: var(--font-size-sm);
+    }
+}

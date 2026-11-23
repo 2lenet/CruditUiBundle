@@ -92,6 +92,17 @@ crudit_ui:
             full: "Maximale Zeichenzahl erreicht"
     language:
         label: Sprache
+    pager:
+        label: "Seitennavigation: %label%"
+        first: "Erste Seite"
+        previous: "Vorherige Seite"
+        next: "Nächste Seite"
+        last: "Letzte Seite (%count%)"
+        page: "Seite"
+        summary: "%from% bis %to% von %total% %label%"
+        per_page: "Zeilen pro Seite"
+        per_page_help: "Die Liste wird sofort bei der Auswahl aktualisiert; mit der Tastatur mit Enter oder durch Verlassen des Felds bestätigen."
+        apply: "Anwenden"
     selection:
         label: "Aktionen für die Auswahl"
         one: "%count% Zeile ausgewählt"

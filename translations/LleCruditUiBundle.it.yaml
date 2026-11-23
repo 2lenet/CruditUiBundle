@@ -92,6 +92,17 @@ crudit_ui:
             full: "Numero massimo di caratteri raggiunto"
     language:
         label: Lingua
+    pager:
+        label: "Paginazione: %label%"
+        first: "Prima pagina"
+        previous: "Pagina precedente"
+        next: "Pagina successiva"
+        last: "Ultima pagina (%count%)"
+        page: "Pagina"
+        summary: "da %from% a %to% di %total% %label%"
+        per_page: "Righe per pagina"
+        per_page_help: "L'elenco si aggiorna appena si sceglie; con la tastiera, confermare con Invio o uscendo dal campo."
+        apply: "Applica"
     selection:
         label: "Azioni sulla selezione"
         one: "%count% riga selezionata"

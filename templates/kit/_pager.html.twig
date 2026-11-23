@@ -1,0 +1,19 @@
+{# Pager (3.1.d): the summary, the pages and the rows per page, at the bottom of a Table. Each example has its own page parameter: its links really change the page. #}
+{% set path = app.request is not null ? app.request.pathinfo : '/' %}
+{% set others = app.request is not null ? app.request.query.all : {} %}
+{% set request = app.request %}
+
+<h3 class="crudit-ui-kit__subtitle">Middle of the list: first, previous, the neighbours, next, last</h3>
+<twig:LleCruditUi:Pager id="kit-pager-middle" label="visits" :total="360" :perPage="request ? request.query.getInt('middle_limit', 30) : 30" :page="request ? request.query.getInt('middle', 1) : 1" :perPageChoices="[10, 30, 50, 100]" :path="path" :query="others" pageParam="middle" limitParam="middle_limit"/>
+
+<h3 class="crudit-ui-kit__subtitle">First page, last page (no dead link: the arrows that lead nowhere are not links)</h3>
+<twig:LleCruditUi:Pager id="kit-pager-first" label="visits" :total="131" :perPage="30" :page="1" :path="path" :query="others" pageParam="first"/>
+<twig:LleCruditUi:Pager id="kit-pager-last" label="visits" :total="131" :perPage="30" :page="5" :path="path" :query="others" pageParam="last"/>
+
+<h3 class="crudit-ui-kit__subtitle">One page: the summary only, and the selector when the list is longer than the smallest choice</h3>
+<twig:LleCruditUi:Pager id="kit-pager-single" label="visits" :total="12" :perPage="request ? request.query.getInt('single_limit', 30) : 30" :perPageChoices="[10, 30, 50, 100]" :path="path" :query="others" pageParam="single" limitParam="single_limit"/>
+<twig:LleCruditUi:Pager id="kit-pager-none" label="visits" :total="8" :perPage="10" :perPageChoices="[10, 30, 50]" :path="path" :query="others" pageParam="none"/>
+
+{# The offset example opens on the page 2 when its parameter is absent (30 is the first row of the page 2), to show a page in the middle. #}
+<h3 class="crudit-ui-kit__subtitle">Offset mode (Crudit: <code>visits_offset</code> holds the number of the first row), with the anchor of a tab</h3>
+<twig:LleCruditUi:Pager id="kit-pager-offset" label="visits" :total="131" :perPage="request ? request.query.getInt('visits_limit', 30) : 30" :page="((others.visits_offset ?? 30) // (request ? request.query.getInt('visits_limit', 30) : 30)) + 1" mode="offset" pageParam="visits_offset" limitParam="visits_limit" :perPageChoices="[10, 30, 50, 100]" :path="path" :query="others" anchor="#kit-pager-offset"/>

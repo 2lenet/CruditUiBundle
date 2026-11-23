@@ -40,8 +40,9 @@
 <twig:LleCruditUi:Table id="kit-table-default" caption="Visits, sorted by planned date" :columns="columns" :rows="rows" :sort="{column: 'date', dir: 'asc'}" selectable>
     <twig:block name="before"><p class="crudit-ui-kit__text">Rows with an address are clickable with the mouse; by keyboard, the link of the first column does the job.</p></twig:block>
     <twig:block name="footer">
-        <p class="crudit-ui-kit__text">The pager of the list goes in the footer block (here two links that only change the page: the selection follows them).</p>
-        <p class="crudit-ui-kit__text"><a id="kit-pager-1" href="?page=1">Page 1</a> · <a id="kit-pager-2" href="?page=2">Page 2</a> · <a id="kit-pager-sort" href="?page=1&amp;sort=ref">Sort (the selection ends)</a></p>
+        {#- The real pager (3.1.d): its links only change the page, the selection follows them. 137 results, 4 rows a page. -#}
+        <twig:LleCruditUi:Pager id="kit-table-pager" label="visits" :total="137" :perPage="4" :page="app.request.query.getInt('page', 1)" :path="app.request.pathinfo" :query="app.request.query.all"/>
+        <p class="crudit-ui-kit__text"><a id="kit-pager-sort" href="?page=1&amp;sort=ref">Sort (the selection ends)</a></p>
     </twig:block>
 </twig:LleCruditUi:Table>
 {# After the table, in the same container: the bar sticks to the bottom of the screen while the table is in view. #}

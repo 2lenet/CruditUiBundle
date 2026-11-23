@@ -1,0 +1,102 @@
+import { Controller } from '@hotwired/stimulus';
+
+/*
+ * Pager (component Pager): sends the form of the rows per page as soon as the choice is made. The form is a GET that
+ * sends the first page (the page parameter at 1, or 0 in the mode "offset"): the list goes back to the first page.
+ * Without JavaScript the form shows a button "Apply" (<noscript>). Under Turbo, requestSubmit() is a visit like any
+ * other form.
+ *
+ * With the keyboard, a closed <select> fires "change" at each arrow, and at each letter or digit typed (Chrome and
+ * Firefox on Windows): going from 10 to 100 would reload the list at each step. A change made by a key waits for Enter
+ * or for the focus to leave the field, and only if the choice differs from the one the server rendered (the option
+ * `defaultSelected`: the value of the field may be restored by Firefox or by a Turbo snapshot). A choice made with the
+ * mouse or the touch screen, or in the open list, is sent at once. If the user presses a link of the pager instead, the
+ * waiting choice is dropped and the field shows the value of the list again: the link leads to the page, and nothing is
+ * sent later at a moment nobody expects.
+ *
+ * How a change is known to come from a key: "change" is fired while the key is handled, so the flag set by the keydown is
+ * cleared right after it (a timer), not by the keyup, which a native list (macOS: the arrow opens it) may take.
+ */
+export default class extends Controller {
+    static keysOfTheList = ['Enter', 'Tab', 'Escape', 'Shift', 'Control', 'Alt', 'Meta'];
+
+    pending = false;
+    fromKey = false;
+
+    submit() {
+        if (this.fromKey) {
+            this.pending = true;
+
+            return;
+        }
+        this.send();
+    }
+
+    // keydown on the select: Enter sends what was chosen with the keys; any other key (arrow, letter, digit, Home…)
+    // makes the change that follows one "by key". Tab and Escape do not change the choice. Alt+arrow opens the list.
+    key(event) {
+        if (event.key === 'Enter' && this.pending) {
+            event.preventDefault();
+            this.sendIfChanged();
+
+            return;
+        }
+        if (this.constructor.keysOfTheList.includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+        this.fromKey = true;
+        setTimeout(() => { this.fromKey = false; }, 0);
+    }
+
+    // blur: the choice made with the keys is sent (Tab, Shift+Tab, a click elsewhere). A link of the pager is not an
+    // exception: the pointer has dropped the choice before (pointer()), and the keyboard user who leaves the field has
+    // chosen.
+    leave() {
+        if (this.pending) {
+            this.sendIfChanged();
+        }
+    }
+
+    // pointerdown on a link of the pager: the link leads to the page, the choice waiting is dropped (a second visit
+    // would race with the link) and the field shows again the value the list has, so that nothing looks applied that is
+    // not (the press may be cancelled by sliding off the link, the visit may fail). Not on relatedTarget: Safari and
+    // Firefox on macOS do not focus a link.
+    pointer(event) {
+        if (!this.pending || !(event.target instanceof Element) || !event.target.closest('a')) {
+            return;
+        }
+        this.pending = false;
+        const select = this.select();
+        const rendered = select ? this.rendered(select) : undefined;
+        if (select && rendered !== undefined) {
+            select.value = rendered;
+        }
+    }
+
+    sendIfChanged() {
+        const select = this.select();
+        if (select && select.value === this.rendered(select)) {
+            this.pending = false;
+
+            return;
+        }
+        this.send();
+    }
+
+    send() {
+        this.pending = false;
+        const form = this.element.querySelector('form');
+        if (form) {
+            form.requestSubmit();
+        }
+    }
+
+    select() {
+        return this.element.querySelector('select');
+    }
+
+    // the choice the server rendered
+    rendered(select) {
+        return [...select.options].find((option) => option.defaultSelected)?.value;
+    }
+}

@@ -1,0 +1,89 @@
+{#
+ # Pager: where the user is among the pages of a list, and the way to the other pages. At the bottom of a Table, never
+ # above it. It knows nothing of Crudit: it counts the pages from `total` and `perPage`, and builds the addresses
+ # from `path` and `query`. Links (GET), so it works without JavaScript, and a page can be opened in another tab.
+ #
+ # Props: id, label (the elements, plural: "visits"), total (all the results), page (the current one), perPage,
+ # perPageChoices (empty: no selector), path (address without query), query (the other parameters, nested or not),
+ # pageParam (`page`), mode (`page`, or `offset`: the parameter holds the number of the first row, Crudit), limitParam
+ # (`limit`), anchor (`#tab`, added to the addresses).
+ # Nothing is rendered without result. The selector of the rows per page sends its form at once (controller pager),
+ # without JavaScript a button "Apply" shows; the form sends the first page (a server that keeps the page in the session
+ # would else read the old one). The links keep the rows per page of the query.
+ # Contract: docs/components.md.
+ #}
+{% props id, label, total, page = 1, perPage, perPageChoices = [], path, query = {}, pageParam = 'page', mode = 'page', limitParam = 'limit', anchor = null %}
+{%- macro address(path, kept, param, mode, size, number, tail) -%}
+    {{- path ~ '?' ~ kept|merge({(param): mode == 'offset' ? (number - 1) * size : number})|url_encode ~ tail -}}
+{%- endmacro -%}
+{%- import _self as pager -%}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set controller = '2lenet--crudit-ui-bundle--pager' -%}
+{%- set size = max(perPage, 1) -%}
+{%- set count = max(1, (total + size - 1) // size) -%}
+{%- set current = min(max(page, 1), count) -%}
+{%- set kept = query|filter((value, key) => key != pageParam) -%}
+{%- set fields = kept|filter((value, key) => key != limitParam) -%}
+{%- set tail = anchor ?? '' -%}
+{%- set first = (current - 1) * size + 1 -%}
+{%- set last = min(current * size, total) -%}
+{#- The rows per page of the list is always a choice: else the selector shows another number than the list does. -#}
+{%- set choices = ui_pager_choices(perPageChoices, size) -%}
+{%- set hasChoices = choices|length > 1 and total > min(choices) -%}
+{#- The controller and the action of the pager, then those of the project (data-controller and data-action it passes): the two work. -#}
+{%- set projectActions = attributes.all['data-action']|default(null) -%}
+{%- set projectControllers = attributes.all['data-controller']|default(null) -%}
+{%- if total > 0 -%}
+<div {{ attributes.without('data-action', 'data-controller').defaults({id: id, class: 'crudit-ui-pager', 'data-controller': ((hasChoices ? controller : '') ~ ' ' ~ (projectControllers ?? ''))|trim ?: null, 'data-action': ((hasChoices ? 'pointerdown->' ~ controller ~ '#pointer' : '') ~ ' ' ~ (projectActions ?? ''))|trim ?: null}) }}>
+    <p class="crudit-ui-pager__summary">{{ 'crudit_ui.pager.summary'|trans({'%from%': first|ui_number, '%to%': last|ui_number, '%total%': total|ui_number, '%label%': label}, domain) }}</p>
+
+    {%- if count > 1 -%}
+        {%- set pages = ui_pager_pages(current, count) -%}
+        <nav class="crudit-ui-pager__nav" aria-label="{{ 'crudit_ui.pager.label'|trans({'%label%': label}, domain) }}">
+            <ul class="crudit-ui-pager__list">
+                {%- for step in [{icon: 'first', to: 1, text: 'crudit_ui.pager.first'|trans({}, domain), edge: true}, {icon: 'back', to: current - 1, text: 'crudit_ui.pager.previous'|trans({}, domain), edge: false}] -%}
+                    <li{% if step.edge %} class="crudit-ui-pager__edge"{% endif %}>
+                        {%- if current > 1 -%}
+                            <a class="crudit-ui-pager__link" href="{{ pager.address(path, kept, pageParam, mode, size, step.to, tail) }}">{{ ui_icon(step.icon) }}<span class="crudit-ui-visually-hidden">{{ step.text }}</span></a>
+                        {%- else -%}
+                            <span class="crudit-ui-pager__link" role="link" aria-disabled="true">{{ ui_icon(step.icon) }}<span class="crudit-ui-visually-hidden">{{ step.text }}</span></span>
+                        {%- endif -%}
+                    </li>
+                {%- endfor -%}
+                {%- for number in pages -%}
+                    {%- if number is null -%}
+                        <li class="crudit-ui-pager__number"><span class="crudit-ui-pager__ellipsis" aria-hidden="true">…</span></li>
+                    {%- elseif number == current -%}
+                        <li class="crudit-ui-pager__number"><span class="crudit-ui-pager__link crudit-ui-pager__link--current" aria-current="page"><span class="crudit-ui-visually-hidden">{{ 'crudit_ui.pager.page'|trans({}, domain) }}&nbsp;</span>{{ number|ui_number }}</span></li>
+                    {%- else -%}
+                        <li class="crudit-ui-pager__number"><a class="crudit-ui-pager__link" href="{{ pager.address(path, kept, pageParam, mode, size, number, tail) }}"><span class="crudit-ui-visually-hidden">{{ 'crudit_ui.pager.page'|trans({}, domain) }}&nbsp;</span>{{ number|ui_number }}</a></li>
+                    {%- endif -%}
+                {%- endfor -%}
+                <li class="crudit-ui-pager__status" aria-hidden="true">{{ current|ui_number }} / {{ count|ui_number }}</li>
+                {%- for step in [{icon: 'next', to: current + 1, text: 'crudit_ui.pager.next'|trans({}, domain), edge: false}, {icon: 'last', to: count, text: 'crudit_ui.pager.last'|trans({'%count%': count|ui_number}, domain), edge: true}] -%}
+                    <li{% if step.edge %} class="crudit-ui-pager__edge"{% endif %}>
+                        {%- if current < count -%}
+                            <a class="crudit-ui-pager__link" href="{{ pager.address(path, kept, pageParam, mode, size, step.to, tail) }}">{{ ui_icon(step.icon) }}<span class="crudit-ui-visually-hidden">{{ step.text }}</span></a>
+                        {%- else -%}
+                            <span class="crudit-ui-pager__link" role="link" aria-disabled="true">{{ ui_icon(step.icon) }}<span class="crudit-ui-visually-hidden">{{ step.text }}</span></span>
+                        {%- endif -%}
+                    </li>
+                {%- endfor -%}
+            </ul>
+        </nav>
+    {%- endif -%}
+
+    {%- if hasChoices -%}
+        <form class="crudit-ui-pager__per-page" method="get" action="{{ path ~ tail }}">
+            {%- for pair in ui_query_pairs(fields) %}<input type="hidden" name="{{ pair.name }}" value="{{ pair.value }}">{% endfor -%}
+            <input type="hidden" name="{{ pageParam }}" value="{{ mode == 'offset' ? 0 : 1 }}">
+            <label class="crudit-ui-pager__per-page-label" for="{{ id }}-limit">{{ 'crudit_ui.pager.per_page'|trans({}, domain) }}</label>
+            <select class="crudit-ui-select crudit-ui-pager__select" id="{{ id }}-limit" name="{{ limitParam }}" aria-describedby="{{ id }}-limit-help" data-action="change->{{ controller }}#submit keydown->{{ controller }}#key blur->{{ controller }}#leave">
+                {%- for choice in choices %}<option value="{{ choice }}"{% if choice == size %} selected{% endif %}>{{ choice }}</option>{% endfor -%}
+            </select>
+            <span class="crudit-ui-visually-hidden" id="{{ id }}-limit-help">{{ 'crudit_ui.pager.per_page_help'|trans({}, domain) }}</span>
+            <noscript><button type="submit" class="crudit-ui-btn crudit-ui-btn--small">{{ 'crudit_ui.pager.apply'|trans({}, domain) }}</button></noscript>
+        </form>
+    {%- endif -%}
+</div>
+{%- endif -%}
