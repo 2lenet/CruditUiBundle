@@ -82,7 +82,7 @@ or link.
 | `type` | `button`, `submit`, `reset` | `button` | |
 | `disabled` | bool | `false` | `disabled` on a button; a link loses its `href` and gets `aria-disabled` |
 | `loading` | bool | `false` | spinner in place of the icon, `aria-disabled` and `aria-busy`: the focus stays on the button, the label too, and the click is ignored (no second sending of the form). A loading link loses its `href`, as a disabled one: neither followed (click, middle click, Ctrl+click) nor focused |
-| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">`, which sends nothing (it closes its dialog). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file |
+| `busyOnSubmit` | bool | `true` for `type="submit"` | once the button sends its form, it is put in loading: a double click, or Enter pressed twice, sends the form once. It goes back to normal if the submit is cancelled (`preventDefault()`, by any listener), when Turbo has sent the form (`turbo:submit-end`), and when the Back button restores the page. Nothing for a form sent to another window or frame (`target`, `formtarget`), nor for a `<form method="dialog">`, which sends nothing (it closes its dialog). Pass `:busyOnSubmit="false"` when the page does not change after the submit and the bundle cannot know it: a form sent by the project in Ajax (it handles `loading`), an **export** whose answer is a downloaded file. A submit button keeps the template of its spinner either way: a script puts it in loading with the controller (`busy()`, `restore()`) |
 | `count` | int | `null` | counter after the label, read with it (`Filters 3`) |
 
 Block: `content`, the label. The other attributes (`class`, `form`, `data-action`, `aria-keyshortcuts`…) go on the
@@ -777,6 +777,74 @@ of Crudit: it counts the pages from `total` and `perPage`, and builds its addres
   the language (`12 345`, `12,345`).
 - The label is the plural of the elements: with one result the summary reads "1 to 1 of 1 visits"; give a label that
   reads well with any number ("results") when it matters.
+
+### LleCruditUi:ExportDialog
+
+The dialog of the export of a list (3.1.g): the format as cards (radio buttons), a sentence that says what the file will
+hold, "Cancel" and "Export". It knows nothing of Crudit: the caller gives the formats and the sentence. Opened by a
+button of the page (`commandfor="<id>" command="show-modal"`).
+
+| Prop | Type | Default | |
+|---|---|---|---|
+| `id` | string | required | target of `commandfor`; names the title (`<id>-title`) and the description |
+| `title` | string | required | names the elements: "Export the visits" |
+| `description` | string \| null | `null` | what the file holds: "The 137 visits that match the current filters." Read with the title |
+| `action` | string | required | address of the export |
+| `formats` | list | `[]` | `{value, label, description, icon}`; `icon` is an icon of the catalogue (`file-excel`, `file-csv`, `file-pdf`), optional |
+| `format` | string \| null | first | the format checked |
+| `params` | map | `{}` | other fields sent (`name => value`), hidden |
+| `timeout` | int | `60000` | ms to wait for the download to begin before the error |
+
+- The form is a **GET** with `data-turbo="false"` (the answer is a file, not a page), so it works without JavaScript and
+  is a normal download. The button is **not** put in loading by its own `busyOnSubmit` (`false`): the controller `export`
+  does it with the controller of the button (`busy()`, `restore()`: the spinner), because it is the one that knows when
+  the download begins.
+- **Controller `export`** (on the form). It puts a random token in `download_token` and shows the status "Export in
+  progress…" (a polite live region), the button in loading (a second click does nothing), and sends the form **into a
+  hidden `<iframe>`**, so that the page never moves. Two signals end the wait:
+  - **The cookie.** The server answers the file with a cookie `crudit_export=<token>`; seen, the dialog closes and a toast
+    "Export done." is shown (event `crudit-ui:toast`), whether the dialog is still open or not.
+  - **The frame.** A file does not fire `load` on the frame; **a page does**: an error (500, 403), the login after the
+    session ended, a redirect to the list with a message. The error "The export did not start. Try again, or reload the page if your session has expired." is then shown at once (an
+    expired session is the usual cause, hence the hint), in a `role="alert"` element, and the form can be sent again. It goes
+    when the dialog opens again.
+  - **The reason of the error.** If the page that loads has an element `data-crudit-export-error` (same origin), its text
+    replaces the generic message: `<p data-crudit-export-error>The export could not be generated.</p>`. An application
+    that refuses an export from the dialog answers a small page like that with a 422 (CruditBundle does), not a redirection:
+    a redirection to the list would render the whole list in the hidden frame, and use up the flash message there.
+  - **Nothing for `timeout` ms** (the server hangs): the same error. **The token is still watched** (ten times the delay):
+    a file that comes late closes the dialog and shows the toast, so that nobody exports twice because the server was slow.
+    Each attempt has its own token: if the user has sent the form again, a late file of the first attempt only shows the
+    toast, the attempt in progress goes on. Each attempt also has its own hidden frame (own name), kept while its token is
+    watched: sending the form again does not cancel the request of the first one. After a download the frame is removed ten seconds later (not at once, so that no browser cancels the
+    download with it), and all of them before Turbo caches the page.
+  - **A file shown inline** (no `Content-Disposition: attachment`): the frame loads it like a page, so `load` fires although
+    the cookie came. The cookie arrives with the headers, before `load` (which waits for the whole file), so the controller also
+    looks at the frame when it sees the cookie: a download leaves it on `about:blank`, an inline answer has already
+    started the navigation. Nothing was downloaded: the dialog says so ("The file was made but not downloaded. Contact the
+    administrator.") and the console warns the developer. **The `attachment` disposition is part of the contract.**
+  - Without JavaScript there is no frame. A download leaves the page as it is (the dialog stays open); a page answered in
+    place of the file (an error, the login) replaces the page.
+  - **Content Security Policy**: the hidden frame is a navigation to the address of the export, so the page must allow
+    `frame-src 'self'` (or `default-src 'self'`). With `frame-src 'none'` the browser blocks it and every export fails,
+    although the server answers well. An `X-Frame-Options: DENY` on the **file** would too; on an error page or the login
+    it is harmless (the page is an error anyway).
+- **The contract of the server** (a helper for it, `Lle\CruditBundle\Exporter\DownloadCookie::attach()`, is being added to CruditBundle on the `feature/export` branch and is not released yet: until then, set the cookie by hand as below).
+  The file comes with `Content-Disposition: attachment`, and the cookie must be **readable by the
+  script** (`HttpOnly` false: `Cookie::create()` of Symfony is HttpOnly by default, and then every export ends in an
+  error), at the **path `/`** (the controller deletes it there), and its value is the token **and nothing else**. The
+  token comes from the client and ends in a header: accept only `[A-Za-z0-9-]{8,64}`.
+
+  ```php
+  $token = (string) $request->query->get('download_token', '');
+  if (preg_match('/^[A-Za-z0-9-]{8,64}$/', $token) === 1) {
+      $response->headers->setCookie(Cookie::create('crudit_export', $token, path: '/', httpOnly: false, sameSite: Cookie::SAMESITE_LAX));
+  }
+  ```
+- `format` and `download_token` are the fields of the dialog: a `params` of that name is left out. A `format` that is not
+  among the formats checks the first one.
+- The formats are radio buttons in a `<fieldset>` with a `<legend>` "Format"; the focus ring is on the card. In forced colors (Windows high contrast) the checked card has a thicker border in `Highlight`.
+- Texts in the `crudit_ui.export.*` keys (fr, en, de, it).
 
 ### LleCruditUi:SelectionBar
 

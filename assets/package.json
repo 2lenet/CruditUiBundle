@@ -67,6 +67,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "export": {
+                "main": "dist/controllers/export_controller.js",
+                "webpackMode": "eager",
+                "fetch": "eager",
+                "enabled": true
+            },
             "file-drop": {
                 "main": "dist/controllers/file_drop_controller.js",
                 "webpackMode": "lazy",

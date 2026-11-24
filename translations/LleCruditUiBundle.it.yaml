@@ -39,6 +39,14 @@ crudit_ui:
         count:
             one: "%count% risultato."
             other: "%count% risultati."
+    export:
+        format: "Formato"
+        cancel: "Annulla"
+        action: "Esporta"
+        busy: "Esportazione in corso…"
+        done: "Esportazione completata."
+        failed: "L’esportazione non è partita. Riprova, oppure ricarica la pagina se la sessione è scaduta."
+        inline: "Il file è stato creato ma non scaricato. Contatta l’amministratore."
     filter:
         operator_for: "Condizione per %label%: %operator%"
         operator_legend: "Condizione per %label%"
