@@ -808,6 +808,10 @@ button of the page (`commandfor="<id>" command="show-modal"`).
     session ended, a redirect to the list with a message. The error "The export did not start. Try again, or reload the page if your session has expired." is then shown at once (an
     expired session is the usual cause, hence the hint), in a `role="alert"` element, and the form can be sent again. It goes
     when the dialog opens again.
+  - **The reason of the error.** If the page that loads has an element `data-crudit-export-error` (same origin), its text
+    replaces the generic message: `<p data-crudit-export-error>The export could not be generated.</p>`. An application
+    that refuses an export from the dialog answers a small page like that with a 422 (CruditBundle does), not a redirection:
+    a redirection to the list would render the whole list in the hidden frame, and use up the flash message there.
   - **Nothing for `timeout` ms** (the server hangs): the same error. **The token is still watched** (ten times the delay):
     a file that comes late closes the dialog and shows the toast, so that nobody exports twice because the server was slow.
     Each attempt has its own token: if the user has sent the form again, a late file of the first attempt only shows the

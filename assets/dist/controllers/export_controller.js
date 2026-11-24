@@ -9,7 +9,9 @@ import { Controller } from '@hotwired/stimulus';
  *   controller reads it every half second. Seen: the dialog closes and a toast says "Export done".
  * - The hidden frame. With JavaScript the form is sent into a hidden <iframe> (`target`), so the page never moves. A
  *   file does not fire `load` on the frame; a page does: an error (500, 403), a login page after the session ended, a
- *   redirect to the list with a message. That is an error, shown at once: the user is not left waiting. Without
+ *   redirect to the list with a message. That is an error, shown at once: the user is not left waiting. If the page has
+ *   an element `data-crudit-export-error`, its text is the message shown (Crudit answers so, with a 422, for a format
+ *   it cannot make); else the generic one. Without
  *   JavaScript there is no frame: the browser downloads the file, or shows the page the server answered.
  *
  * Not heard of within `timeout` ms (the server hangs): an error is shown and the form can be sent again, **but the
@@ -131,11 +133,21 @@ export default class extends Controller {
             if (inline) {
                 this.consume(token);
             }
+            // the server may say why in the page (an element `data-crudit-export-error`, see the contract in the docs)
+            const reason = inline ? null : this.reasonIn(frame);
             this.dropFrame(token);
             if (token === this.token && this.waiting) {
-                this.fail(inline ? this.inlineValue : this.failedValue);
+                this.fail(inline ? this.inlineValue : (reason ?? this.failedValue));
             }
         });
+    }
+
+    reasonIn(frame) {
+        try {
+            return frame.contentDocument?.querySelector('[data-crudit-export-error]')?.textContent?.trim() || null;
+        } catch {
+            return null;
+        }
     }
 
     // The cookie of an inline answer is deleted and the developer is warned.
