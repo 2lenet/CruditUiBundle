@@ -604,9 +604,16 @@ try {
         return page.$eval('#kit-forms .crudit-ui-file [role="status"]', (status) => status.textContent);
     };
     assert.deepEqual(await files(), [['front-of-the-shop.svg', '2 KB · current file', 'Preview of front-of-the-shop.svg'], ['shop.png', '1 KB', 'Preview of shop.png']]);
-    assert.equal(await fileStatus('shop.png added.'), 'shop.png added.');
+    // One file per field: the file chosen replaces the file already sent when saved, its line says it
+    const replacement = () => page.$eval('#kit-forms .crudit-ui-file__list > li:first-child', (line) => ({
+        note: !line.querySelector('[data-2lenet--crudit-ui-bundle--file-drop-target="replaceNote"]').hidden,
+        struck: line.classList.contains('crudit-ui-file__file--replaced'),
+    }));
+    assert.deepEqual(await replacement(), {note: true, struck: true}, 'the file already sent does not say it will be replaced');
+    assert.equal(await fileStatus('shop.png added. front-of-the-shop.svg will be replaced when saved.'), 'shop.png added. front-of-the-shop.svg will be replaced when saved.');
     await page.click('#kit-forms .crudit-ui-file__list > li[data-chosen] button');
     assert.equal(await page.$eval('#kit-form-file', (input) => input.files.length), 0, 'Remove does not empty the input');
+    assert.deepEqual(await replacement(), {note: false, struck: false}, 'the file chosen removed: the file already sent is no longer replaced');
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'kit-form-file');
     assert.equal(await fileStatus('shop.png removed.'), 'shop.png removed.');
     assert.equal((await files()).length, 1);
@@ -619,13 +626,16 @@ try {
         focus: document.activeElement?.dataset['2lenet-CruditUiBundle-FileDropTarget'] ?? document.activeElement?.getAttribute('data-2lenet--crudit-ui-bundle--file-drop-target'),
     }));
     assert.deepEqual(await deletion(), {asked: true, note: true, focus: 'keep'});
+    assert.equal((await replacement()).note, false, 'its deletion asked: the file already sent is not said replaced');
     assert.equal(await fileStatus('front-of-the-shop.svg will be deleted when saved.'), 'front-of-the-shop.svg will be deleted when saved.');
     await page.keyboard.press('Enter');
     assert.deepEqual(await deletion(), {asked: false, note: false, focus: 'delete'});
+    assert.equal((await replacement()).note, true, 'the deletion cancelled with a file chosen: the file already sent is said replaced again');
     assert.equal(await fileStatus('front-of-the-shop.svg is kept.'), 'front-of-the-shop.svg is kept.');
     await page.$eval('#kit-forms form, form:has(#kit-form-file)', (form) => form.reset());
     await page.waitForFunction(() => document.querySelectorAll('#kit-forms .crudit-ui-file__list > li').length === 1, {timeout: 2000}).catch(() => null);
     assert.equal((await files()).length, 1, 'the reset of the form keeps a file chosen in the list');
+    assert.equal((await replacement()).note, false, 'the reset of the form keeps the file already sent said replaced');
 
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});

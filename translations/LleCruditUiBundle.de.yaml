@@ -94,6 +94,7 @@ crudit_ui:
         current: "Aktuelle Datei"
         current_size: "%size% · aktuelle Datei"
         will_delete: "Wird beim Speichern gelöscht"
+        will_replace: "Wird beim Speichern ersetzt"
         download: "Herunterladen"
         delete: "%name% löschen"
         cancel_delete: "Löschen abbrechen"
@@ -103,6 +104,7 @@ crudit_ui:
         removed: "Entfernt: %name%."
         deleted: "%name% wird beim Speichern gelöscht."
         kept: "%name% wird behalten."
+        replaced: "%name% wird beim Speichern ersetzt."
         size_kb: "%size% KB"
         size_mb: "%size% MB"
     form:

@@ -10,13 +10,15 @@ import { Controller } from '@hotwired/stimulus';
  *   button Remove that empties the input (several files: the others are kept), then puts the focus back on the input.
  * - The file already sent (target current), with a button Delete: it checks the hidden checkbox that asks the deletion,
  *   the line says the file will be deleted, a button Cancel puts it back. The focus goes from one button to the other.
+ * - One file per field (not multiple): while a file is chosen, the line of the file already sent says it will be
+ *   replaced when saved (target replaceNote), unless its deletion is asked (that note wins).
  * - Each change is told in a live region (status). A reset of the form empties the list of the files chosen and keeps
  *   the file already sent.
  * The texts come from the theme, translated by the server (%name%, %size%); the sizes are written in the locale of the
  * request (value locale, else the lang of the page), in Latin digits.
  */
 export default class extends Controller {
-    static targets = ['zone', 'list', 'current', 'chosen', 'note', 'delete', 'keep', 'checkbox', 'status'];
+    static targets = ['zone', 'list', 'current', 'chosen', 'note', 'replaceNote', 'delete', 'keep', 'checkbox', 'status'];
 
     static values = {
         removeText: String,
@@ -25,6 +27,7 @@ export default class extends Controller {
         removedText: String,
         deletedText: String,
         keptText: String,
+        replacedText: String,
         kbText: String,
         mbText: String,
         locale: String,
@@ -89,9 +92,26 @@ export default class extends Controller {
             this.listTarget.append(line);
         });
         this.listTarget.hidden = files.length === 0 && !this.hasCurrentTarget;
+        const replaced = this.markReplaced();
         if (announce && files.length > 0) {
-            this.announce(files.map((file) => this.addedTextValue.replace('%name%', file.name)).join(' '));
+            const messages = files.map((file) => this.addedTextValue.replace('%name%', file.name));
+            if (replaced) {
+                messages.push(this.replacedTextValue.replace('%name%', this.currentName()));
+            }
+            this.announce(messages.join(' '));
         }
+    }
+
+    // The file already sent, replaced by the file chosen when saved (not when its deletion is asked): true if it is
+    markReplaced() {
+        if (!this.hasReplaceNoteTarget) {
+            return false;
+        }
+        const replaced = this.input.files.length > 0 && !(this.hasCheckboxTarget && this.checkboxTarget.checked);
+        this.replaceNoteTarget.hidden = !replaced;
+        this.currentTarget.classList.toggle('crudit-ui-file__file--replaced', replaced);
+
+        return replaced;
     }
 
     // Removes a file chosen: the input is emptied, or keeps the other files (several files)
@@ -123,6 +143,7 @@ export default class extends Controller {
         this.checkboxTarget.checked = true;
         this.currentTarget.classList.add('crudit-ui-file__file--deleted');
         this.noteTarget.hidden = false;
+        this.markReplaced();
         this.deleteTarget.hidden = true;
         this.keepTarget.hidden = false;
         this.keepTarget.focus();
@@ -140,6 +161,7 @@ export default class extends Controller {
         this.noteTarget.hidden = true;
         this.keepTarget.hidden = true;
         this.deleteTarget.hidden = false;
+        this.markReplaced();
         if (announce && asked) {
             this.deleteTarget.focus();
             this.announce(this.keptTextValue.replace('%name%', this.currentName()));

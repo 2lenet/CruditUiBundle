@@ -94,6 +94,7 @@ crudit_ui:
         current: "Current file"
         current_size: "%size% · current file"
         will_delete: "Will be deleted when saved"
+        will_replace: "Will be replaced when saved"
         download: "Download"
         delete: "Delete %name%"
         cancel_delete: "Cancel the deletion"
@@ -103,6 +104,7 @@ crudit_ui:
         removed: "%name% removed."
         deleted: "%name% will be deleted when saved."
         kept: "%name% is kept."
+        replaced: "%name% will be replaced when saved."
         size_kb: "%size% KB"
         size_mb: "%size% MB"
     form:

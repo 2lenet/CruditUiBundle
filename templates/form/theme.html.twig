@@ -560,6 +560,7 @@
         data-{{ crudit_ui_controller }}-index-value="{{ crudit_ui_next }}"
         {%- if prototype is defined %} data-{{ crudit_ui_controller }}-prototype-name-value="{{ prototype.vars.name }}"{% endif %}
         {%- if collection_sortable|default(null) is not empty %} data-{{ crudit_ui_controller }}-sortable-value="true"{% endif %}
+        {%- if disabled %} data-{{ crudit_ui_controller }}-disabled-value="true"{% endif %}
         data-{{ crudit_ui_controller }}-move-up-text-value="{{ 'crudit_ui.collection.move_up'|trans({}, crudit_ui_domain) }}"
         data-{{ crudit_ui_controller }}-move-down-text-value="{{ 'crudit_ui.collection.move_down'|trans({}, crudit_ui_domain) }}"
         data-{{ crudit_ui_controller }}-remove-text-value="{{ 'crudit_ui.collection.remove'|trans({}, crudit_ui_domain) }}"
@@ -622,7 +623,15 @@
     {%- set crudit_ui_domain = 'LleCruditUiBundle' -%}
     {#- Given by collection_widget; a line rendered alone reads its collection -#}
     {%- set crudit_ui_collection = form.parent -%}
-    {%- set crudit_ui_index = crudit_ui_entry_index ?? name -%}
+    {#- A line rendered alone (form_row(form.lines[0])): its place among the lines of its collection, from 1 -#}
+    {%- set crudit_ui_index = crudit_ui_entry_index ?? null -%}
+    {%- set crudit_ui_placed = crudit_ui_index is not null -%}
+    {%- if not crudit_ui_placed -%}
+        {%- set crudit_ui_index = name -%}
+        {%- for crudit_ui_sibling in crudit_ui_collection -%}
+            {%- if crudit_ui_sibling.vars.name == name %}{% set crudit_ui_index = loop.index %}{% set crudit_ui_placed = true %}{% endif -%}
+        {%- endfor -%}
+    {%- endif -%}
     {%- set crudit_ui_template = crudit_ui_entry_template ?? (crudit_ui_collection.vars.collection_entry_label|default(null) is not empty
         ? (crudit_ui_collection.vars.translation_domain is same as(false) ? crudit_ui_collection.vars.collection_entry_label : crudit_ui_collection.vars.collection_entry_label|trans({}, crudit_ui_collection.vars.translation_domain))
         : 'crudit_ui.collection.entry'|trans({}, crudit_ui_domain)) -%}
@@ -637,6 +646,8 @@
                 {%- for child in form -%}
                     {%- if crudit_ui_sortable is not empty and child.vars.name == crudit_ui_sortable -%}
                         {{- form_widget(child, {attr: child.vars.attr|merge({'data-crudit-ui-collection-position': ''})}) -}}
+                        {#- Shown if the field keeps its errors (those of a HiddenType go up: error_bubbling) -#}
+                        {{- form_errors(child) -}}
                     {%- else -%}
                         {{- form_row(child, {crudit_ui_entry_name: crudit_ui_entry}) -}}
                     {%- endif -%}
@@ -656,12 +667,12 @@
         {%- if crudit_ui_sortable is not empty or crudit_ui_delete -%}
             <div class="crudit-ui-collection__actions">
                 {%- if crudit_ui_sortable is not empty -%}
-                    {%- set crudit_ui_position = crudit_ui_entry_index ?? 0 -%}
-                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if crudit_ui_position == 1 or crudit_ui_entry_index is not defined or disabled %} disabled{% endif %} data-crudit-ui-collection-up data-action="{{ crudit_ui_controller }}#moveUp">
+                    {#- Not placed (not found among the lines of its collection): both buttons disabled -#}
+                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if crudit_ui_index == 1 or not crudit_ui_placed or disabled %} disabled{% endif %} data-crudit-ui-collection-up data-action="{{ crudit_ui_controller }}#moveUp">
                         {{- ui_icon('arrow-up') -}}
                         <span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="moveUp">{{ 'crudit_ui.collection.move_up'|trans({'%item%': crudit_ui_entry}, crudit_ui_domain) }}</span>
                     </button>
-                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if crudit_ui_position == crudit_ui_count or crudit_ui_entry_index is not defined or disabled %} disabled{% endif %} data-crudit-ui-collection-down data-action="{{ crudit_ui_controller }}#moveDown">
+                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if crudit_ui_index == crudit_ui_count or not crudit_ui_placed or disabled %} disabled{% endif %} data-crudit-ui-collection-down data-action="{{ crudit_ui_controller }}#moveDown">
                         {{- ui_icon('arrow-down') -}}
                         <span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="moveDown">{{ 'crudit_ui.collection.move_down'|trans({'%item%': crudit_ui_entry}, crudit_ui_domain) }}</span>
                     </button>
@@ -692,9 +703,10 @@
         {{- block('form_widget_simple') -}}
     {%- else -%}
         {%- set crudit_ui_input -%}{{ block('form_widget_simple') }}{%- endset -%}
+        {#- multiple: FileType gives attr.multiple, not a variable multiple -#}
         {{- include('@LleCruditUi/form/_file.html.twig', {
             input: crudit_ui_input,
-            multiple: multiple|default(false),
+            multiple: multiple|default(false) or attr.multiple is defined,
             invalid: errors|length > 0,
             disabled: disabled,
             current: crudit_ui_file_current|default(null),

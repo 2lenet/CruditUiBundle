@@ -86,8 +86,9 @@
         border: 1px solid var(--c-border);
         border-radius: var(--radius-md);
 
-        // The file already sent, to be deleted when the form is saved: struck through, its note says it
-        &--deleted .crudit-ui-file__label {
+        // The file already sent, to be deleted or replaced when the form is saved: struck through, its note says it
+        &--deleted .crudit-ui-file__label,
+        &--replaced .crudit-ui-file__label {
             color: var(--c-text-muted);
             text-decoration: line-through;
         }

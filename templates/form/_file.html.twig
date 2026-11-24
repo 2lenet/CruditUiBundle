@@ -8,7 +8,8 @@
  # JavaScript. multiple, invalid, disabled, class (of the root).
  # current: the file already sent, or null: {name, size (bytes, or null: not shown), download (URL or null), preview (URL
  # of an image, or null)}. delete: the name of the hidden checkbox that asks to delete it (null: no button Delete); the
- # button checks it, the line says the file will be deleted, a button cancels.
+ # button checks it, the line says the file will be deleted, a button cancels. Without multiple, a file chosen replaces
+ # it when saved: the line says it while a file is chosen (the deletion asked wins).
  #}
 {%- set controller = '2lenet--crudit-ui-bundle--file-drop' -%}
 {%- set domain = 'LleCruditUiBundle' -%}
@@ -30,6 +31,7 @@
     data-{{ controller }}-removed-text-value="{{ 'crudit_ui.file.removed'|trans({}, domain) }}"
     data-{{ controller }}-deleted-text-value="{{ 'crudit_ui.file.deleted'|trans({}, domain) }}"
     data-{{ controller }}-kept-text-value="{{ 'crudit_ui.file.kept'|trans({}, domain) }}"
+    data-{{ controller }}-replaced-text-value="{{ 'crudit_ui.file.replaced'|trans({}, domain) }}"
     data-{{ controller }}-kb-text-value="{{ 'crudit_ui.file.size_kb'|trans({}, domain) }}"
     data-{{ controller }}-mb-text-value="{{ 'crudit_ui.file.size_mb'|trans({}, domain) }}"
     {%- if (app.request.locale ?? null) is not empty %} data-{{ controller }}-locale-value="{{ app.request.locale|replace({'_': '-'}) }}"{% endif %}
@@ -61,6 +63,10 @@
                     </span>
                     {%- if delete is not null -%}
                         <span class="crudit-ui-file__note" hidden data-{{ controller }}-target="note">{{ 'crudit_ui.file.will_delete'|trans({}, domain) }}</span>
+                    {%- endif -%}
+                    {#- One file per field: a file chosen replaces it when the form is saved -#}
+                    {%- if not multiple -%}
+                        <span class="crudit-ui-file__note" hidden data-{{ controller }}-target="replaceNote">{{ 'crudit_ui.file.will_replace'|trans({}, domain) }}</span>
                     {%- endif -%}
                 </span>
                 {%- if current.download|default(null) is not empty -%}

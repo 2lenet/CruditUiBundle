@@ -16,6 +16,7 @@ import { Controller } from '@hotwired/stimulus';
  * - A line added takes the next index (value index): the names of the fields stay unique, Symfony reads the lines in
  *   the order of the page.
  * - A reset of the form puts the positions back: they are written again if the lines were changed.
+ * - A disabled form (value disabled) never gets its buttons Move up and Move down enabled again.
  * The texts come from the theme, translated by the server (%item%, %position%, %total%).
  */
 export default class extends Controller {
@@ -26,6 +27,7 @@ export default class extends Controller {
         index: Number,
         prototypeName: { type: String, default: '__name__' },
         sortable: Boolean,
+        disabled: Boolean,
         moveUpText: String,
         moveDownText: String,
         removeText: String,
@@ -140,11 +142,12 @@ export default class extends Controller {
             }
             const up = row.querySelector(':scope > .crudit-ui-collection__actions [data-crudit-ui-collection-up]');
             const down = row.querySelector(':scope > .crudit-ui-collection__actions [data-crudit-ui-collection-down]');
+            // A disabled collection (value disabled, from the form) keeps its buttons disabled
             if (up) {
-                up.disabled = index === 0;
+                up.disabled = this.disabledValue || index === 0;
             }
             if (down) {
-                down.disabled = index === rows.length - 1;
+                down.disabled = this.disabledValue || index === rows.length - 1;
             }
             if (this.sortableValue) {
                 for (const input of this.own(row, '[data-crudit-ui-collection-position]')) {
