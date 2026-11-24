@@ -1,0 +1,102 @@
+@use '../tools/a11y' as *;
+@use '../tools/responsive' as *;
+
+// Collection (block collection_widget of the form theme, controller collection): a list of lines, each framed, with
+// its number, its fields and its buttons. Same as `.collection` of the crudit-v2 mockup (src/styles/components/_form.scss).
+// On a wide screen the fields of a line are side by side, in columns of the same width on every line, and their
+// labels are shown on the first line only (read on every line); on a narrow one they are one under the other, each
+// with its label.
+.crudit-ui-collection {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+
+    &__empty {
+        margin: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__rows {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: 0;
+        margin: 0;
+        list-style: none;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: var(--space-2) var(--space-3);
+        padding: var(--space-2) var(--space-3);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+        background-color: var(--c-bg);
+
+        @include media('>md') {
+            flex-wrap: nowrap;
+        }
+
+        &--invalid {
+            border-color: var(--c-danger-solid);
+        }
+
+        // The errors of the line itself, under its fields
+        > .crudit-ui-error {
+            flex-basis: 100%;
+            order: 1;
+            margin: 0;
+        }
+    }
+
+    &__index {
+        display: inline-grid;
+        width: 1.5rem;
+        height: var(--control-h);
+        flex: none;
+        place-items: center;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+        font-variant-numeric: tabular-nums;
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__fields {
+        display: grid;
+        min-width: 0;
+        flex: 1 1 0;
+        gap: var(--space-2) var(--space-3);
+        grid-template-columns: minmax(0, 1fr);
+
+        @include media('>md') {
+            grid-auto-columns: minmax(0, 1fr);
+            grid-auto-flow: column;
+        }
+    }
+
+    @include media('>md') {
+        &__row:not(:first-child) &__fields > .crudit-ui-field .crudit-ui-label {
+            @include sr-only;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        flex: none;
+        gap: 0.125rem;
+        margin-inline-start: auto;
+    }
+
+    &__remove:hover {
+        color: var(--c-danger-text);
+    }
+}

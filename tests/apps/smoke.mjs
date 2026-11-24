@@ -532,6 +532,101 @@ try {
         input.blur();
     });
 
+    // Collection with an order (controller collection): a line added from the prototype takes the next index, the focus
+    // and a name; a line moved keeps the focus on its button (on the other one at the end), the positions are written
+    // again; a line removed gives the focus to the line that takes its place, the last one to the button Add.
+    const parts = () => page.$$eval('#kit-form-parts > ol > li', (rows) => rows.map((row) => [
+        row.getAttribute('aria-label'),
+        row.querySelector('input[name$="[part]"]').value,
+        row.querySelector('[data-crudit-ui-collection-position]').value,
+    ]));
+    const partsStatus = async (text) => {
+        await page.waitForFunction((expected) => document.querySelector('#kit-form-parts [role="status"]').textContent === expected, {timeout: 2000}, text).catch(() => null);
+
+        return page.$eval('#kit-form-parts [role="status"]', (status) => status.textContent);
+    };
+    const focused = () => page.evaluate(() => {
+        const element = document.activeElement;
+        const button = ['up', 'down', 'remove'].find((name) => element?.hasAttribute(`data-crudit-ui-collection-${name}`));
+
+        return `${element?.closest('li')?.getAttribute('aria-label') ?? element?.className} ${button ?? element?.name}`;
+    });
+    await page.$eval('#kit-form-parts', (root) => root.scrollIntoView({block: 'center'}));
+    // Wide screen: the labels are shown on the first line only, read on every line
+    assert.deepEqual(
+        await page.$$eval('#kit-form-parts label', (labels) => labels.slice(0, 4).map((label) => label.getBoundingClientRect().width > 1)),
+        [true, true, false, false],
+        'the labels of the lines after the first one are shown',
+    );
+    await page.click('#kit-form-parts .crudit-ui-collection__add');
+    assert.equal(await partsStatus('Line 4 added.'), 'Line 4 added.');
+    assert.equal(await focused(), 'Line 4 parts[3][part]', 'the focus is not on the first field of the line added');
+    await page.keyboard.type('Filter');
+    assert.deepEqual(await parts(), [['Line 1', 'Pump', '1'], ['Line 2', 'Valve', '2'], ['Line 3', 'Seal', '3'], ['Line 4', 'Filter', '4']]);
+    assert.equal(await page.$eval('label[for="kit-form-parts_3_quantity"]', (label) => label.textContent), 'Quantity, Line 4');
+    assert.equal(await page.$eval('#kit-form-parts > ol > li:nth-child(3) [data-crudit-ui-collection-down]', (button) => button.disabled), false, 'the line before the one added cannot go down');
+    await page.focus('#kit-form-parts > ol > li:last-child [data-crudit-ui-collection-up]');
+    await page.keyboard.press('Enter');
+    assert.deepEqual(await parts(), [['Line 1', 'Pump', '1'], ['Line 2', 'Valve', '2'], ['Line 3', 'Filter', '3'], ['Line 4', 'Seal', '4']]);
+    assert.equal(await partsStatus('Moved to position 3 of 4.'), 'Moved to position 3 of 4.');
+    assert.equal(await focused(), 'Line 3 up', 'the focus does not follow the line moved');
+    assert.equal(await page.$eval('#kit-form-parts > ol > li:nth-child(3) [data-crudit-ui-collection-text="moveUp"]', (text) => text.textContent), 'Move up: Line 3');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    assert.deepEqual((await parts()).map((line) => line[1]), ['Filter', 'Pump', 'Valve', 'Seal']);
+    assert.equal(await focused(), 'Line 1 down', 'at the top, the focus goes to Move down');
+    await page.click('#kit-form-parts > ol > li:nth-child(2) [data-crudit-ui-collection-remove]');
+    assert.deepEqual(await parts(), [['Line 1', 'Filter', '1'], ['Line 2', 'Valve', '2'], ['Line 3', 'Seal', '3']]);
+    assert.equal(await partsStatus('Line 2 removed.'), 'Line 2 removed.');
+    assert.equal(await focused(), 'Line 2 parts[1][part]', 'the focus does not go to the line that takes the place of the one removed');
+    for (let left = 3; left > 0; left--) {
+        await page.click(`#kit-form-parts > ol > li:nth-child(${left}) [data-crudit-ui-collection-remove]`);
+    }
+    assert.equal(await page.$eval('#kit-form-parts .crudit-ui-collection__empty', (empty) => empty.hidden), false, 'an empty collection does not say it');
+    assert.equal(await page.evaluate(() => document.activeElement?.matches('#kit-form-parts .crudit-ui-collection__add')), true, 'the last line removed: the focus is not on Add');
+
+    // File (controller file-drop): a file dragged over the zone marks it; a file chosen is listed with its size and a
+    // preview, Remove empties the input and gives it the focus back; Delete asks the deletion of the file already sent
+    // (a hidden checkbox), the line says it, Cancel puts it back.
+    await page.$eval('#kit-form-file', (input) => input.dispatchEvent(new DragEvent('dragenter', {bubbles: true})));
+    assert.equal(await page.$eval('#kit-form-file', (input) => input.closest('.crudit-ui-file').classList.contains('crudit-ui-file--dragging')), true, 'a file dragged over the zone does not mark it');
+    await page.$eval('#kit-form-file', (input) => input.dispatchEvent(new DragEvent('dragleave', {bubbles: true})));
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await page.setInputFiles('#kit-form-file', {name: 'shop.png', mimeType: 'image/png', buffer: png});
+    const files = () => page.$$eval('#kit-forms .crudit-ui-file__list > li', (lines) => lines.map((line) => [
+        line.querySelector('.crudit-ui-file__label').textContent,
+        line.querySelector('.crudit-ui-file__size').textContent,
+        line.querySelector('img')?.alt ?? null,
+    ]));
+    const fileStatus = async (text) => {
+        await page.waitForFunction((expected) => document.querySelector('#kit-forms .crudit-ui-file [role="status"]').textContent === expected, {timeout: 2000}, text).catch(() => null);
+
+        return page.$eval('#kit-forms .crudit-ui-file [role="status"]', (status) => status.textContent);
+    };
+    assert.deepEqual(await files(), [['front-of-the-shop.svg', '2 KB · current file', 'Preview of front-of-the-shop.svg'], ['shop.png', '1 KB', 'Preview of shop.png']]);
+    assert.equal(await fileStatus('shop.png added.'), 'shop.png added.');
+    await page.click('#kit-forms .crudit-ui-file__list > li[data-chosen] button');
+    assert.equal(await page.$eval('#kit-form-file', (input) => input.files.length), 0, 'Remove does not empty the input');
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'kit-form-file');
+    assert.equal(await fileStatus('shop.png removed.'), 'shop.png removed.');
+    assert.equal((await files()).length, 1);
+    await page.setInputFiles('#kit-form-file', {name: 'plan.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc(1572864)});
+    assert.deepEqual((await files())[1], ['plan.pdf', '1.5 MB', null], 'the size of a big file, no preview for a PDF');
+    await page.click('#kit-forms .crudit-ui-file__list > li:first-child [data-2lenet--crudit-ui-bundle--file-drop-target="delete"]');
+    const deletion = () => page.$eval('#kit-forms .crudit-ui-file__list > li:first-child', (line) => ({
+        asked: line.querySelector('input[type="checkbox"]').checked,
+        note: !line.querySelector('.crudit-ui-file__note').hidden,
+        focus: document.activeElement?.dataset['2lenet-CruditUiBundle-FileDropTarget'] ?? document.activeElement?.getAttribute('data-2lenet--crudit-ui-bundle--file-drop-target'),
+    }));
+    assert.deepEqual(await deletion(), {asked: true, note: true, focus: 'keep'});
+    assert.equal(await fileStatus('front-of-the-shop.svg will be deleted when saved.'), 'front-of-the-shop.svg will be deleted when saved.');
+    await page.keyboard.press('Enter');
+    assert.deepEqual(await deletion(), {asked: false, note: false, focus: 'delete'});
+    assert.equal(await fileStatus('front-of-the-shop.svg is kept.'), 'front-of-the-shop.svg is kept.');
+    await page.$eval('#kit-forms form, form:has(#kit-form-file)', (form) => form.reset());
+    await page.waitForFunction(() => document.querySelectorAll('#kit-forms .crudit-ui-file__list > li').length === 1, {timeout: 2000}).catch(() => null);
+    assert.equal((await files()).length, 1, 'the reset of the form keeps a file chosen in the list');
+
     // On a phone: without <meta name="viewport"> in base.html.twig, the page would be laid out on 980 px and shrunk.
     await audit('crudit-ui/kit', 'light', {width: 360, height: 740, isMobile: true, hasTouch: true});
     const widths = await page.evaluate(() => ({client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth}));

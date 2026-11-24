@@ -15,6 +15,7 @@ use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\DateIntervalType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
@@ -709,6 +710,166 @@ class FormThemeTest extends TestCase
             self::assertSame('year' === $part, str_contains((string) $input->getAttribute('class'), 'crudit-ui-input--year'), 'only the year is wider: ' . $part);
         }
         self::assertFalse((bool) $html->getElementById('form_day')?->hasAttribute('inputmode'), 'a date in one input has the picker of the browser');
+    }
+
+    public function testACollectionIsAListOfNamedLinesThatCanBeAddedRemovedAndMoved(): void
+    {
+        $form = $this->form()
+            ->add('lines', CollectionType::class, [
+                'label' => 'Lines',
+                'entry_type' => LineType::class,
+                'allow_add' => true,
+                'allow_delete' => true,
+                'data' => [3 => ['part' => 'Pump', 'quantity' => 2, 'position' => 1], 5 => ['part' => 'Valve', 'quantity' => 1, 'position' => 2]],
+            ])
+            ->getForm();
+        $html = $this->renderTemplate($form, "{{ form_row(form.lines, {collection_sortable: 'position', collection_entry_label: 'Piece %index%'}) }}");
+
+        self::assertSame('Lines', trim((string) $html->querySelector('fieldset > legend')?->textContent), 'a collection is a fieldset named by its legend');
+        $root = $html->getElementById('form_lines');
+        self::assertNotNull($root);
+        $controller = '2lenet--crudit-ui-bundle--collection';
+        self::assertStringContainsString('crudit-ui-collection', (string) $root->getAttribute('class'));
+        self::assertSame($controller, $root->getAttribute('data-controller'));
+        self::assertSame('Piece %index%', $root->getAttribute('data-' . $controller . '-entry-value'));
+        self::assertSame('6', $root->getAttribute('data-' . $controller . '-index-value'), 'a line added takes the index after the greatest one');
+        self::assertSame('__name__', $root->getAttribute('data-' . $controller . '-prototype-name-value'));
+        self::assertSame('true', $root->getAttribute('data-' . $controller . '-sortable-value'));
+        self::assertSame('Moved to position %position% of %total%.', $root->getAttribute('data-' . $controller . '-moved-text-value'));
+        self::assertTrue((bool) $root->querySelector('.crudit-ui-collection__empty')?->hasAttribute('hidden'));
+
+        $rows = $root->querySelectorAll('ol.crudit-ui-collection__rows > li.crudit-ui-collection__row');
+        self::assertCount(2, $rows);
+        $first = $rows->item(0);
+        $last = $rows->item(1);
+        self::assertSame('Piece 1', $first?->getAttribute('aria-label'), 'a line is named in the order of the page, not by its key');
+        self::assertSame('Piece 2', $last?->getAttribute('aria-label'));
+        self::assertSame('true', $first->querySelector('.crudit-ui-collection__index')?->getAttribute('aria-hidden'));
+        self::assertSame('Part, Piece 1', trim((string) $html->querySelector('label[for="form_lines_3_part"]')?->textContent), 'each field says its line');
+        self::assertSame(', Piece 2', $html->querySelector('label[for="form_lines_5_quantity"] [data-crudit-ui-collection-entry-name]')?->textContent);
+
+        $position = $html->getElementById('form_lines_5_position');
+        self::assertSame('hidden', $position?->getAttribute('type'));
+        self::assertTrue($position->hasAttribute('data-crudit-ui-collection-position'));
+        self::assertSame('2', $position->getAttribute('value'), 'the positions of the server are kept until the order changes');
+
+        $up = $first->querySelector('[data-crudit-ui-collection-up]');
+        $down = $first->querySelector('[data-crudit-ui-collection-down]');
+        self::assertSame('button', $up?->getAttribute('type'));
+        self::assertTrue($up->hasAttribute('disabled'), 'the first line cannot go up');
+        self::assertFalse((bool) $down?->hasAttribute('disabled'));
+        self::assertSame('Move up: Piece 1', $up->querySelector('.crudit-ui-visually-hidden')?->textContent);
+        self::assertTrue((bool) $last->querySelector('[data-crudit-ui-collection-down]')?->hasAttribute('disabled'), 'the last line cannot go down');
+        self::assertSame('Remove: Piece 2', $last->querySelector('[data-crudit-ui-collection-remove] .crudit-ui-visually-hidden')?->textContent);
+        self::assertSame($controller . '#remove', $last->querySelector('[data-crudit-ui-collection-remove]')?->getAttribute('data-action'));
+
+        $template = $root->querySelector('template[data-' . $controller . '-target="prototype"]');
+        self::assertNotNull($template);
+        $prototype = $this->html($template->innerHTML);
+        self::assertSame('Piece __name__', $prototype->querySelector('li')?->getAttribute('aria-label'));
+        self::assertNotNull($prototype->querySelector('input[name="form[lines][__name__][part]"]'));
+        self::assertNotNull($prototype->querySelector('input[name="form[lines][__name__][position]"][data-crudit-ui-collection-position]'));
+
+        $add = $root->querySelector('button.crudit-ui-collection__add');
+        self::assertSame('Add: Lines', $add?->getAttribute('aria-label'), 'the button names its collection');
+        self::assertSame('Add', trim((string) $add->textContent));
+        self::assertNotNull($root->querySelector('[role="status"][aria-live="polite"]'));
+    }
+
+    public function testACollectionWithoutAddRemoveNorOrderHasNoButtonAndALineOfOneFieldIsNamed(): void
+    {
+        $form = $this->form()
+            ->add('phones', CollectionType::class, ['label' => 'Phones', 'entry_type' => TextType::class, 'data' => ['0601020304', '0605060708']])
+            ->getForm();
+        $html = $this->renderForm($form);
+
+        $root = $html->getElementById('form_phones');
+        self::assertNotNull($root);
+        self::assertFalse($root->hasAttribute('data-2lenet--crudit-ui-bundle--collection-sortable-value'));
+        self::assertNull($root->querySelector('template'), 'no prototype without allow_add');
+        self::assertNull($root->querySelector('button'));
+        self::assertNull($root->querySelector('.crudit-ui-collection__actions'));
+        $label = $html->querySelector('label[for="form_phones_1"]');
+        self::assertSame('Line 2', $label?->textContent, 'a line of one field: its input is named by the line');
+        self::assertStringContainsString('crudit-ui-visually-hidden', (string) $label->getAttribute('class'));
+    }
+
+    public function testAnEmptyCollectionSaysIt(): void
+    {
+        $form = $this->form()
+            ->add('phones', CollectionType::class, ['label' => 'Phones', 'entry_type' => TextType::class, 'allow_add' => true, 'data' => []])
+            ->getForm();
+        $html = $this->renderForm($form);
+
+        $empty = $html->querySelector('#form_phones .crudit-ui-collection__empty');
+        self::assertFalse((bool) $empty?->hasAttribute('hidden'));
+        self::assertSame('No lines yet.', trim((string) $empty?->textContent));
+        self::assertCount(0, $html->querySelectorAll('#form_phones li'));
+        self::assertSame('0', $html->getElementById('form_phones')?->getAttribute('data-2lenet--crudit-ui-bundle--collection-index-value'));
+    }
+
+    public function testAFileIsADropZoneCoveredByItsInput(): void
+    {
+        $form = $this->form()->add('attachment', FileType::class, ['label' => 'Attachment', 'help' => 'A PDF', 'required' => false, 'attr' => ['accept' => '.pdf']])->getForm();
+        $html = $this->renderForm($form);
+
+        self::assertSame('form_attachment', $html->querySelector('label.crudit-ui-label')?->getAttribute('for'));
+        $root = $html->querySelector('.crudit-ui-file');
+        self::assertSame('2lenet--crudit-ui-bundle--file-drop', $root?->getAttribute('data-controller'));
+        $input = $root->querySelector('.crudit-ui-file__zone > input[type="file"]');
+        self::assertSame('form_attachment', $input?->getAttribute('id'));
+        self::assertSame('form[attachment]', $input->getAttribute('name'));
+        self::assertSame('.pdf', $input->getAttribute('accept'));
+        self::assertSame('form_attachment_help', $input->getAttribute('aria-describedby'));
+        self::assertSame('crudit-ui-file__input', $input->getAttribute('class'), 'not the frame of a text input');
+        $text = $root->querySelector('.crudit-ui-file__text');
+        self::assertSame('true', $text?->getAttribute('aria-hidden'), 'the input is named by its label only');
+        self::assertSame('Drop a file here or browse', preg_replace('/\s+/', ' ', trim((string) $text->textContent)));
+        self::assertTrue((bool) $root->querySelector('.crudit-ui-file__list')?->hasAttribute('hidden'));
+        self::assertNotNull($root->querySelector('template[data-2lenet--crudit-ui-bundle--file-drop-target="chosen"]'));
+        self::assertSame('Remove %name%', $root->getAttribute('data-2lenet--crudit-ui-bundle--file-drop-remove-text-value'));
+    }
+
+    public function testTheFileAlreadySentCanBeDownloadedAndDeleted(): void
+    {
+        $form = $this->form()->add('attachment', FileType::class, ['label' => 'Attachment', 'required' => false])->getForm();
+        $html = $this->renderTemplate($form, "{{ form_row(form.attachment, {crudit_ui_file_current: {name: 'plan.pdf', size: 1572864, download: '/files/plan.pdf', preview: null}, crudit_ui_file_delete: 'form[attachment_delete]'}) }}");
+
+        $current = $html->querySelector('.crudit-ui-file__list:not([hidden]) > li');
+        self::assertSame('plan.pdf', $current?->querySelector('.crudit-ui-file__label')?->textContent);
+        self::assertSame('1.5 MB · current file', $current->querySelector('.crudit-ui-file__size')?->textContent);
+        self::assertNull($current->querySelector('img'), 'no preview: an icon');
+        $link = $current->querySelector('a[download]');
+        self::assertSame('/files/plan.pdf', $link?->getAttribute('href'));
+        self::assertSame('Download plan.pdf', preg_replace('/\s+/', ' ', trim((string) $link->textContent)));
+        $delete = $current->querySelector('button[data-2lenet--crudit-ui-bundle--file-drop-target="delete"]');
+        self::assertSame('Delete plan.pdf', $delete?->querySelector('.crudit-ui-visually-hidden')?->textContent);
+        self::assertTrue((bool) $current->querySelector('[data-2lenet--crudit-ui-bundle--file-drop-target="keep"]')?->hasAttribute('hidden'));
+        self::assertTrue((bool) $current->querySelector('[data-2lenet--crudit-ui-bundle--file-drop-target="note"]')?->hasAttribute('hidden'));
+        $checkbox = $current->querySelector('input[type="checkbox"][name="form[attachment_delete]"]');
+        self::assertTrue((bool) $checkbox?->hasAttribute('hidden'));
+        self::assertFalse($checkbox->hasAttribute('checked'));
+    }
+
+    public function testTheImageAlreadySentHasAPreviewAndASizeInKilobytes(): void
+    {
+        $form = $this->form()->add('photo', FileType::class, ['label' => 'Photo', 'required' => false])->getForm();
+        $html = $this->renderTemplate($form, "{{ form_row(form.photo, {crudit_ui_file_current: {name: 'front.jpg', size: 300, download: null, preview: '/files/front.jpg'}}) }}");
+
+        $current = $html->querySelector('.crudit-ui-file__list > li');
+        self::assertSame('Preview of front.jpg', $current?->querySelector('img.crudit-ui-file__preview')?->getAttribute('alt'));
+        self::assertSame('1 KB · current file', $current->querySelector('.crudit-ui-file__size')?->textContent, 'never 0 KB');
+        self::assertNull($current->querySelector('a'), 'no address: no link');
+        self::assertNull($current->querySelector('button'), 'no checkbox to ask the deletion: no button');
+    }
+
+    public function testTheInputOfAFileAloneForTheMarkupOfAnotherType(): void
+    {
+        $form = $this->form()->add('attachment', FileType::class, ['label' => 'Attachment'])->getForm();
+        $html = $this->renderTemplate($form, '{{ form_widget(form.attachment, {crudit_ui_file_input_only: true}) }}');
+
+        self::assertNull($html->querySelector('.crudit-ui-file'));
+        self::assertSame('crudit-ui-file__input', $html->querySelector('input[type="file"]')?->getAttribute('class'));
     }
 
     public function testToggletipOpensItsPanel(): void

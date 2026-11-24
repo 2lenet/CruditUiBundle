@@ -1,0 +1,104 @@
+{#
+ # File (block file_widget of the form theme, controller file-drop): the markup, from plain values, so that a page
+ # without a Symfony form can show one (the kit) and an application can give the file already sent (CruditBundle:
+ # VichUploaderBundle).
+ #
+ # input: the HTML of the <input type="file"> (class crudit-ui-file__input; its label, help and error attached as for any
+ # input). It covers the drop zone: a click anywhere opens the picker, a file dropped on it is chosen, also without
+ # JavaScript. multiple, invalid, disabled, class (of the root).
+ # current: the file already sent, or null: {name, size (bytes, or null: not shown), download (URL or null), preview (URL
+ # of an image, or null)}. delete: the name of the hidden checkbox that asks to delete it (null: no button Delete); the
+ # button checks it, the line says the file will be deleted, a button cancels.
+ #}
+{%- set controller = '2lenet--crudit-ui-bundle--file-drop' -%}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set multiple = multiple|default(false) -%}
+{%- set disabled = disabled|default(false) -%}
+{%- set current = current|default(null) -%}
+{%- set delete = delete|default(null) -%}
+{%- set size = null -%}
+{%- if current is not null and current.size|default(null) is not null -%}
+    {%- set size = current.size >= 1048576
+        ? 'crudit_ui.file.size_mb'|trans({'%size%': (current.size / 1048576)|ui_number({max_fraction_digit: 1})}, domain)
+        : 'crudit_ui.file.size_kb'|trans({'%size%': max(1, (current.size / 1024)|round)|ui_number}, domain) -%}
+{%- endif -%}
+<div class="{{ ('crudit-ui-file ' ~ (invalid|default(false) ? 'crudit-ui-file--invalid ' : '') ~ (disabled ? 'crudit-ui-file--disabled ' : '') ~ class|default(''))|trim }}"
+    data-controller="{{ controller }}"
+    data-{{ controller }}-remove-text-value="{{ 'crudit_ui.file.remove'|trans({}, domain) }}"
+    data-{{ controller }}-preview-text-value="{{ 'crudit_ui.file.preview'|trans({}, domain) }}"
+    data-{{ controller }}-added-text-value="{{ 'crudit_ui.file.added'|trans({}, domain) }}"
+    data-{{ controller }}-removed-text-value="{{ 'crudit_ui.file.removed'|trans({}, domain) }}"
+    data-{{ controller }}-deleted-text-value="{{ 'crudit_ui.file.deleted'|trans({}, domain) }}"
+    data-{{ controller }}-kept-text-value="{{ 'crudit_ui.file.kept'|trans({}, domain) }}"
+    data-{{ controller }}-kb-text-value="{{ 'crudit_ui.file.size_kb'|trans({}, domain) }}"
+    data-{{ controller }}-mb-text-value="{{ 'crudit_ui.file.size_mb'|trans({}, domain) }}"
+    {%- if (app.request.locale ?? null) is not empty %} data-{{ controller }}-locale-value="{{ app.request.locale|replace({'_': '-'}) }}"{% endif %}
+>
+    <div class="crudit-ui-file__zone" data-{{ controller }}-target="zone">
+        {{- ui_icon('upload', 'crudit-ui-file__icon') -}}
+        {#- Hidden from assistive technologies: the input is named by the label of the field -#}
+        <span class="crudit-ui-file__text" aria-hidden="true">
+            {{- (multiple ? 'crudit_ui.file.drop_many' : 'crudit_ui.file.drop_one')|trans({}, domain) }} <span class="crudit-ui-file__browse">{{ 'crudit_ui.file.browse'|trans({}, domain) }}</span>
+        </span>
+        {{- input|raw -}}
+    </div>
+    <ul class="crudit-ui-file__list"{% if current is null %} hidden{% endif %} data-{{ controller }}-target="list">
+        {%- if current is not null -%}
+            <li class="crudit-ui-file__file" data-{{ controller }}-target="current">
+                {%- if current.preview|default(null) is not empty -%}
+                    <img class="crudit-ui-file__preview" src="{{ current.preview }}" alt="{{ 'crudit_ui.file.preview'|trans({'%name%': current.name}, domain) }}">
+                {%- else -%}
+                    {{- ui_icon('file', 'crudit-ui-file__file-icon') -}}
+                {%- endif -%}
+                <span class="crudit-ui-file__name">
+                    <span class="crudit-ui-file__label">{{ current.name }}</span>
+                    <span class="crudit-ui-file__size">
+                        {%- if size is not null -%}
+                            {{- 'crudit_ui.file.current_size'|trans({'%size%': size}, domain) -}}
+                        {%- else -%}
+                            {{- 'crudit_ui.file.current'|trans({}, domain) -}}
+                        {%- endif -%}
+                    </span>
+                    {%- if delete is not null -%}
+                        <span class="crudit-ui-file__note" hidden data-{{ controller }}-target="note">{{ 'crudit_ui.file.will_delete'|trans({}, domain) }}</span>
+                    {%- endif -%}
+                </span>
+                {%- if current.download|default(null) is not empty -%}
+                    <a class="crudit-ui-btn crudit-ui-btn--ghost crudit-ui-btn--small" href="{{ current.download }}" download>
+                        {{- ui_icon('download') -}}
+                        <span class="crudit-ui-file__action-label">{{ 'crudit_ui.file.download'|trans({}, domain) }}</span>
+                        <span class="crudit-ui-visually-hidden"> {{ current.name }}</span>
+                    </a>
+                {%- endif -%}
+                {%- if delete is not null -%}
+                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="delete" data-action="{{ controller }}#delete">
+                        {{- ui_icon('delete') -}}
+                        <span class="crudit-ui-visually-hidden">{{ 'crudit_ui.file.delete'|trans({'%name%': current.name}, domain) }}</span>
+                    </button>
+                    <button type="button" class="crudit-ui-btn crudit-ui-btn--ghost crudit-ui-btn--small" hidden data-{{ controller }}-target="keep" data-action="{{ controller }}#keep">
+                        {{- ui_icon('undo') -}}
+                        <span>{{ 'crudit_ui.file.cancel_delete'|trans({}, domain) }}</span>
+                        <span class="crudit-ui-visually-hidden"> {{ current.name }}</span>
+                    </button>
+                    <input type="checkbox" name="{{ delete }}" value="1" hidden{% if disabled %} disabled{% endif %} data-{{ controller }}-target="checkbox">
+                {%- endif -%}
+            </li>
+        {%- endif -%}
+    </ul>
+    {#- A file chosen, copied by the controller: its preview or icon, its name and size, a button Remove -#}
+    <template data-{{ controller }}-target="chosen">
+        <li class="crudit-ui-file__file">
+            {{- ui_icon('file', 'crudit-ui-file__file-icon') -}}
+            <span class="crudit-ui-file__name">
+                <span class="crudit-ui-file__label" data-name></span>
+                <span class="crudit-ui-file__size" data-size></span>
+            </span>
+            <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small" data-action="{{ controller }}#remove">
+                {{- ui_icon('close') -}}
+                <span class="crudit-ui-visually-hidden" data-remove></span>
+            </button>
+        </li>
+    </template>
+    <p class="crudit-ui-visually-hidden" role="status" aria-live="polite" data-{{ controller }}-target="status"></p>
+</div>
+

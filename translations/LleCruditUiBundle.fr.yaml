@@ -15,6 +15,17 @@ crudit_ui:
         label: "Fil d'Ariane"
     chip:
         remove: "Retirer le filtre %label%"
+    collection:
+        entry: "Ligne %index%"
+        empty: "Aucune ligne pour le moment."
+        add: "Ajouter"
+        add_to: "Ajouter : %label%"
+        move_up: "Monter : %item%"
+        move_down: "Descendre : %item%"
+        remove: "Retirer : %item%"
+        added: "Ajouté : %item%."
+        removed: "Retiré : %item%."
+        moved: "Déplacé en position %position% sur %total%."
     combobox:
         placeholder: "Rechercher…"
         selected: "%label% : choix faits"
@@ -76,6 +87,24 @@ crudit_ui:
             from: "Du"
             to: "Au"
             ready_made: "Périodes prédéfinies pour %label%"
+    file:
+        drop_one: "Déposez un fichier ici ou"
+        drop_many: "Déposez des fichiers ici ou"
+        browse: "parcourir"
+        current: "Fichier actuel"
+        current_size: "%size% · fichier actuel"
+        will_delete: "Sera supprimé à l'enregistrement"
+        download: "Télécharger"
+        delete: "Supprimer %name%"
+        cancel_delete: "Annuler la suppression"
+        remove: "Retirer %name%"
+        preview: "Aperçu de %name%"
+        added: "Ajouté : %name%."
+        removed: "Retiré : %name%."
+        deleted: "%name% sera supprimé à l'enregistrement."
+        kept: "%name% est gardé."
+        size_kb: "%size% ko"
+        size_mb: "%size% Mo"
     form:
         date:
             day: "Jour"

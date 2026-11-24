@@ -53,3 +53,12 @@ test('the counter of characters keeps its width while the digits change, the lis
     assert.match(css, /\.crudit-ui-date-lists>\.crudit-ui-input\{width:calc\(2ch \+ 2\*var\(--space-3\) \+ 2px\)/, 'the inputs of a date (widget text) take one line each');
     assert.match(css, /\.crudit-ui-date-lists>\.crudit-ui-input--year\{width:calc\(4ch /);
 });
+
+test('the file input covers its drop zone, transparent, and the zone shows its focus', () => {
+    assert.ok(css.includes('.crudit-ui-file__input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}'));
+    assert.ok(css.includes('.crudit-ui-file__zone:has(.crudit-ui-file__input:focus-visible){border-color:var(--c-focus);outline:var(--focus-ring-width) solid var(--c-focus);outline-offset:0}'));
+});
+
+test('on a wide screen, the labels of a collection are shown on its first line only, still read on the others', () => {
+    assert.match(css, /@media\(min-width: 768px\)\{\.crudit-ui-collection__row:not\(:first-child\) \.crudit-ui-collection__fields>\.crudit-ui-field \.crudit-ui-label\{position:absolute;width:1px;height:1px;/);
+});

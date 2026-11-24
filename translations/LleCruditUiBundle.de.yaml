@@ -15,6 +15,17 @@ crudit_ui:
         label: "Brotkrümelnavigation"
     chip:
         remove: "Filter %label% entfernen"
+    collection:
+        entry: "Zeile %index%"
+        empty: "Noch keine Zeilen."
+        add: "Hinzufügen"
+        add_to: "Hinzufügen: %label%"
+        move_up: "Nach oben: %item%"
+        move_down: "Nach unten: %item%"
+        remove: "Entfernen: %item%"
+        added: "Hinzugefügt: %item%."
+        removed: "Entfernt: %item%."
+        moved: "Verschoben auf Position %position% von %total%."
     combobox:
         placeholder: "Suchen…"
         selected: "%label%: getroffene Auswahl"
@@ -76,6 +87,24 @@ crudit_ui:
             from: "Von"
             to: "Bis"
             ready_made: "Vordefinierte Zeiträume für %label%"
+    file:
+        drop_one: "Datei hier ablegen oder"
+        drop_many: "Dateien hier ablegen oder"
+        browse: "durchsuchen"
+        current: "Aktuelle Datei"
+        current_size: "%size% · aktuelle Datei"
+        will_delete: "Wird beim Speichern gelöscht"
+        download: "Herunterladen"
+        delete: "%name% löschen"
+        cancel_delete: "Löschen abbrechen"
+        remove: "%name% entfernen"
+        preview: "Vorschau von %name%"
+        added: "Hinzugefügt: %name%."
+        removed: "Entfernt: %name%."
+        deleted: "%name% wird beim Speichern gelöscht."
+        kept: "%name% wird behalten."
+        size_kb: "%size% KB"
+        size_mb: "%size% MB"
     form:
         date:
             day: "Tag"

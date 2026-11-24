@@ -65,6 +65,18 @@
 
 {# Label, help, errors #}
 
+{#
+ # The text of a label. A field of a line of a collection adds the name of its line, read but not shown ("Quantity,
+ # line 2"): the labels of the other lines may be hidden (collection_entry_row). The controller collection renames it
+ # when the lines move.
+ #}
+{%- block form_label_content -%}
+    {{- parent() -}}
+    {%- if crudit_ui_entry_name is defined -%}
+        <span class="crudit-ui-visually-hidden" data-crudit-ui-collection-entry-name>, {{ crudit_ui_entry_name }}</span>
+    {%- endif -%}
+{%- endblock form_label_content -%}
+
 {%- block form_label -%}
     {%- if label is not same as(false) -%}
         {%- if not compound -%}
@@ -205,7 +217,7 @@
     {%- set crudit_ui_part_label = block('crudit_ui_date_part_label') -%}
     {%- if crudit_ui_part_label is not empty %}{% set attr = attr|merge({'aria-label': crudit_ui_part_label}) %}{% endif -%}
     {%- set crudit_ui_date_input = type == 'text' and form.parent is not null and name in ['year', 'month', 'day', 'hour', 'minute', 'second'] and form.parent.vars.block_prefixes|filter(p => p in ['date', 'time'])|length > 0 -%}
-    {%- if type not in ['hidden', 'checkbox', 'radio', 'range'] -%}
+    {%- if type not in ['hidden', 'checkbox', 'radio', 'range', 'file'] -%}
         {%- set attr = attr|merge({class: ('crudit-ui-input ' ~ (crudit_ui_date_input and name == 'year' ? 'crudit-ui-input--year ' : '') ~ attr.class|default(''))|trim}) -%}
     {%- endif -%}
     {%- if attr.inputmode is not defined -%}
@@ -518,3 +530,175 @@
     {%- endif -%}
     {{- parent() -}}
 {%- endblock datetime_widget -%}
+
+{#
+ # Collection (controller collection, docs/forms.md): a list of lines, each named ("Line 2", variable
+ # collection_entry_label: a text with %index%, translated in the domain of the field) and numbered. Each field of a
+ # line says its line after its label (read, not shown); on a wide screen, the labels are shown on the first line only.
+ # - allow_add: a button Add, the prototype in a <template>;
+ # - allow_delete: a button Remove on each line;
+ # - variable collection_sortable (name of the field of the position of a line, a hidden input): buttons Move up and
+ #   Move down; the controller writes 1, 2, 3… in this field each time the lines change. The order is kept only if the
+ #   entity reads its lines in this order (#[ORM\OrderBy]).
+ # The focus is moved after each action, the change is told in a live region. Without JavaScript, the lines are shown
+ # and sent, the buttons do nothing.
+ #}
+{%- block collection_widget -%}
+    {%- set crudit_ui_controller = '2lenet--crudit-ui-bundle--collection' -%}
+    {%- set crudit_ui_domain = 'LleCruditUiBundle' -%}
+    {%- set crudit_ui_entry = block('crudit_ui_collection_entry_label') -%}
+    {%- set crudit_ui_next = 0 -%}
+    {%- for child in form -%}
+        {%- if child.vars.name matches '/^\\d+$/' and child.vars.name + 1 > crudit_ui_next %}{% set crudit_ui_next = child.vars.name + 1 %}{% endif -%}
+    {%- endfor -%}
+    {%- set attr = attr|merge({
+        class: ('crudit-ui-collection ' ~ attr.class|default(''))|trim,
+        'data-controller': ((attr['data-controller'] ?? '') ~ ' ' ~ crudit_ui_controller)|trim,
+    }) -%}
+    <div {{ block('widget_container_attributes') }}
+        data-{{ crudit_ui_controller }}-entry-value="{{ crudit_ui_entry }}"
+        data-{{ crudit_ui_controller }}-index-value="{{ crudit_ui_next }}"
+        {%- if prototype is defined %} data-{{ crudit_ui_controller }}-prototype-name-value="{{ prototype.vars.name }}"{% endif %}
+        {%- if collection_sortable|default(null) is not empty %} data-{{ crudit_ui_controller }}-sortable-value="true"{% endif %}
+        data-{{ crudit_ui_controller }}-move-up-text-value="{{ 'crudit_ui.collection.move_up'|trans({}, crudit_ui_domain) }}"
+        data-{{ crudit_ui_controller }}-move-down-text-value="{{ 'crudit_ui.collection.move_down'|trans({}, crudit_ui_domain) }}"
+        data-{{ crudit_ui_controller }}-remove-text-value="{{ 'crudit_ui.collection.remove'|trans({}, crudit_ui_domain) }}"
+        data-{{ crudit_ui_controller }}-added-text-value="{{ 'crudit_ui.collection.added'|trans({}, crudit_ui_domain) }}"
+        data-{{ crudit_ui_controller }}-removed-text-value="{{ 'crudit_ui.collection.removed'|trans({}, crudit_ui_domain) }}"
+        data-{{ crudit_ui_controller }}-moved-text-value="{{ 'crudit_ui.collection.moved'|trans({}, crudit_ui_domain) }}"
+    >
+        <p class="crudit-ui-collection__empty"{% if form|length > 0 %} hidden{% endif %} data-{{ crudit_ui_controller }}-target="empty">
+            {{- 'crudit_ui.collection.empty'|trans({}, crudit_ui_domain) -}}
+        </p>
+        <ol class="crudit-ui-collection__rows" data-{{ crudit_ui_controller }}-target="rows">
+            {%- set crudit_ui_lines = {
+                crudit_ui_entry_template: crudit_ui_entry,
+                crudit_ui_entry_sortable: collection_sortable|default(null),
+                crudit_ui_entry_delete: allow_delete,
+                crudit_ui_entry_count: form|length,
+            } -%}
+            {%- for child in form -%}
+                {{- form_row(child, crudit_ui_lines|merge({crudit_ui_entry_index: loop.index})) -}}
+            {%- endfor -%}
+        </ol>
+        {%- if allow_add and prototype is defined -%}
+            <template data-{{ crudit_ui_controller }}-target="prototype">{{ form_row(prototype, crudit_ui_lines|merge({crudit_ui_entry_index: prototype.vars.name})) }}</template>
+            {%- set crudit_ui_name = block('crudit_ui_collection_name') -%}
+            <button type="button" class="crudit-ui-btn crudit-ui-btn--secondary crudit-ui-btn--small crudit-ui-collection__add"{% if disabled %} disabled{% endif %}
+                {%- if crudit_ui_name is not empty %} aria-label="{{ 'crudit_ui.collection.add_to'|trans({'%label%': crudit_ui_name}, crudit_ui_domain) }}"{% endif %}
+                data-{{ crudit_ui_controller }}-target="add" data-action="{{ crudit_ui_controller }}#add">
+                {{- ui_icon('add') -}}
+                {{- 'crudit_ui.collection.add'|trans({}, crudit_ui_domain) -}}
+            </button>
+        {%- endif -%}
+        <p class="crudit-ui-visually-hidden" role="status" aria-live="polite" data-{{ crudit_ui_controller }}-target="status"></p>
+    </div>
+{%- endblock collection_widget -%}
+
+{# The text that names a line of a collection, with %index%: collection_entry_label, else "Line %index%" #}
+{%- block crudit_ui_collection_entry_label -%}
+    {%- if collection_entry_label|default(null) is not empty -%}
+        {{- translation_domain is same as(false) ? collection_entry_label : collection_entry_label|trans({}, translation_domain) -}}
+    {%- else -%}
+        {{- 'crudit_ui.collection.entry'|trans({}, 'LleCruditUiBundle') -}}
+    {%- endif -%}
+{%- endblock crudit_ui_collection_entry_label -%}
+
+{# The label of a collection, translated (the name of its button Add), empty without label #}
+{%- block crudit_ui_collection_name -%}
+    {%- if label is not same as(false) -%}
+        {%- set crudit_ui_label = label is empty ? (label_format is not empty ? label_format|replace({'%name%': name, '%id%': id}) : name|humanize) : label -%}
+        {{- translation_domain is same as(false) ? crudit_ui_label : crudit_ui_label|trans(label_translation_parameters, translation_domain) -}}
+    {%- endif -%}
+{%- endblock crudit_ui_collection_name -%}
+
+{#
+ # A line of a collection: its number (hidden from assistive technologies: the line is named), its fields (each with
+ # the name of the line after its label; a line of one field has a hidden label, the name of the line), its errors and
+ # its buttons. The prototype has the name of the prototype (__name__) as number, replaced when a line is added.
+ #}
+{%- block collection_entry_row -%}
+    {%- set crudit_ui_controller = '2lenet--crudit-ui-bundle--collection' -%}
+    {%- set crudit_ui_domain = 'LleCruditUiBundle' -%}
+    {#- Given by collection_widget; a line rendered alone reads its collection -#}
+    {%- set crudit_ui_collection = form.parent -%}
+    {%- set crudit_ui_index = crudit_ui_entry_index ?? name -%}
+    {%- set crudit_ui_template = crudit_ui_entry_template ?? (crudit_ui_collection.vars.collection_entry_label|default(null) is not empty
+        ? (crudit_ui_collection.vars.translation_domain is same as(false) ? crudit_ui_collection.vars.collection_entry_label : crudit_ui_collection.vars.collection_entry_label|trans({}, crudit_ui_collection.vars.translation_domain))
+        : 'crudit_ui.collection.entry'|trans({}, crudit_ui_domain)) -%}
+    {%- set crudit_ui_entry = crudit_ui_template|replace({'%index%': crudit_ui_index}) -%}
+    {%- set crudit_ui_sortable = crudit_ui_entry_sortable ?? crudit_ui_collection.vars.collection_sortable|default(null) -%}
+    {%- set crudit_ui_delete = crudit_ui_entry_delete ?? crudit_ui_collection.vars.allow_delete|default(false) -%}
+    {%- set crudit_ui_count = crudit_ui_entry_count ?? crudit_ui_collection.children|length -%}
+    <li class="{{ ('crudit-ui-collection__row' ~ (errors|length > 0 ? ' crudit-ui-collection__row--invalid' : ''))|trim }}" aria-label="{{ crudit_ui_entry }}" data-{{ crudit_ui_controller }}-target="row">
+        <span class="crudit-ui-collection__index" aria-hidden="true" data-crudit-ui-collection-index>{{ crudit_ui_index }}</span>
+        <div class="crudit-ui-collection__fields">
+            {%- if compound -%}
+                {%- for child in form -%}
+                    {%- if crudit_ui_sortable is not empty and child.vars.name == crudit_ui_sortable -%}
+                        {{- form_widget(child, {attr: child.vars.attr|merge({'data-crudit-ui-collection-position': ''})}) -}}
+                    {%- else -%}
+                        {{- form_row(child, {crudit_ui_entry_name: crudit_ui_entry}) -}}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- else -%}
+                <div class="{{ ('crudit-ui-field' ~ (errors|length > 0 ? ' crudit-ui-field--invalid' : ''))|trim }}">
+                    <label for="{{ id }}" class="crudit-ui-visually-hidden" data-crudit-ui-collection-entry-label>{{ crudit_ui_entry }}</label>
+                    {{- form_widget(form) -}}
+                    {{- form_help(form) -}}
+                    {{- form_errors(form) -}}
+                </div>
+            {%- endif -%}
+        </div>
+        {%- if compound -%}
+            {{- form_errors(form) -}}
+        {%- endif -%}
+        {%- if crudit_ui_sortable is not empty or crudit_ui_delete -%}
+            <div class="crudit-ui-collection__actions">
+                {%- if crudit_ui_sortable is not empty -%}
+                    {%- set crudit_ui_position = crudit_ui_entry_index ?? 0 -%}
+                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if crudit_ui_position == 1 or crudit_ui_entry_index is not defined or disabled %} disabled{% endif %} data-crudit-ui-collection-up data-action="{{ crudit_ui_controller }}#moveUp">
+                        {{- ui_icon('arrow-up') -}}
+                        <span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="moveUp">{{ 'crudit_ui.collection.move_up'|trans({'%item%': crudit_ui_entry}, crudit_ui_domain) }}</span>
+                    </button>
+                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if crudit_ui_position == crudit_ui_count or crudit_ui_entry_index is not defined or disabled %} disabled{% endif %} data-crudit-ui-collection-down data-action="{{ crudit_ui_controller }}#moveDown">
+                        {{- ui_icon('arrow-down') -}}
+                        <span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="moveDown">{{ 'crudit_ui.collection.move_down'|trans({'%item%': crudit_ui_entry}, crudit_ui_domain) }}</span>
+                    </button>
+                {%- endif -%}
+                {%- if crudit_ui_delete -%}
+                    <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small crudit-ui-collection__remove"{% if disabled %} disabled{% endif %} data-crudit-ui-collection-remove data-action="{{ crudit_ui_controller }}#remove">
+                        {{- ui_icon('delete') -}}
+                        <span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="remove">{{ 'crudit_ui.collection.remove'|trans({'%item%': crudit_ui_entry}, crudit_ui_domain) }}</span>
+                    </button>
+                {%- endif -%}
+            </div>
+        {%- endif -%}
+    </li>
+{%- endblock collection_entry_row -%}
+
+{#
+ # File (controller file-drop, docs/forms.md): the true file input, focusable, covers a drop zone (a file dropped on it
+ # is chosen, also without JavaScript). The file chosen is shown with its size and, for an image, a preview. The form
+ # theme of an application (CruditBundle: VichUploaderBundle) gives the file already sent: variable
+ # crudit_ui_file_current ({name, size, download, preview}: size in bytes or null, download and preview: URLs or null) and,
+ # to delete it, crudit_ui_file_delete (the name of the hidden checkbox that asks it). Rendered with the variable
+ # crudit_ui_file_input_only, the input alone (to put it in the markup of another type).
+ #}
+{%- block file_widget -%}
+    {%- set type = 'file' -%}
+    {%- set attr = attr|merge({class: ('crudit-ui-file__input ' ~ attr.class|default(''))|trim}) -%}
+    {%- if crudit_ui_file_input_only|default(false) -%}
+        {{- block('form_widget_simple') -}}
+    {%- else -%}
+        {%- set crudit_ui_input -%}{{ block('form_widget_simple') }}{%- endset -%}
+        {{- include('@LleCruditUi/form/_file.html.twig', {
+            input: crudit_ui_input,
+            multiple: multiple|default(false),
+            invalid: errors|length > 0,
+            disabled: disabled,
+            current: crudit_ui_file_current|default(null),
+            delete: crudit_ui_file_delete|default(null),
+        }, with_context: false) -}}
+    {%- endif -%}
+{%- endblock file_widget -%}
