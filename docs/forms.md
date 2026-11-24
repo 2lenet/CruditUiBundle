@@ -186,8 +186,9 @@ A `FileType` (the field `FileUpload` of the crudit-v2 mockup) is `div.crudit-ui-
   `crudit_ui_file_delete` (the name of a checkbox that asks the deletion), a button "Delete *name*": it checks the hidden
   checkbox, the line is struck through and says "Will be deleted when saved", a button "Cancel the deletion" puts it
   back. The focus goes from one button to the other.
-  For one file per field (not `multiple`), a file chosen replaces it when the form is saved (VichUploaderBundle): while a
-  file is chosen, the line is struck through and says "Will be replaced when saved" (unless its deletion is asked).
+  For one file per field (not `multiple`), a file chosen replaces it when the form is saved (VichUploaderBundle sends it
+  even when the deletion is asked): while a file is chosen, the line is struck through and says "Will be replaced when
+  saved". The two actions exclude each other: choosing a file cancels the deletion asked, Delete removes the file chosen.
 
 Each change is told in a live region. A dragged file marks the zone (`crudit-ui-file--dragging`). The markup is in
 `@LleCruditUi/form/_file.html.twig`, with the HTML of the input (see its header; the kit and CruditBundle include it);

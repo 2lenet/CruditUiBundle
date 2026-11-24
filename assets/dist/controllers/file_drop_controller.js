@@ -10,8 +10,10 @@ import { Controller } from '@hotwired/stimulus';
  *   button Remove that empties the input (several files: the others are kept), then puts the focus back on the input.
  * - The file already sent (target current), with a button Delete: it checks the hidden checkbox that asks the deletion,
  *   the line says the file will be deleted, a button Cancel puts it back. The focus goes from one button to the other.
- * - One file per field (not multiple): while a file is chosen, the line of the file already sent says it will be
- *   replaced when saved (target replaceNote), unless its deletion is asked (that note wins).
+ * - One file per field (not multiple): a file chosen replaces the file already sent when saved (VichUploaderBundle
+ *   sends it even when the deletion is asked). While a file is chosen, the line of the file already sent says it will be
+ *   replaced (target replaceNote). The two actions exclude each other: choosing a file cancels the deletion asked,
+ *   Delete removes the file chosen.
  * - Each change is told in a live region (status). A reset of the form empties the list of the files chosen and keeps
  *   the file already sent.
  * The texts come from the theme, translated by the server (%name%, %size%); the sizes are written in the locale of the
@@ -39,7 +41,14 @@ export default class extends Controller {
         if (!this.input) {
             return;
         }
-        this.onChange = () => this.render(true);
+        this.onChange = () => {
+            // One file per field: a file chosen replaces the file already sent (VichUploaderBundle sends it even when
+            // the deletion is asked), so it cancels the deletion asked
+            if (this.hasReplaceNoteTarget && this.input.files.length > 0) {
+                this.keep(null, false);
+            }
+            this.render(true);
+        };
         this.onEnter = () => this.element.classList.add('crudit-ui-file--dragging');
         this.onLeave = () => this.element.classList.remove('crudit-ui-file--dragging');
         this.input.addEventListener('change', this.onChange);
@@ -135,10 +144,16 @@ export default class extends Controller {
         this.input.focus();
     }
 
-    // Asks the deletion of the file already sent
+    // Asks the deletion of the file already sent; one file per field: the file chosen is removed (it would replace it)
     delete() {
         if (!this.hasCheckboxTarget) {
             return;
+        }
+        const messages = [];
+        if (this.hasReplaceNoteTarget && this.input.files.length > 0) {
+            messages.push(...[...this.input.files].map((file) => this.removedTextValue.replace('%name%', file.name)));
+            this.input.files = new DataTransfer().files;
+            this.render(false);
         }
         this.checkboxTarget.checked = true;
         this.currentTarget.classList.add('crudit-ui-file__file--deleted');
@@ -147,7 +162,8 @@ export default class extends Controller {
         this.deleteTarget.hidden = true;
         this.keepTarget.hidden = false;
         this.keepTarget.focus();
-        this.announce(this.deletedTextValue.replace('%name%', this.currentName()));
+        messages.push(this.deletedTextValue.replace('%name%', this.currentName()));
+        this.announce(messages.join(' '));
     }
 
     // Keeps the file already sent

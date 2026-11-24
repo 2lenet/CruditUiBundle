@@ -626,12 +626,19 @@ try {
         focus: document.activeElement?.dataset['2lenet-CruditUiBundle-FileDropTarget'] ?? document.activeElement?.getAttribute('data-2lenet--crudit-ui-bundle--file-drop-target'),
     }));
     assert.deepEqual(await deletion(), {asked: true, note: true, focus: 'keep'});
+    // The two actions exclude each other (VichUploaderBundle sends a file chosen even when the deletion is asked)
+    assert.equal(await page.$eval('#kit-form-file', (input) => input.files.length), 0, 'Delete keeps the file chosen, which would replace the file already sent');
+    assert.equal((await files()).length, 1);
     assert.equal((await replacement()).note, false, 'its deletion asked: the file already sent is not said replaced');
-    assert.equal(await fileStatus('front-of-the-shop.svg will be deleted when saved.'), 'front-of-the-shop.svg will be deleted when saved.');
+    assert.equal(await fileStatus('plan.pdf removed. front-of-the-shop.svg will be deleted when saved.'), 'plan.pdf removed. front-of-the-shop.svg will be deleted when saved.');
     await page.keyboard.press('Enter');
     assert.deepEqual(await deletion(), {asked: false, note: false, focus: 'delete'});
-    assert.equal((await replacement()).note, true, 'the deletion cancelled with a file chosen: the file already sent is said replaced again');
     assert.equal(await fileStatus('front-of-the-shop.svg is kept.'), 'front-of-the-shop.svg is kept.');
+    await page.click('#kit-forms .crudit-ui-file__list > li:first-child [data-2lenet--crudit-ui-bundle--file-drop-target="delete"]');
+    await page.setInputFiles('#kit-form-file', {name: 'shop.png', mimeType: 'image/png', buffer: png});
+    assert.deepEqual({asked: (await deletion()).asked, note: (await deletion()).note}, {asked: false, note: false}, 'a file chosen does not cancel the deletion asked');
+    assert.deepEqual(await replacement(), {note: true, struck: true}, 'a file chosen after the deletion asked does not say the file already sent replaced');
+    assert.equal(await fileStatus('shop.png added. front-of-the-shop.svg will be replaced when saved.'), 'shop.png added. front-of-the-shop.svg will be replaced when saved.');
     await page.$eval('#kit-forms form, form:has(#kit-form-file)', (form) => form.reset());
     await page.waitForFunction(() => document.querySelectorAll('#kit-forms .crudit-ui-file__list > li').length === 1, {timeout: 2000}).catch(() => null);
     assert.equal((await files()).length, 1, 'the reset of the form keeps a file chosen in the list');
