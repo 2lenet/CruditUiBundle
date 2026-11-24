@@ -45,6 +45,8 @@ export default class extends Controller {
     deadline = 0;
     token = null;
     frame = null;
+    // The frame of each attempt (openFrame replaces the previous one): token => frame
+    frames = new Map();
 
     connect() {
         this.dialog = this.element.closest('dialog');
@@ -60,6 +62,7 @@ export default class extends Controller {
         this.dialog?.removeEventListener('2lenet--crudit-ui-bundle--dialog:open', this.onOpen);
         clearInterval(this.timer);
         this.frame?.remove();
+        this.frames.clear();
     }
 
     start(event) {
@@ -93,6 +96,7 @@ export default class extends Controller {
         this.element.target = frame.name;
         this.frame = frame;
         const token = this.token;
+        this.frames.set(token, frame);
         frame.addEventListener('load', () => {
             let address;
             try {
@@ -110,13 +114,35 @@ export default class extends Controller {
             // `Content-Disposition: attachment`), so the frame displayed it and nothing was downloaded.
             const inline = this.hasCookie(token);
             if (inline) {
-                document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
-                console.warn('crudit-ui export: the server answered the file without "Content-Disposition: attachment", the browser showed it in the hidden frame instead of downloading it.');
+                this.consume(token);
             }
             if (token === this.token && this.waiting) {
                 this.fail(inline ? this.inlineValue : this.failedValue);
             }
         });
+    }
+
+    // The cookie of an inline answer is deleted and the developer is warned.
+    consume(token) {
+        document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
+        this.frames.delete(token);
+        console.warn('crudit-ui export: the server answered the file without "Content-Disposition: attachment", the browser showed it in the hidden frame instead of downloading it.');
+    }
+
+    // The frame of this attempt is already navigating to the export. A download leaves it on about:blank; an answer shown
+    // inline engages the navigation as soon as the headers are in, which is before `load` (the cookie comes with the
+    // headers too, so check() can see it first). A frame that is gone (an older attempt) says nothing.
+    inFrame(token) {
+        const frame = this.frames.get(token);
+        if (!frame || !frame.isConnected) {
+            return false;
+        }
+        try {
+            return frame.contentWindow.location.href !== 'about:blank';
+        } catch {
+            // another origin: a page has been loaded
+            return true;
+        }
     }
 
     watch() {
@@ -132,14 +158,28 @@ export default class extends Controller {
     check() {
         for (const [token, until] of this.pending) {
             if (this.hasCookie(token)) {
-                document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
                 this.pending.delete(token);
+                if (this.inFrame(token)) {
+                    // inline: not a download
+                    this.consume(token);
+                    if (token === this.token && this.waiting) {
+                        this.fail(this.inlineValue);
+                    }
+                    if (this.pending.size === 0 && !this.waiting) {
+                        this.unwatch();
+                    }
+
+                    return;
+                }
+                document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
+                this.frames.delete(token);
                 this.done(token === this.token);
 
                 return;
             }
             if (Date.now() > until) {
                 this.pending.delete(token);
+                this.frames.delete(token);
             }
         }
         if (this.waiting && Date.now() > this.deadline) {

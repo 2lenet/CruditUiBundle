@@ -813,7 +813,9 @@ button of the page (`commandfor="<id>" command="show-modal"`).
     Each attempt has its own token: if the user has sent the form again, a late file of the first attempt only shows the
     toast, the attempt in progress goes on.
   - **A file shown inline** (no `Content-Disposition: attachment`): the frame loads it like a page, so `load` fires although
-    the cookie came. Nothing was downloaded: the dialog says so ("The file was made but not downloaded. Contact the
+    the cookie came. The cookie arrives with the headers, before `load` (which waits for the whole file), so the controller also
+    looks at the frame when it sees the cookie: a download leaves it on `about:blank`, an inline answer has already
+    started the navigation. Nothing was downloaded: the dialog says so ("The file was made but not downloaded. Contact the
     administrator.") and the console warns the developer. **The `attachment` disposition is part of the contract.**
   - Without JavaScript there is no frame. A download leaves the page as it is (the dialog stays open); a page answered in
     place of the file (an error, the login) replaces the page.
@@ -821,7 +823,7 @@ button of the page (`commandfor="<id>" command="show-modal"`).
     `frame-src 'self'` (or `default-src 'self'`). With `frame-src 'none'` the browser blocks it and every export fails,
     although the server answers well. An `X-Frame-Options: DENY` on the **file** would too; on an error page or the login
     it is harmless (the page is an error anyway).
-- **The contract of the server** (CruditBundle 2.0 has a helper for it, `Lle\CruditBundle\Exporter\DownloadCookie::attach()`).
+- **The contract of the server** (a helper for it, `Lle\CruditBundle\Exporter\DownloadCookie::attach()`, is being added to CruditBundle on the `feature/export` branch and is not released yet: until then, set the cookie by hand as below).
   The file comes with `Content-Disposition: attachment`, and the cookie must be **readable by the
   script** (`HttpOnly` false: `Cookie::create()` of Symfony is HttpOnly by default, and then every export ends in an
   error), at the **path `/`** (the controller deletes it there), and its value is the token **and nothing else**. The
