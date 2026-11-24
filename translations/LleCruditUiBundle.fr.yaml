@@ -28,6 +28,14 @@ crudit_ui:
         count:
             one: "%count% résultat."
             other: "%count% résultats."
+    export:
+        format: "Format"
+        cancel: "Annuler"
+        action: "Exporter"
+        busy: "Export en cours…"
+        done: "Export terminé."
+        failed: "L’export n’a pas démarré. Réessayez, ou rechargez la page si votre session a expiré."
+        inline: "Le fichier a été préparé mais n’a pas été téléchargé. Contactez l’administrateur."
     filter:
         operator_for: "Condition pour %label% : %operator%"
         operator_legend: "Condition pour %label%"

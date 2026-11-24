@@ -28,6 +28,14 @@ crudit_ui:
         count:
             one: "%count% result."
             other: "%count% results."
+    export:
+        format: "Format"
+        cancel: "Cancel"
+        action: "Export"
+        busy: "Export in progress…"
+        done: "Export done."
+        failed: "The export did not start. Try again, or reload the page if your session has expired."
+        inline: "The file was made but not downloaded. Contact the administrator."
     filter:
         operator_for: "Condition for %label%: %operator%"
         operator_legend: "Condition for %label%"

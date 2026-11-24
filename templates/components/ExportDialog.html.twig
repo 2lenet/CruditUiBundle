@@ -1,0 +1,60 @@
+{#
+ # ExportDialog: the dialog of the export of a list. The user chooses a format (cards: radio buttons), the dialog
+ # says what the file will contain, and the form (GET, `data-turbo="false"`: the answer is a file, not a page) goes to
+ # `action`. It knows nothing of Crudit: the caller gives the formats and the sentence of the content.
+ #
+ # Props: id (required, target of commandfor), title (required: names the elements, "Export the visits"), description
+ # (what the file will hold: "The 137 visits that match the current filters."), action (address of the export),
+ # formats (list of {value, label, description, icon}), format (the one checked; else the first), params (other
+ # fields sent, name => value; `format` and `download_token` are left out), timeout (ms to wait for the download to begin, 60000).
+ # Controller export (on the form): a token in `download_token`, the button in loading and a status read by the screen
+ # reader while the file is made; the form is sent into a hidden frame, so that a page answered in place of a file (an
+ # error, the login) is an error shown at once and the page does not move. The server answers the file with a cookie
+ # `crudit_export=<token>`, which tells the download has begun: the dialog closes and a toast says so. Without it after
+ # `timeout` ms: an error and a way to try again (the token is still watched: a late file still closes the dialog).
+ # Without JavaScript there is no frame: a download leaves the page as it is (the dialog stays open), a page answered
+ # in place of the file (an error, the login) replaces the page.
+ # Contract: docs/components.md.
+ #}
+{% props id, title, description = null, action, formats = [], format = null, params = {}, timeout = 60000 %}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set exportCtl = '2lenet--crudit-ui-bundle--export' -%}
+{#- The checked one is the given format if the dialog offers it, else the first: a form without a format would send none. -#}
+{%- set values = formats|map(item => item.value) -%}
+{%- set checked = format in values ? format : (formats|first).value ?? null -%}
+<twig:LleCruditUi:Dialog id="{{ id }}" :title="title" :description="description" {{ ...attributes }}>
+    <twig:block name="content">
+        <form id="{{ id }}-form" class="crudit-ui-export" method="get" action="{{ action }}" data-turbo="false" novalidate
+              data-controller="{{ exportCtl }}" data-action="submit->{{ exportCtl }}#start"
+              data-{{ exportCtl }}-timeout-value="{{ timeout }}"
+              data-{{ exportCtl }}-busy-value="{{ 'crudit_ui.export.busy'|trans(domain: domain) }}"
+              data-{{ exportCtl }}-done-value="{{ 'crudit_ui.export.done'|trans(domain: domain) }}"
+              data-{{ exportCtl }}-failed-value="{{ 'crudit_ui.export.failed'|trans(domain: domain) }}"
+              data-{{ exportCtl }}-inline-value="{{ 'crudit_ui.export.inline'|trans(domain: domain) }}">
+            <fieldset class="crudit-ui-export__formats">
+                <legend class="crudit-ui-export__legend">{{ 'crudit_ui.export.format'|trans(domain: domain) }}</legend>
+                {%- for item in formats -%}
+                    <label class="crudit-ui-export__card">
+                        <input class="crudit-ui-export__input" type="radio" name="format" value="{{ item.value }}"{{ item.value == checked ? ' checked' }}>
+                        <span class="crudit-ui-export__body">
+                            {%- if item.icon|default %}<span class="crudit-ui-export__icon" aria-hidden="true">{{ ui_icon(item.icon) }}</span>{% endif -%}
+                            <span>
+                                <span class="crudit-ui-export__title">{{ item.label }}</span>
+                                {%- if item.description|default %}<span class="crudit-ui-export__text">{{ item.description }}</span>{% endif -%}
+                            </span>
+                        </span>
+                    </label>
+                {%- endfor -%}
+            </fieldset>
+            {#- `format` and `download_token` are the dialog's own fields: a param of that name is left out. -#}
+            {%- for name, value in params|filter((value, name) => name not in ['format', 'download_token']) %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor -%}
+            <input type="hidden" name="download_token" value="" data-{{ exportCtl }}-target="token" disabled>
+            <p class="crudit-ui-export__status" role="status" data-{{ exportCtl }}-target="status"></p>
+            <p class="crudit-ui-export__error" role="alert" data-{{ exportCtl }}-target="error" hidden></p>
+        </form>
+    </twig:block>
+    <twig:block name="footer">
+        <twig:LleCruditUi:Button variant="ghost" data-action="2lenet--crudit-ui-bundle--dialog#dismiss" autofocus>{{ 'crudit_ui.export.cancel'|trans(domain: domain) }}</twig:LleCruditUi:Button>
+        <twig:LleCruditUi:Button type="submit" variant="primary" icon="download" :busyOnSubmit="false" form="{{ id }}-form">{{ 'crudit_ui.export.action'|trans(domain: domain) }}</twig:LleCruditUi:Button>
+    </twig:block>
+</twig:LleCruditUi:Dialog>

@@ -101,7 +101,9 @@ class ButtonTest extends TestCase
         self::assertFalse($this->element('<twig:LleCruditUi:Button>Cancel</twig:LleCruditUi:Button>', 'button')->hasAttribute($value));
         $button = $this->element('<twig:LleCruditUi:Button type="submit" :busyOnSubmit="false">Save</twig:LleCruditUi:Button>', 'button');
         self::assertFalse($button->hasAttribute($value));
-        self::assertNull($button->querySelector('template'));
+        // The template of the spinner stays: a script that sends the form itself puts the button in loading (the export)
+        self::assertSame('spinner', $button->querySelector('template')?->getAttribute('data-2lenet--crudit-ui-bundle--button-target'));
+        self::assertNull($this->element('<twig:LleCruditUi:Button>Cancel</twig:LleCruditUi:Button>', 'button')->querySelector('template'));
     }
 
     public function testLoadingLinkIsNotFollowed(): void
