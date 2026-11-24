@@ -16,6 +16,7 @@ import { Controller } from '@hotwired/stimulus';
  * token is still watched** (ten times the delay): a file that comes late closes the dialog and says it is done, so that
  * nobody exports twice because the server was slow. Each attempt has its own token: a late file of an older attempt only
  * shows the toast, the attempt in progress goes on.
+ * Each attempt has its own frame, removed when its token is no longer watched (removing it would cancel the request).
  * - The file must come with `Content-Disposition: attachment`. Shown inline, the frame loads it (as a page): the cookie
  *   is there but nothing was downloaded, which is said (a message, and a warning in the console for the developer).
  *
@@ -44,9 +45,10 @@ export default class extends Controller {
     pending = new Map();
     deadline = 0;
     token = null;
-    frame = null;
-    // The frame of each attempt (openFrame replaces the previous one): token => frame
+    // One hidden frame per attempt, kept while its token is watched (a late file of an older attempt still has its
+    // frame): token => frame
     frames = new Map();
+    attempts = 0;
 
     connect() {
         this.dialog = this.element.closest('dialog');
@@ -61,7 +63,9 @@ export default class extends Controller {
     disconnect() {
         this.dialog?.removeEventListener('2lenet--crudit-ui-bundle--dialog:open', this.onOpen);
         clearInterval(this.timer);
-        this.frame?.remove();
+        for (const frame of this.frames.values()) {
+            frame.remove();
+        }
         this.frames.clear();
     }
 
@@ -84,17 +88,17 @@ export default class extends Controller {
         this.watch();
     }
 
-    // The form goes into a hidden frame: a page that loads there is an answer that is not a file.
+    // The form goes into a hidden frame: a page that loads there is an answer that is not a file. Each attempt has its
+    // own frame, with its own name (`target` aims at the first frame of that name: a shared name would navigate the frame
+    // of the older attempt, and remove() would cancel its request).
     openFrame() {
-        this.frame?.remove();
         const frame = document.createElement('iframe');
-        frame.name = `${this.element.id}-frame`;
+        frame.name = `${this.element.id}-frame-${++this.attempts}`;
         frame.hidden = true;
         frame.tabIndex = -1;
         frame.setAttribute('aria-hidden', 'true');
         this.element.append(frame);
         this.element.target = frame.name;
-        this.frame = frame;
         const token = this.token;
         this.frames.set(token, frame);
         frame.addEventListener('load', () => {
@@ -116,6 +120,7 @@ export default class extends Controller {
             if (inline) {
                 this.consume(token);
             }
+            this.dropFrame(token);
             if (token === this.token && this.waiting) {
                 this.fail(inline ? this.inlineValue : this.failedValue);
             }
@@ -125,8 +130,13 @@ export default class extends Controller {
     // The cookie of an inline answer is deleted and the developer is warned.
     consume(token) {
         document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
-        this.frames.delete(token);
         console.warn('crudit-ui export: the server answered the file without "Content-Disposition: attachment", the browser showed it in the hidden frame instead of downloading it.');
+    }
+
+    // The frame of an attempt is removed when its token is no longer watched.
+    dropFrame(token) {
+        this.frames.get(token)?.remove();
+        this.frames.delete(token);
     }
 
     // The frame of this attempt is already navigating to the export. A download leaves it on about:blank; an answer shown
@@ -134,7 +144,7 @@ export default class extends Controller {
     // headers too, so check() can see it first). A frame that is gone (an older attempt) says nothing.
     inFrame(token) {
         const frame = this.frames.get(token);
-        if (!frame || !frame.isConnected) {
+        if (!frame) {
             return false;
         }
         try {
@@ -162,6 +172,7 @@ export default class extends Controller {
                 if (this.inFrame(token)) {
                     // inline: not a download
                     this.consume(token);
+                    this.dropFrame(token);
                     if (token === this.token && this.waiting) {
                         this.fail(this.inlineValue);
                     }
@@ -172,14 +183,14 @@ export default class extends Controller {
                     return;
                 }
                 document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
-                this.frames.delete(token);
+                this.dropFrame(token);
                 this.done(token === this.token);
 
                 return;
             }
             if (Date.now() > until) {
                 this.pending.delete(token);
-                this.frames.delete(token);
+                this.dropFrame(token);
             }
         }
         if (this.waiting && Date.now() > this.deadline) {
