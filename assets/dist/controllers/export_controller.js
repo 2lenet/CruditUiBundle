@@ -16,7 +16,8 @@ import { Controller } from '@hotwired/stimulus';
  * token is still watched** (ten times the delay): a file that comes late closes the dialog and says it is done, so that
  * nobody exports twice because the server was slow. Each attempt has its own token: a late file of an older attempt only
  * shows the toast, the attempt in progress goes on.
- * Each attempt has its own frame, removed when its token is no longer watched (removing it would cancel the request).
+ * Each attempt has its own frame (named with its token), removed when its token is no longer watched (removing it would
+ * cancel the request: after a download, ten seconds later) and before Turbo caches the page.
  * - The file must come with `Content-Disposition: attachment`. Shown inline, the frame loads it (as a page): the cookie
  *   is there but nothing was downloaded, which is said (a message, and a warning in the console for the developer).
  *
@@ -48,7 +49,8 @@ export default class extends Controller {
     // One hidden frame per attempt, kept while its token is watched (a late file of an older attempt still has its
     // frame): token => frame
     frames = new Map();
-    attempts = 0;
+    // The frames of downloads, kept a while after the cookie (see dropFrame)
+    leaving = new Set();
 
     connect() {
         this.dialog = this.element.closest('dialog');
@@ -58,15 +60,24 @@ export default class extends Controller {
             }
         };
         this.dialog?.addEventListener('2lenet--crudit-ui-bundle--dialog:open', this.onOpen);
+        // The frames are in the form: they would be in the snapshot Turbo caches, and come back as orphans.
+        this.onBeforeCache = () => this.removeFrames();
+        document.addEventListener('turbo:before-cache', this.onBeforeCache);
     }
 
     disconnect() {
         this.dialog?.removeEventListener('2lenet--crudit-ui-bundle--dialog:open', this.onOpen);
+        document.removeEventListener('turbo:before-cache', this.onBeforeCache);
         clearInterval(this.timer);
-        for (const frame of this.frames.values()) {
+        this.removeFrames();
+    }
+
+    removeFrames() {
+        for (const frame of [...this.frames.values(), ...this.leaving]) {
             frame.remove();
         }
         this.frames.clear();
+        this.leaving.clear();
     }
 
     start(event) {
@@ -93,7 +104,7 @@ export default class extends Controller {
     // of the older attempt, and remove() would cancel its request).
     openFrame() {
         const frame = document.createElement('iframe');
-        frame.name = `${this.element.id}-frame-${++this.attempts}`;
+        frame.name = `${this.element.id}-frame-${this.token}`;
         frame.hidden = true;
         frame.tabIndex = -1;
         frame.setAttribute('aria-hidden', 'true');
@@ -133,10 +144,25 @@ export default class extends Controller {
         console.warn('crudit-ui export: the server answered the file without "Content-Disposition: attachment", the browser showed it in the hidden frame instead of downloading it.');
     }
 
-    // The frame of an attempt is removed when its token is no longer watched.
-    dropFrame(token) {
-        this.frames.get(token)?.remove();
+    // The frame of an attempt is removed when its token is no longer watched. After a download (`later`) it stays ten
+    // seconds: the cookie comes with the headers, and a browser that has not yet handed the response to its download
+    // manager would cancel the download with the frame.
+    dropFrame(token, later = false) {
+        const frame = this.frames.get(token);
         this.frames.delete(token);
+        if (!frame) {
+            return;
+        }
+        if (!later) {
+            frame.remove();
+
+            return;
+        }
+        this.leaving.add(frame);
+        setTimeout(() => {
+            frame.remove();
+            this.leaving.delete(frame);
+        }, 10000);
     }
 
     // The frame of this attempt is already navigating to the export. A download leaves it on about:blank; an answer shown
@@ -183,7 +209,7 @@ export default class extends Controller {
                     return;
                 }
                 document.cookie = `${this.cookieValue}=; Max-Age=0; path=/`;
-                this.dropFrame(token);
+                this.dropFrame(token, true);
                 this.done(token === this.token);
 
                 return;

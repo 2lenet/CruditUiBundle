@@ -812,7 +812,8 @@ button of the page (`commandfor="<id>" command="show-modal"`).
     a file that comes late closes the dialog and shows the toast, so that nobody exports twice because the server was slow.
     Each attempt has its own token: if the user has sent the form again, a late file of the first attempt only shows the
     toast, the attempt in progress goes on. Each attempt also has its own hidden frame (own name), kept while its token is
-    watched: sending the form again does not cancel the request of the first one.
+    watched: sending the form again does not cancel the request of the first one. After a download the frame is removed ten seconds later (not at once, so that no browser cancels the
+    download with it), and all of them before Turbo caches the page.
   - **A file shown inline** (no `Content-Disposition: attachment`): the frame loads it like a page, so `load` fires although
     the cookie came. The cookie arrives with the headers, before `load` (which waits for the whole file), so the controller also
     looks at the frame when it sees the cookie: a download leaves it on `about:blank`, an inline answer has already
