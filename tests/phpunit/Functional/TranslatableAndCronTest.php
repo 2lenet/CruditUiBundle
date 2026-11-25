@@ -142,14 +142,15 @@ class TranslatableAndCronTest extends TestCase
         self::assertSame('Mo', $days->querySelector('[aria-hidden="true"]')?->textContent);
         self::assertSame('Tu', $days->querySelectorAll('[aria-hidden="true"]')->item(1)?->textContent);
         self::assertNull($days->querySelector('[title]'));
-        self::assertSame('reminder_help', $boxes->item(0)->getAttribute('aria-describedby'));
+        // The days and the time are also described by the sentence ("Choose at least one day.")
+        self::assertSame('reminder_help reminder-cron_summary', $boxes->item(0)->getAttribute('aria-describedby'));
 
         self::assertTrue((bool) $root->querySelector('[data-2lenet--crudit-ui-bundle--cron-target="monthDay"]')?->hasAttribute('hidden'));
         $time = $html->getElementById('reminder-cron_time');
         self::assertSame('08:30', $time?->getAttribute('value'));
         self::assertFalse($time->hasAttribute('name'));
         self::assertSame('Time', $root->querySelector('label[for="reminder-cron_time"]')?->textContent);
-        self::assertSame('reminder_help', $time->getAttribute('aria-describedby'));
+        self::assertSame('reminder_help reminder-cron_summary', $time->getAttribute('aria-describedby'));
         self::assertSame('reminder_help', $html->getElementById('reminder-cron_month_day')?->getAttribute('aria-describedby'));
         // aria-live set by the controller on the sentence once written: it is not read when the page loads; the
         // expression is outside it.
@@ -157,7 +158,7 @@ class TranslatableAndCronTest extends TestCase
         self::assertNotNull($summary);
         self::assertNull($summary->querySelector('[aria-live]'));
         self::assertFalse($summary->hasAttribute('aria-live'));
-        self::assertNotNull($summary->querySelector('[data-2lenet--crudit-ui-bundle--cron-target="sentence"]'));
+        self::assertSame('reminder-cron_summary', $summary->querySelector('[data-2lenet--crudit-ui-bundle--cron-target="sentence"]')?->getAttribute('id'));
     }
 
     public function testACronExpressionOnADayOfTheMonth(): void

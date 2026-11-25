@@ -3,7 +3,7 @@ import { Controller } from '@hotwired/stimulus';
 /*
  * Cron expression (templates/form/_cron.html.twig). The server renders the controls in the state read from the value;
  * this controller shows them (without JavaScript, only the text input), and on each change writes the expression in the
- * text input, which is what the form sends, then the sentence ("Every Monday and Thursday at 8:30 AM") and the
+ * text input, which is what the form sends (required only in custom, when shown), then the sentence ("Every Monday and Thursday at 8:30 AM") and the
  * expression. When the page loads, the expression shown is the value of the text input, as it will be sent.
  *
  * Frequencies: none (empty value), daily ("m h * * *"), weekly ("m h * * 1,4"), monthly ("m h D * *", D from 1 to 28),
@@ -27,6 +27,12 @@ export default class extends Controller {
     connect() {
         // Invalid as sent to the server: the controls keep their aria-invalid whatever is chosen.
         this.serverInvalid = this.element.classList.contains('crudit-ui-cron--invalid');
+        // A required text input hidden would stop the form in the browser, with no message it can show (it cannot
+        // focus it): required only when shown, the server refuses an empty value.
+        this.required = this.field.required;
+        if (this.required) {
+            this.field.setAttribute('aria-required', 'true');
+        }
         this.widgetTarget.hidden = false;
         this.show();
         this.writeSummary(this.field.value.trim());
@@ -55,6 +61,7 @@ export default class extends Controller {
         this.daysTarget.hidden = frequency !== 'weekly';
         this.monthDayTarget.hidden = frequency !== 'monthly';
         this.customTarget.hidden = frequency !== 'custom';
+        this.field.required = this.required && frequency === 'custom';
         // A week without a day: the days are what is missing.
         const noDay = frequency === 'weekly' && this.days.length === 0;
         this.dayTargets.forEach((day) => {
@@ -66,16 +73,18 @@ export default class extends Controller {
         });
     }
 
-    // The controls from an expression of one of the forms of the widget; another expression leaves them as they are.
+    // The controls from an expression of one of the forms of the widget ("00 08 * * *" too); another expression leaves
+    // them as they are.
     read(expression) {
-        const match = /^([1-5]?\d) (1?\d|2[0-3]) (\*|[1-9]|1\d|2[0-8]) \* (\*|[0-6](?:,[0-6])*)$/.exec(expression);
+        const match = /^([0-5]?\d) ([01]?\d|2[0-3]) (\*|0?[1-9]|1\d|2[0-8]) \* (\*|[0-6](?:,[0-6])*)$/.exec(expression);
         if (!match) {
             return;
         }
         const [, minute, hour, day, weekDays] = match;
         this.timeTarget.value = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
         if (day !== '*' && weekDays === '*') {
-            this.monthDayInputTarget.value = day;
+            // "05" is the option 5
+            this.monthDayInputTarget.value = String(Number(day));
         }
         if (day === '*' && weekDays !== '*') {
             const days = weekDays.split(',');

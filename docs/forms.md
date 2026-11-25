@@ -142,7 +142,10 @@ The input of the first language, also pointed by the visible label of the field,
 `aria-labelledby="<input_id>_label"`: its name is then "*Title* (*language*)", not the two labels. The controller
 `translatable` (`fetch: lazy`) updates " · empty" on the event `input`; " · error" stays until the form is sent again.
 A rich editor (CKEditor…) in a panel that does not dispatch `input` on its field leaves " · empty" as it was. Unlike
-`Tabs`, the panels have no `tabindex`: each one holds an input, the next stop of the keyboard after the tab.
+`Tabs`, the panels have no `tabindex`: each one holds an input, the next stop of the keyboard after the tab. The
+controller takes `required` away from the inputs (`aria-required="true"` instead): a required input in a hidden panel
+would stop the form in the browser with no message it can show (see [`novalidate`](#novalidate)); the server refuses an
+empty value.
 
 ## Cron expression
 
@@ -157,20 +160,25 @@ would point to the text input, hidden unless the frequency is Custom. In it:
 - the days of the week, always Monday first whatever the language, each named in full, its short name shown ("Mo",
   "Tu"), the day of the month (1 to 28), the time;
 - a sentence ("Every Monday and Thursday at 8:30 AM", the time in the format of the language; `aria-live` on the
-  sentence only, once written) and the expression (`30 8 * * 1,4`), the value of the text input when the page loads.
+  sentence only, once written; `<id>_summary`, in the `aria-describedby` of the days and the time, so that "Choose at
+  least one day." is read on the day again) and the expression (`30 8 * * 1,4`), the value of the text input when the page loads.
 
 Expressions written: `m h * * *`, `m h * * 1,4`, `m h D * *`, an empty value for None. A week without a day, or an empty
 time: the sentence asks for it ("Choose at least one day.", "Choose a time."), the expression stays incomplete (four
 fields) and the server refuses it; the days are invalid (`aria-invalid`) while none is checked. Custom shows the text
 input, its expression kept as it is: an expression the widget cannot show (`*/15 6-20 * * 1-5`, `0 18 L * *`) is opened
-in Custom; leaving Custom reads the expression typed when it has one of the forms of the widget, else the controls keep
-their state. The help and the error (`describedby`, `invalid`) are attached to every control.
+in Custom; leaving Custom reads the expression typed when it has one of the forms of the widget (`00 08 * * *` too),
+else the controls keep their state. The help and the error (`describedby`, `invalid`) are attached to every control.
 
 Without JavaScript only the text input is shown and works (the controls have `hidden`, the controller takes it away).
 Only the text input is read by the form: the radios of the frequency have a name outside the form (`<id>__frequency`,
 sent with it, ignored by Symfony, which reads its own name), the other controls have none. The state of the widget is
 read by the server from the value (`state`: see the header of the template; CruditBundle reads it). The validation of
-the expression belongs to the server.
+the expression belongs to the server. A required text input is `required` only in Custom, when shown
+(`aria-required="true"` always): hidden, it would stop the form in the browser with no message it can show (see
+[`novalidate`](#novalidate)); the server refuses an empty value.
+
+### novalidate
 
 The theme does not change the `<form>` tag. Without `novalidate` on it, the browser checks the required fields itself
 before sending the form and shows its own bubbles instead of the errors of the theme. To show only the messages of the

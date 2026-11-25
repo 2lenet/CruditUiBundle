@@ -11,7 +11,9 @@
  #
  # The input gives its own lang, required, aria-describedby and aria-invalid. An input also pointed by the visible label
  # of the field (the first language) has two labels: give it aria-labelledby="<input_id>_label". The controller
- # translatable updates " · empty" on the event input; " · error" stays until the form is sent again. A rich editor
+ # translatable updates " · empty" on the event input; " · error" stays until the form is sent again; it takes required
+ # away from the inputs (aria-required instead): hidden in a panel, a required input stops the form in the browser with no
+ # message it can show, the server refuses an empty value. A rich editor
  # (CKEditor…) that does not dispatch input on its field does not update " · empty". Unlike Tabs, the panels have no
  # tabindex: each one holds an input, the next stop of the keyboard.
  #}
