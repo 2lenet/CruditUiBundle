@@ -11,6 +11,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Error\RuntimeError;
+use Twig\Markup;
 
 /**
  * Collapsibles and tabs: Disclosure, Tabs.
@@ -25,6 +26,10 @@ class NavigationTest extends TestCase
             <twig:block name="parts">Parts content</twig:block>
             <twig:block name="history">History content</twig:block>
         </twig:LleCruditUi:Tabs>
+        TWIG;
+
+    private const TABS_WITHOUT_BLOCKS = <<<'TWIG'
+        <twig:LleCruditUi:Tabs id="visit" label="Visit" :tabs="tabs"/>
         TWIG;
 
     protected function tearDown(): void
@@ -191,6 +196,21 @@ class NavigationTest extends TestCase
         $this->expectExceptionMessage(sprintf('Block "%s"', $id));
 
         $this->tabs(['tabs' => [['id' => $id, 'label' => 'Parts']]]);
+    }
+
+    public function testTabsWithTheirContentAsValues(): void
+    {
+        // Tabs known only when the page is rendered: no block, the panel given as a value; the id is free.
+        $tabs = $this->element(self::TABS_WITHOUT_BLOCKS, 'div', $this->context(['tabs' => [
+            ['id' => 'notes-1', 'label' => 'Notes', 'content' => new Markup('<p>Rendered by <b>Twig</b></p>', 'UTF-8')],
+            ['id' => '2024', 'label' => 'Year', 'content' => 'A <b>string</b>, escaped', 'count' => 2],
+        ]]));
+
+        self::assertSame('Rendered by Twig', $tabs->querySelector('#visit-panel-notes-1 p')?->textContent);
+        self::assertNotNull($tabs->querySelector('#visit-panel-notes-1 p b'));
+        self::assertSame('A <b>string</b>, escaped', $tabs->querySelector('#visit-panel-2024')?->textContent);
+        self::assertSame('Year 2', $tabs->querySelector('#visit-tab-2024')?->textContent);
+        self::assertSame(['visit-panel-notes-1'], $this->ids($tabs->querySelectorAll('[role="tabpanel"]:not([hidden])')));
     }
 
     public function testCountOfATab(): void
