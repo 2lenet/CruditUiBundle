@@ -31,6 +31,7 @@
     @include meta.load-css('components/combobox');
     @include meta.load-css('components/command-palette');
     @include meta.load-css('components/counter');
+    @include meta.load-css('components/cron');
     @include meta.load-css('components/dialog');
     @include meta.load-css('components/disclosure');
     @include meta.load-css('components/dropdown');
@@ -53,6 +54,7 @@
     @include meta.load-css('components/toast');
     @include meta.load-css('components/tone');
     @include meta.load-css('components/tooltip');
+    @include meta.load-css('components/translatable');
 
     // Utilities last: at equal specificity, they win over the components.
     @include meta.load-css('utilities/display');

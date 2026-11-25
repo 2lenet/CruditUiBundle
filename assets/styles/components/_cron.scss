@@ -1,0 +1,127 @@
+@use '../tools/a11y' as *;
+
+// Cron expression (templates/form/_cron.html.twig). Same as `.cron` of the crudit-v2 mockup: the frequency, then the
+// days, the day of the month and the time on one line that wraps, then the sentence and the expression. A day chosen:
+// filled and bold, not only a colour. Invalid (`--invalid`, or a week without a day): the border of an error.
+.crudit-ui-cron {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+
+    &__frequency {
+        max-inline-size: 36rem;
+    }
+
+    &--invalid &__frequency,
+    &--invalid .crudit-ui-input,
+    &--invalid .crudit-ui-select {
+        border-color: var(--c-danger-solid);
+    }
+
+    &__details {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: var(--space-2) var(--space-4);
+    }
+
+    &__part,
+    &__custom {
+        display: grid;
+        gap: var(--space-1);
+    }
+
+    &__hint {
+        padding: 0;
+        color: var(--c-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    &__days {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1) 0.125rem;
+        padding: 0;
+        margin: 0;
+        border: 0;
+
+        > legend {
+            margin-block-end: var(--space-1);
+        }
+    }
+
+    &__day {
+        position: relative;
+        display: inline-flex;
+    }
+
+    &__day-input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    &__day-label {
+        display: inline-grid;
+        inline-size: var(--control-h);
+        block-size: var(--control-h);
+        place-items: center;
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        @include transition(background-color, color, border-color);
+    }
+
+    &__day-input:checked + &__day-label {
+        border-color: var(--c-primary);
+        background-color: var(--c-primary);
+        color: var(--c-on-primary);
+    }
+
+    &__day-input:focus-visible + &__day-label {
+        @include focus-ring;
+    }
+
+    // Invalid: the border of an error on the days and the frequency (the segmented control has it from its
+    // aria-invalid), not only the message.
+    &__day-input[aria-invalid='true']:not(:checked) + &__day-label {
+        border-color: var(--c-danger-solid);
+    }
+
+    &__day-input:disabled + &__day-label {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    &__summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0;
+        padding-block-end: var(--space-2);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+    }
+
+    &__code {
+        padding: 0 var(--space-1);
+        border-radius: var(--radius-sm);
+        background-color: var(--c-surface-sunken);
+        color: var(--c-text-muted);
+        font-family: var(--font-mono);
+        font-size: var(--font-size-xs);
+    }
+
+    @media (forced-colors: active) {
+        &__day-input:checked + &__day-label {
+            border-color: Highlight;
+            background-color: Highlight;
+            color: HighlightText;
+        }
+    }
+}

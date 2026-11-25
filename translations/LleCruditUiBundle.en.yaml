@@ -28,6 +28,24 @@ crudit_ui:
         count:
             one: "%count% result."
             other: "%count% results."
+    cron:
+        frequency_group: "Frequency"
+        frequency:
+            none: "None"
+            daily: "Every day"
+            weekly: "Every week"
+            monthly: "Every month"
+            custom: "Custom"
+        days: "Days"
+        month_day: "Day of the month"
+        time: "Time"
+        expression: "Cron expression"
+        summary:
+            daily: "Every day at %time%"
+            weekly: "Every %days% at %time%"
+            monthly: "Every month, on day %day% at %time%"
+            no_day: "Choose at least one day."
+            no_time: "Choose a time."
     export:
         format: "Format"
         cancel: "Cancel"
@@ -167,5 +185,10 @@ crudit_ui:
         loading: Loading…
     toast:
         close: Close the message
+    translatable:
+        languages: "Languages: %label%"
+        input_label: "%label% (%language%)"
+        empty: "· empty"
+        invalid: "· error"
     value:
         empty: Not set

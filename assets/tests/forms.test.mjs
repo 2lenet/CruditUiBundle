@@ -53,3 +53,16 @@ test('the counter of characters keeps its width while the digits change, the lis
     assert.match(css, /\.crudit-ui-date-lists>\.crudit-ui-input\{width:calc\(2ch \+ 2\*var\(--space-3\) \+ 2px\)/, 'the inputs of a date (widget text) take one line each');
     assert.match(css, /\.crudit-ui-date-lists>\.crudit-ui-input--year\{width:calc\(4ch /);
 });
+
+test('a day chosen in a cron expression is filled, also in forced colours; the state of a language is written', () => {
+    assert.ok(css.includes('.crudit-ui-cron__day-input{position:absolute;inset:0;margin:0;opacity:0;'), 'the native checkbox of a day stays, invisible over its label');
+    assert.ok(css.includes('.crudit-ui-cron__day-input:checked+.crudit-ui-cron__day-label{border-color:var(--c-primary);background-color:var(--c-primary);color:var(--c-on-primary)}'));
+    assert.ok(css.includes('.crudit-ui-cron__day-input:focus-visible+.crudit-ui-cron__day-label{outline:var(--focus-ring-width) solid var(--c-focus)'));
+    assert.match(css, /@media\(forced-colors: active\)\{\.crudit-ui-cron__day-input:checked\+\.crudit-ui-cron__day-label\{border-color:Highlight;background-color:Highlight;color:HighlightText\}/);
+    assert.match(css, /\.crudit-ui-translatable__state--invalid\{[^}]*color:var\(--c-danger-text\)/);
+});
+
+test('an invalid cron expression has the border of an error on its controls, not only the message', () => {
+    assert.ok(css.includes(".crudit-ui-cron__day-input[aria-invalid=true]:not(:checked)+.crudit-ui-cron__day-label{border-color:var(--c-danger-solid)}"));
+    assert.match(css, /\.crudit-ui-cron--invalid \.crudit-ui-cron__frequency,[^{]*\{border-color:var\(--c-danger-solid\)\}/);
+});

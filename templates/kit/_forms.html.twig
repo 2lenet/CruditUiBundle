@@ -177,6 +177,45 @@
             }, with_context: false) }}
         </div>
 
+        {#- Translated field: one tab per language; English empty, German in error (selected first) -#}
+        <div class="crudit-ui-field crudit-ui-field--invalid">
+            <div class="crudit-ui-field__label-row">
+                <label for="kit-form-title_fr" class="crudit-ui-label">Title (translated)</label>
+            </div>
+            {{ include('@LleCruditUi/form/_translatable.html.twig', {
+                id: 'kit-form-title',
+                label: 'Title',
+                languages: [
+                    {code: 'fr', label: 'Français', input_id: 'kit-form-title_fr', required: true, empty: false, invalid: false,
+                        input: '<input type="text" id="kit-form-title_fr" class="crudit-ui-input" lang="fr" required aria-labelledby="kit-form-title_fr_label" aria-describedby="kit-form-title_help" value="Révision annuelle">'},
+                    {code: 'en', label: 'English', input_id: 'kit-form-title_en', empty: true, invalid: false,
+                        input: '<input type="text" id="kit-form-title_en" class="crudit-ui-input" lang="en" aria-describedby="kit-form-title_help">'},
+                    {code: 'de', label: 'Deutsch', input_id: 'kit-form-title_de', empty: false, invalid: true,
+                        input: '<input type="text" id="kit-form-title_de" class="crudit-ui-input" lang="de" aria-invalid="true" aria-describedby="kit-form-title_help kit-form-title_de_error" value="Jährliche Wartung mit einem zu langen Titel">',
+                        errors: '<p id="kit-form-title_de_error" class="crudit-ui-error">' ~ ui_icon('error') ~ '<span>At most 30 characters.</span></p>'},
+                ],
+            }, with_context: false) }}
+            <p id="kit-form-title_help" class="crudit-ui-help">Default language: Français</p>
+        </div>
+
+        {#- Cron expressions: a fieldset named by its legend, the state read by the server from the value -#}
+        {%- for cron in [
+            {id: 'kit-form-cron-weekly', legend: 'Reminder (every week)', value: '30 8 * * 1,4', state: {frequency: 'weekly', days: ['1', '4'], time: '08:30'}},
+            {id: 'kit-form-cron-monthly', legend: 'Report (every month, required: no choice None)', value: '0 18 15 * *', state: {frequency: 'monthly', month_day: '15', time: '18:00'}, required: true},
+            {id: 'kit-form-cron-custom', legend: 'Synchronisation (custom)', value: '*/15 6-20 * * 1-5', state: {frequency: 'custom'}},
+        ] -%}
+            <fieldset class="crudit-ui-field crudit-ui-field__group">
+                <legend class="crudit-ui-label">{{ cron.legend }}{% if cron.required|default(false) %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif %}</legend>
+                {{ include('@LleCruditUi/form/_cron.html.twig', {
+                    id: cron.id,
+                    input_id: cron.id ~ '_value',
+                    input: '<input type="text" id="' ~ cron.id ~ '_value" name="' ~ cron.id ~ '" class="crudit-ui-input" spellcheck="false" value="' ~ cron.value ~ '"' ~ (cron.required|default(false) ? ' required' : '') ~ '>',
+                    state: cron.state,
+                    required: cron.required|default(false),
+                }, with_context: false) }}
+            </fieldset>
+        {%- endfor %}
+
         <div class="crudit-ui-field">
             <div class="crudit-ui-field__label-row">
                 <label for="kit-form-active" class="crudit-ui-label">Active</label>

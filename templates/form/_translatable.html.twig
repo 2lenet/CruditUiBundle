@@ -1,0 +1,52 @@
+{#
+ # Translated field (CruditBundle: GedmoTranslatableType): one tab per language, the input of the language in its
+ # panel. The markup of the component Tabs (classes crudit-ui-tabs*, ARIA tabs pattern, controller tabs), from plain
+ # values: Tabs wants a Twig block per tab, and a page without a Symfony form can show one (the kit).
+ #
+ # id: base of the ids. label: the name of the field (tablist "Languages: <label>", hidden label of each input
+ # "<label> (<language>)", `<input_id>_label`). languages: list of {code, label, input (HTML of the input), input_id,
+ # required (a star on the tab), empty (" · empty" on the tab), errors (HTML of its errors, shown in its panel), invalid
+ # (" · error" on the tab)}. The tab shown first: the first in error, else selected (a code), else the first.
+ # class (of the root).
+ #
+ # The input gives its own lang, required, aria-describedby and aria-invalid. An input also pointed by the visible label
+ # of the field (the first language) has two labels: give it aria-labelledby="<input_id>_label". The controller
+ # translatable updates " · empty" on the event input; " · error" stays until the form is sent again; it takes required
+ # away from the inputs (aria-required instead): hidden in a panel, a required input stops the form in the browser with no
+ # message it can show, the server refuses an empty value. A rich editor
+ # (CKEditor…) that does not dispatch input on its field does not update " · empty". Unlike Tabs, the panels have no
+ # tabindex: each one holds an input, the next stop of the keyboard.
+ #}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set codes = languages|map(language => language.code) -%}
+{%- set invalid_codes = languages|filter(language => language.invalid|default(false))|map(language => language.code) -%}
+{#- The first tab in error wins: after a form sent, the error is not hidden behind another tab -#}
+{%- set selected = invalid_codes|first ?: (selected|default(null) in codes ? selected : codes|first) -%}
+{%- set tabs = '2lenet--crudit-ui-bundle--tabs' -%}
+{%- set controller = '2lenet--crudit-ui-bundle--translatable' -%}
+<div id="{{ id }}" class="{{ ('crudit-ui-tabs crudit-ui-translatable ' ~ class|default(''))|trim }}" data-controller="{{ tabs }} {{ controller }}" data-action="input->{{ controller }}#update">
+    <div class="crudit-ui-tabs__list" role="tablist" aria-label="{{ 'crudit_ui.translatable.languages'|trans({'%label%': label}, domain) }}" data-action="keydown->{{ tabs }}#keydown">
+        {%- for language in languages -%}
+            {%- set active = language.code == selected -%}
+            <button type="button" class="crudit-ui-tabs__tab" role="tab" id="{{ id }}-tab-{{ language.code }}" aria-selected="{{ active ? 'true' : 'false' }}" aria-controls="{{ id }}-panel-{{ language.code }}" tabindex="{{ active ? '0' : '-1' }}" data-{{ tabs }}-target="tab" data-{{ tabs }}-id-param="{{ language.code }}" data-action="{{ tabs }}#select">
+                <span>
+                    {{- language.label -}}
+                    {%- if language.required|default(false) %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif -%}
+                    {#- The state is part of the name of the tab, as written: "English · empty" -#}
+                    {%- if language.invalid|default(false) -%}
+                        &nbsp;<span class="crudit-ui-translatable__state crudit-ui-translatable__state--invalid">{{ ui_icon('error') }}{{ 'crudit_ui.translatable.invalid'|trans({}, domain) }}</span>
+                    {%- else -%}
+                        <span class="crudit-ui-translatable__state" data-{{ controller }}-target="empty" data-language="{{ language.code }}"{% if not language.empty|default(false) %} hidden{% endif %}>&nbsp;{{ 'crudit_ui.translatable.empty'|trans({}, domain) }}</span>
+                    {%- endif -%}
+                </span>
+            </button>
+        {%- endfor -%}
+    </div>
+    {%- for language in languages -%}
+        <div class="crudit-ui-tabs__panel crudit-ui-translatable__panel" role="tabpanel" id="{{ id }}-panel-{{ language.code }}" aria-labelledby="{{ id }}-tab-{{ language.code }}" data-language="{{ language.code }}" data-{{ tabs }}-target="panel"{% if language.code != selected %} hidden{% endif %}>
+            <label id="{{ language.input_id }}_label" for="{{ language.input_id }}" class="crudit-ui-visually-hidden">{{ 'crudit_ui.translatable.input_label'|trans({'%label%': label, '%language%': language.label}, domain) }}</label>
+            {{- language.input|raw -}}
+            {{- language.errors|default('')|raw -}}
+        </div>
+    {%- endfor -%}
+</div>

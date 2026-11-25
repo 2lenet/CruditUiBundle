@@ -1,0 +1,31 @@
+// Translated field (templates/form/_translatable.html.twig): the tabs of the component Tabs, one per language, lower
+// (a field among others, not the tabs of a page). The state of a tab (" · empty", " · error") is written, not only a
+// colour: muted when empty, the colour and the icon of an error when invalid.
+.crudit-ui-translatable {
+    > .crudit-ui-tabs__list {
+        margin-block-end: var(--space-2);
+    }
+
+    > .crudit-ui-tabs__list > .crudit-ui-tabs__tab {
+        min-block-size: var(--control-h-small);
+    }
+
+    &__state {
+        color: var(--c-text-muted);
+        font-weight: var(--font-weight-regular);
+
+        &--invalid {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            color: var(--c-danger-text);
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    // The input fills its panel, its errors below it, as in a field.
+    &__panel {
+        display: grid;
+        gap: var(--space-1);
+    }
+}
