@@ -2,7 +2,7 @@
 
 // Cron expression (templates/form/_cron.html.twig). Same as `.cron` of the crudit-v2 mockup: the frequency, then the
 // days, the day of the month and the time on one line that wraps, then the sentence and the expression. A day chosen:
-// filled and bold, not only a colour.
+// filled and bold, not only a colour. Invalid (`--invalid`, or a week without a day): the border of an error.
 .crudit-ui-cron {
     display: flex;
     flex-direction: column;
@@ -10,6 +10,12 @@
 
     &__frequency {
         max-inline-size: 36rem;
+    }
+
+    &--invalid &__frequency,
+    &--invalid .crudit-ui-input,
+    &--invalid .crudit-ui-select {
+        border-color: var(--c-danger-solid);
     }
 
     &__details {
@@ -78,6 +84,12 @@
 
     &__day-input:focus-visible + &__day-label {
         @include focus-ring;
+    }
+
+    // Invalid: the border of an error on the days and the frequency (the segmented control has it from its
+    // aria-invalid), not only the message.
+    &__day-input[aria-invalid='true']:not(:checked) + &__day-label {
+        border-color: var(--c-danger-solid);
     }
 
     &__day-input:disabled + &__day-label {

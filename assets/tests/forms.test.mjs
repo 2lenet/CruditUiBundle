@@ -61,3 +61,8 @@ test('a day chosen in a cron expression is filled, also in forced colours; the s
     assert.match(css, /@media\(forced-colors: active\)\{\.crudit-ui-cron__day-input:checked\+\.crudit-ui-cron__day-label\{border-color:Highlight;background-color:Highlight;color:HighlightText\}/);
     assert.match(css, /\.crudit-ui-translatable__state--invalid\{[^}]*color:var\(--c-danger-text\)/);
 });
+
+test('an invalid cron expression has the border of an error on its controls, not only the message', () => {
+    assert.ok(css.includes(".crudit-ui-cron__day-input[aria-invalid=true]:not(:checked)+.crudit-ui-cron__day-label{border-color:var(--c-danger-solid)}"));
+    assert.match(css, /\.crudit-ui-cron--invalid \.crudit-ui-cron__frequency,[^{]*\{border-color:var\(--c-danger-solid\)\}/);
+});

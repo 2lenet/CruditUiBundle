@@ -135,27 +135,42 @@ built from plain values (see the header of the template), since `Tabs` wants a T
 - a tab says the state of its language, as part of its name: "English · empty", or "Deutsch · error" with an icon;
 - each panel has a hidden label "*Title* (*language*)" (`<input_id>_label`), the input (given as HTML, with its own
   `lang`, `required`, `aria-describedby`), then its errors;
-- the tab shown first is `selected`, else the first in error, else the first.
+- the tab shown first is the first in error (after a form sent, the error is not hidden behind another tab), else
+  `selected`, else the first.
 
 The input of the first language, also pointed by the visible label of the field, gets
 `aria-labelledby="<input_id>_label"`: its name is then "*Title* (*language*)", not the two labels. The controller
-`translatable` (`fetch: lazy`) updates " · empty" while typing; " · error" stays until the form is sent again.
+`translatable` (`fetch: lazy`) updates " · empty" on the event `input`; " · error" stays until the form is sent again.
+A rich editor (CKEditor…) in a panel that does not dispatch `input` on its field leaves " · empty" as it was. Unlike
+`Tabs`, the panels have no `tabindex`: each one holds an input, the next stop of the keyboard after the tab.
 
 ## Cron expression
 
 `@LleCruditUi/form/_cron.html.twig` (the field `CronField` of the crudit-v2 mockup, with the controller `cron`, `fetch:
-lazy`; CruditBundle: `CronExpressionType`) writes a recurrence in the real text input, which is what the form sends:
+lazy`; CruditBundle: `CronExpressionType`) writes a recurrence in the real text input, which is what the form sends.
+**Render it in a fieldset named by the label of the field**, the pattern of a compound field
+(`fieldset.crudit-ui-field.crudit-ui-field__group > legend.crudit-ui-label`, as CruditBundle does): a `<label for>`
+would point to the text input, hidden unless the frequency is Custom. In it:
 
-- a segmented control of the frequency: None, Every day, Every week, Every month, Custom;
-- the days of the week (Monday first, each named in full, its initial shown), the day of the month (1st to 28th, last
-  day), the time;
-- a sentence ("Every Monday and Thursday at 08:30", `aria-live` once written) and the expression (`30 8 * * 1,4`).
+- a segmented control of the frequency, a radiogroup named "Frequency": None (not with `required`), Every day, Every
+  week, Every month, Custom;
+- the days of the week, always Monday first whatever the language, each named in full, its short name shown ("Mo",
+  "Tu"), the day of the month (1 to 28), the time;
+- a sentence ("Every Monday and Thursday at 8:30 AM", the time in the format of the language; `aria-live` on the
+  sentence only, once written) and the expression (`30 8 * * 1,4`), the value of the text input when the page loads.
 
-Expressions written: `m h * * *`, `m h * * 1,4`, `m h D * *` or `m h L * *`, an empty value for None. Custom shows the
-text input, its expression kept as it is: an expression the widget cannot show is opened in Custom. Without JavaScript
-only the text input is shown and works (the controls have `hidden`, the controller takes it away). The controls have
-no name: only the text input is sent. The state of the widget is read by the server from the value (`state`: see the
-header of the template; CruditBundle reads it). The validation of the expression belongs to the server.
+Expressions written: `m h * * *`, `m h * * 1,4`, `m h D * *`, an empty value for None. A week without a day, or an empty
+time: the sentence asks for it ("Choose at least one day.", "Choose a time."), the expression stays incomplete (four
+fields) and the server refuses it; the days are invalid (`aria-invalid`) while none is checked. Custom shows the text
+input, its expression kept as it is: an expression the widget cannot show (`*/15 6-20 * * 1-5`, `0 18 L * *`) is opened
+in Custom; leaving Custom reads the expression typed when it has one of the forms of the widget, else the controls keep
+their state. The help and the error (`describedby`, `invalid`) are attached to every control.
+
+Without JavaScript only the text input is shown and works (the controls have `hidden`, the controller takes it away).
+Only the text input is read by the form: the radios of the frequency have a name outside the form (`<id>__frequency`,
+sent with it, ignored by Symfony, which reads its own name), the other controls have none. The state of the widget is
+read by the server from the value (`state`: see the header of the template; CruditBundle reads it). The validation of
+the expression belongs to the server.
 
 The theme does not change the `<form>` tag. Without `novalidate` on it, the browser checks the required fields itself
 before sending the form and shows its own bubbles instead of the errors of the theme. To show only the messages of the
@@ -177,7 +192,7 @@ server, add it to the form:
 `--disabled`, `__field`, `__tokens`, `__token`, `__token-label`, `__remove`, `__input`, `__chevron`, `__listbox`,
 `__option`, `__option--active`, `__check`, `__label`, `__message`), `crudit-ui-translatable` (`__state`,
 `__state--invalid`, `__panel`), `crudit-ui-cron` (`--invalid`, `__frequency`, `__details`, `__part`, `__hint`, `__days`,
-`__day`, `__day-input`, `__day-label`, `__summary`, `__icon`, `__code`, `__custom`).
+`__day`, `__day-input`, `__day-label`, `__summary`, `__code`, `__custom`).
 They can be used without the theme, in a form written by hand.
 
 The help opened by a button next to a label is the component [Toggletip](components.md#llecrudituitoggletip).

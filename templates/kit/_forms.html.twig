@@ -201,16 +201,17 @@
         {#- Cron expressions: a fieldset named by its legend, the state read by the server from the value -#}
         {%- for cron in [
             {id: 'kit-form-cron-weekly', legend: 'Reminder (every week)', value: '30 8 * * 1,4', state: {frequency: 'weekly', days: ['1', '4'], time: '08:30'}},
-            {id: 'kit-form-cron-monthly', legend: 'Report (every month)', value: '0 18 L * *', state: {frequency: 'monthly', month_day: 'L', time: '18:00'}},
+            {id: 'kit-form-cron-monthly', legend: 'Report (every month, required: no choice None)', value: '0 18 15 * *', state: {frequency: 'monthly', month_day: '15', time: '18:00'}, required: true},
             {id: 'kit-form-cron-custom', legend: 'Synchronisation (custom)', value: '*/15 6-20 * * 1-5', state: {frequency: 'custom'}},
         ] -%}
             <fieldset class="crudit-ui-field crudit-ui-field__group">
-                <legend class="crudit-ui-label">{{ cron.legend }}</legend>
+                <legend class="crudit-ui-label">{{ cron.legend }}{% if cron.required|default(false) %}<span class="crudit-ui-required" aria-hidden="true">&nbsp;*</span>{% endif %}</legend>
                 {{ include('@LleCruditUi/form/_cron.html.twig', {
                     id: cron.id,
                     input_id: cron.id ~ '_value',
-                    input: '<input type="text" id="' ~ cron.id ~ '_value" name="' ~ cron.id ~ '" class="crudit-ui-input" spellcheck="false" value="' ~ cron.value ~ '">',
+                    input: '<input type="text" id="' ~ cron.id ~ '_value" name="' ~ cron.id ~ '" class="crudit-ui-input" spellcheck="false" value="' ~ cron.value ~ '"' ~ (cron.required|default(false) ? ' required' : '') ~ '>',
                     state: cron.state,
+                    required: cron.required|default(false),
                 }, with_context: false) }}
             </fieldset>
         {%- endfor %}

@@ -29,6 +29,7 @@ crudit_ui:
             one: "%count% résultat."
             other: "%count% résultats."
     cron:
+        frequency_group: "Fréquence"
         frequency:
             none: "Aucune"
             daily: "Chaque jour"
@@ -37,17 +38,14 @@ crudit_ui:
             custom: "Personnalisée"
         days: "Jours"
         month_day: "Jour du mois"
-        first_day: "1er"
-        last_day: "Dernier jour"
         time: "Heure"
         expression: "Expression cron"
         summary:
             daily: "Chaque jour à %time%"
             weekly: "Chaque %days% à %time%"
             monthly: "Chaque mois, le %day% à %time%"
-            monthly_first: "Chaque mois, le 1er à %time%"
-            monthly_last: "Chaque mois, le dernier jour à %time%"
             no_day: "Choisissez au moins un jour."
+            no_time: "Choisissez une heure."
     export:
         format: "Format"
         cancel: "Annuler"

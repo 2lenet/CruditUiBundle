@@ -83,12 +83,17 @@ class TranslatableAndCronTest extends TestCase
         self::assertTrue((bool) $html->getElementById('title-panel-fr')?->hasAttribute('hidden'));
     }
 
-    public function testTheTabSelectedWinsOverTheFirstInError(): void
+    public function testTheFirstTabInErrorWinsOverTheTabSelected(): void
     {
+        // After a form sent, the error is not hidden behind the tab selected (the default language)
         $html = $this->translatable(['de' => ['invalid' => true]], 'en');
 
+        self::assertSame('true', $html->getElementById('title-tab-de')?->getAttribute('aria-selected'));
+        self::assertSame('false', $html->getElementById('title-tab-en')?->getAttribute('aria-selected'));
+
+        // Without an error, the tab selected
+        $html = $this->translatable([], 'en');
         self::assertSame('true', $html->getElementById('title-tab-en')?->getAttribute('aria-selected'));
-        self::assertSame('false', $html->getElementById('title-tab-de')?->getAttribute('aria-selected'));
     }
 
     public function testACronExpressionShowsTheControlsOfItsStateOnlyWithJavaScript(): void
@@ -112,7 +117,10 @@ class TranslatableAndCronTest extends TestCase
         self::assertSame('Cron expression', $custom->querySelector('label')->textContent);
         self::assertSame('30 8 * * 1,4', $custom->querySelector('input#reminder')?->getAttribute('value'));
 
-        // The frequencies: radios not sent with the form (a name outside the form), the one of the state checked.
+        // The frequencies: a radiogroup named; radios with a name outside the form (ignored by Symfony), the one of the
+        // state checked, attached to the help.
+        self::assertSame('radiogroup', $widget->getAttribute('role'));
+        self::assertSame('Frequency', $widget->getAttribute('aria-label'));
         $radios = $widget->querySelectorAll('input[type="radio"]');
         self::assertCount(5, $radios);
         self::assertSame(['none', 'daily', 'weekly', 'monthly', 'custom'], array_map(fn (\Dom\Element $radio) => $radio->getAttribute('value'), iterator_to_array($radios)));
@@ -120,7 +128,8 @@ class TranslatableAndCronTest extends TestCase
         self::assertSame('reminder-cron__frequency', $radios->item(0)?->getAttribute('name'));
         self::assertSame('reminder_help', $radios->item(0)->getAttribute('aria-describedby'));
 
-        // The days, Monday first: those of the state checked, named in full, an initial shown.
+        // The days, Monday first: those of the state checked, named in full, a short name shown (not the initial: Tuesday
+        // and Wednesday both start with T in English, M in French), no title (read twice).
         $days = $root->querySelector('fieldset.crudit-ui-cron__days');
         self::assertNotNull($days);
         self::assertFalse($days->hasAttribute('hidden'));
@@ -130,27 +139,47 @@ class TranslatableAndCronTest extends TestCase
         self::assertSame(['1', '4'], array_map(fn (\Dom\Element $box) => $box->getAttribute('value'), iterator_to_array($days->querySelectorAll('input:checked'))));
         self::assertFalse($boxes->item(0)?->hasAttribute('name'));
         self::assertSame('Monday', $days->querySelector('.crudit-ui-visually-hidden')?->textContent);
-        self::assertSame('M', $days->querySelector('[aria-hidden="true"]')?->textContent);
+        self::assertSame('Mo', $days->querySelector('[aria-hidden="true"]')?->textContent);
+        self::assertSame('Tu', $days->querySelectorAll('[aria-hidden="true"]')->item(1)?->textContent);
+        self::assertNull($days->querySelector('[title]'));
+        self::assertSame('reminder_help', $boxes->item(0)->getAttribute('aria-describedby'));
 
         self::assertTrue((bool) $root->querySelector('[data-2lenet--crudit-ui-bundle--cron-target="monthDay"]')?->hasAttribute('hidden'));
         $time = $html->getElementById('reminder-cron_time');
         self::assertSame('08:30', $time?->getAttribute('value'));
         self::assertFalse($time->hasAttribute('name'));
         self::assertSame('Time', $root->querySelector('label[for="reminder-cron_time"]')?->textContent);
-        // aria-live set by the controller once the sentence is written: it is not read when the page loads.
-        self::assertFalse((bool) $root->querySelector('.crudit-ui-cron__summary')?->hasAttribute('aria-live'));
+        self::assertSame('reminder_help', $time->getAttribute('aria-describedby'));
+        self::assertSame('reminder_help', $html->getElementById('reminder-cron_month_day')?->getAttribute('aria-describedby'));
+        // aria-live set by the controller on the sentence once written: it is not read when the page loads; the
+        // expression is outside it.
+        $summary = $root->querySelector('.crudit-ui-cron__summary');
+        self::assertNotNull($summary);
+        self::assertNull($summary->querySelector('[aria-live]'));
+        self::assertFalse($summary->hasAttribute('aria-live'));
+        self::assertNotNull($summary->querySelector('[data-2lenet--crudit-ui-bundle--cron-target="sentence"]'));
     }
 
-    public function testACronExpressionOnTheLastDayOfTheMonth(): void
+    public function testACronExpressionOnADayOfTheMonth(): void
     {
-        $html = $this->cron('0 18 L * *', ['frequency' => 'monthly', 'month_day' => 'L', 'time' => '18:00']);
+        $html = $this->cron('0 18 15 * *', ['frequency' => 'monthly', 'month_day' => '15', 'time' => '18:00']);
 
         self::assertFalse((bool) $html->querySelector('[data-2lenet--crudit-ui-bundle--cron-target="monthDay"]')?->hasAttribute('hidden'));
         self::assertTrue((bool) $html->querySelector('fieldset.crudit-ui-cron__days')?->hasAttribute('hidden'));
         $select = $html->getElementById('reminder-cron_month_day');
-        self::assertSame('L', $select?->querySelector('option[selected]')?->getAttribute('value'));
-        self::assertSame('1st', $select->querySelector('option')?->textContent);
-        self::assertCount(29, $select->querySelectorAll('option'));
+        self::assertSame('15', $select?->querySelector('option[selected]')?->getAttribute('value'));
+        // 1 to 28, in plain numbers: no last day (L is not standard cron)
+        $options = array_map(fn (\Dom\Element $option) => $option->textContent, iterator_to_array($select->querySelectorAll('option')));
+        self::assertSame(array_map('strval', range(1, 28)), $options);
+    }
+
+    public function testARequiredCronExpressionHasNoChoiceNone(): void
+    {
+        $html = $this->cron('', ['frequency' => 'none'], ['required' => true]);
+
+        $values = array_map(fn (\Dom\Element $radio) => $radio->getAttribute('value'), iterator_to_array($html->querySelectorAll('.crudit-ui-cron__frequency input')));
+        self::assertSame(['daily', 'weekly', 'monthly', 'custom'], $values);
+        self::assertNull($html->querySelector('.crudit-ui-cron__frequency input:checked'));
     }
 
     public function testADisabledCronExpressionHasItsControlsDisabled(): void
@@ -163,7 +192,10 @@ class TranslatableAndCronTest extends TestCase
         foreach ($root->querySelectorAll('.crudit-ui-cron__frequency input, .crudit-ui-cron__details input, .crudit-ui-cron__details select') as $control) {
             self::assertTrue($control->hasAttribute('disabled'));
         }
-        self::assertSame('true', $root->querySelector('.crudit-ui-cron__frequency input')?->getAttribute('aria-invalid'));
+        // The error on every control: the frequency, the days, the day of the month, the time
+        foreach ($root->querySelectorAll('.crudit-ui-cron__frequency input, .crudit-ui-cron__details input, .crudit-ui-cron__details select') as $control) {
+            self::assertSame('true', $control->getAttribute('aria-invalid'));
+        }
     }
 
     /**

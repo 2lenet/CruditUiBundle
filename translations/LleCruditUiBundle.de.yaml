@@ -29,6 +29,7 @@ crudit_ui:
             one: "%count% Ergebnis."
             other: "%count% Ergebnisse."
     cron:
+        frequency_group: "Häufigkeit"
         frequency:
             none: "Keine"
             daily: "Jeden Tag"
@@ -37,17 +38,14 @@ crudit_ui:
             custom: "Benutzerdefiniert"
         days: "Tage"
         month_day: "Tag des Monats"
-        first_day: "1."
-        last_day: "Letzter Tag"
         time: "Uhrzeit"
         expression: "Cron-Ausdruck"
         summary:
             daily: "Jeden Tag um %time%"
             weekly: "Jeden %days% um %time%"
             monthly: "Jeden Monat am %day%. um %time%"
-            monthly_first: "Jeden Monat am 1. um %time%"
-            monthly_last: "Jeden Monat am letzten Tag um %time%"
             no_day: "Wählen Sie mindestens einen Tag."
+            no_time: "Wählen Sie eine Uhrzeit."
     export:
         format: "Format"
         cancel: "Abbrechen"

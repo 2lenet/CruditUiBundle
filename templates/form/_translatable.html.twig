@@ -4,19 +4,22 @@
  # values: Tabs wants a Twig block per tab, and a page without a Symfony form can show one (the kit).
  #
  # id: base of the ids. label: the name of the field (tablist "Languages: <label>", hidden label of each input
- # "<label> in <language>", `<input_id>_label`). languages: list of {code, label, input (HTML of the input), input_id,
+ # "<label> (<language>)", `<input_id>_label`). languages: list of {code, label, input (HTML of the input), input_id,
  # required (a star on the tab), empty (" · empty" on the tab), errors (HTML of its errors, shown in its panel), invalid
- # (" · error" on the tab)}. selected: the code of the tab shown first; else the first tab in error, else the first.
+ # (" · error" on the tab)}. The tab shown first: the first in error, else selected (a code), else the first.
  # class (of the root).
  #
  # The input gives its own lang, required, aria-describedby and aria-invalid. An input also pointed by the visible label
  # of the field (the first language) has two labels: give it aria-labelledby="<input_id>_label". The controller
- # translatable updates " · empty" while typing; " · error" stays until the form is sent again.
+ # translatable updates " · empty" on the event input; " · error" stays until the form is sent again. A rich editor
+ # (CKEditor…) that does not dispatch input on its field does not update " · empty". Unlike Tabs, the panels have no
+ # tabindex: each one holds an input, the next stop of the keyboard.
  #}
 {%- set domain = 'LleCruditUiBundle' -%}
 {%- set codes = languages|map(language => language.code) -%}
 {%- set invalid_codes = languages|filter(language => language.invalid|default(false))|map(language => language.code) -%}
-{%- set selected = selected|default(null) in codes ? selected : (invalid_codes|first ?: codes|first) -%}
+{#- The first tab in error wins: after a form sent, the error is not hidden behind another tab -#}
+{%- set selected = invalid_codes|first ?: (selected|default(null) in codes ? selected : codes|first) -%}
 {%- set tabs = '2lenet--crudit-ui-bundle--tabs' -%}
 {%- set controller = '2lenet--crudit-ui-bundle--translatable' -%}
 <div id="{{ id }}" class="{{ ('crudit-ui-tabs crudit-ui-translatable ' ~ class|default(''))|trim }}" data-controller="{{ tabs }} {{ controller }}" data-action="input->{{ controller }}#update">

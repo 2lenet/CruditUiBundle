@@ -296,40 +296,66 @@ try {
     assert.equal((await titleTabs())[1].name, 'English · empty', 'translated field: " · empty" does not come back when the language is emptied');
     await page.$eval('#kit-form-title_en', (input) => input.blur());
 
-    // Cron expression: the widget shown by the controller, the sentence and the expression of the state of the server;
-    // a day added writes the expression in the text input; Custom shows the text input with the expression kept.
+    // Cron expression: the widget shown by the controller, the sentence and the expression of the value; a day added
+    // writes the expression in the text input; a week without a day or an empty time is told and sends an expression
+    // refused by the server; Custom shows the text input with the expression kept, leaving it reads the expression.
     const cron = (id) => page.$eval(`.crudit-ui-cron:has(#${id}_value)`, (root) => ({
         widget: !root.querySelector('.crudit-ui-cron__frequency').hidden,
         custom: !root.querySelector('.crudit-ui-cron__custom').hidden,
         details: !root.querySelector('.crudit-ui-cron__details').hidden,
-        sentence: root.querySelector('.crudit-ui-cron__summary span').textContent,
+        // Intl puts a narrow no-break space before AM/PM
+        sentence: root.querySelector('.crudit-ui-cron__summary span').textContent.replace(/[\u202f\u00a0]/g, ' '),
         code: root.querySelector('.crudit-ui-cron__code').textContent,
-        live: root.querySelector('.crudit-ui-cron__summary').getAttribute('aria-live'),
+        live: [root.querySelector('.crudit-ui-cron__summary span').getAttribute('aria-live'), root.querySelector('.crudit-ui-cron__summary').getAttribute('aria-live')],
         value: root.querySelector('.crudit-ui-cron__custom input').value,
+        invalidDays: [...root.querySelectorAll('.crudit-ui-cron__day-input[aria-invalid="true"]')].length,
     }));
+    const weeklyRoot = '.crudit-ui-cron:has(#kit-form-cron-weekly_value)';
+    const clickDay = (day) => page.click(`${weeklyRoot} .crudit-ui-cron__day:has(input[value="${day}"])`);
+    const setTime = (value) => page.$eval(`${weeklyRoot} input[type="time"]`, (input, time) => {
+        input.value = time;
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    }, value);
     let weekly = await cron('kit-form-cron-weekly');
-    assert.deepEqual(weekly, {widget: true, custom: false, details: true, sentence: 'Every Monday and Thursday at 08:30', code: '30 8 * * 1,4', live: 'polite', value: '30 8 * * 1,4'}, `cron: the widget is not shown in the state of the server (${JSON.stringify(weekly)})`);
-    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-cron__day:has(input[value="0"])');
+    assert.deepEqual(weekly, {widget: true, custom: false, details: true, sentence: 'Every Monday and Thursday at 8:30 AM', code: '30 8 * * 1,4', live: ['polite', null], value: '30 8 * * 1,4', invalidDays: 0}, `cron: the widget is not shown in the state of the server (${JSON.stringify(weekly)})`);
+    await clickDay('0');
     weekly = await cron('kit-form-cron-weekly');
     assert.equal(weekly.value, '30 8 * * 0,1,4', 'cron: a day added is not written in the text input');
-    assert.equal(weekly.sentence, 'Every Monday, Thursday, and Sunday at 08:30');
+    assert.equal(weekly.code, '30 8 * * 0,1,4');
+    assert.equal(weekly.sentence, 'Every Monday, Thursday, and Sunday at 8:30 AM');
     for (const day of ['0', '1', '4']) {
-        await page.click(`.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-cron__day:has(input[value="${day}"])`);
+        await clickDay(day);
     }
     weekly = await cron('kit-form-cron-weekly');
     assert.equal(weekly.sentence, 'Choose at least one day.', 'cron: a week without a day is not told');
     assert.equal(weekly.value, '30 8 * *', 'cron: a week without a day must send an expression refused by the server');
-    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-cron__day:has(input[value="2"])');
-    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-segmented__option:has(input[value="custom"])');
+    assert.equal(weekly.invalidDays, 7, 'cron: the days are not invalid while none is checked');
+    await clickDay('2');
     weekly = await cron('kit-form-cron-weekly');
-    assert.deepEqual([weekly.custom, weekly.details, weekly.value], [true, false, '30 8 * * 2'], 'cron: Custom does not show the text input with the expression kept');
-    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-segmented__option:has(input[value="none"])');
+    assert.equal(weekly.invalidDays, 0, 'cron: the days stay invalid once one is checked');
+    await setTime('');
+    weekly = await cron('kit-form-cron-weekly');
+    assert.deepEqual([weekly.sentence, weekly.value], ['Choose a time.', '* * * 2'], 'cron: an empty time must be told and send an expression refused by the server');
+    await setTime('14:05');
+    assert.equal((await cron('kit-form-cron-weekly')).value, '5 14 * * 2');
+    await page.click(`${weeklyRoot} .crudit-ui-segmented__option:has(input[value="custom"])`);
+    weekly = await cron('kit-form-cron-weekly');
+    assert.deepEqual([weekly.custom, weekly.details, weekly.value], [true, false, '5 14 * * 2'], 'cron: Custom does not show the text input with the expression kept');
+    // An expression typed in Custom, of a form of the widget: read when Custom is left
+    await page.$eval('#kit-form-cron-weekly_value', (input) => {
+        input.value = '0 7 * * 3,5';
+    });
+    await page.click(`${weeklyRoot} .crudit-ui-segmented__option:has(input[value="weekly"])`);
+    weekly = await cron('kit-form-cron-weekly');
+    assert.deepEqual([weekly.value, weekly.sentence], ['0 7 * * 3,5', 'Every Wednesday and Friday at 7:00 AM'], 'cron: leaving Custom does not read the expression typed');
+    await page.click(`${weeklyRoot} .crudit-ui-segmented__option:has(input[value="none"])`);
     weekly = await cron('kit-form-cron-weekly');
     assert.deepEqual([weekly.custom, weekly.details, weekly.value], [false, false, ''], 'cron: None must empty the value');
     const monthly = await cron('kit-form-cron-monthly');
-    assert.deepEqual([monthly.sentence, monthly.code], ['Every month, on the last day at 18:00', '0 18 L * *']);
+    assert.deepEqual([monthly.sentence, monthly.code], ['Every month, on day 15 at 6:00 PM', '0 18 15 * *']);
+    assert.equal(await page.$$eval('.crudit-ui-cron:has(#kit-form-cron-monthly_value) .crudit-ui-cron__frequency input', (radios) => radios.some((radio) => radio.value === 'none')), false, 'cron: a required field offers None');
     const custom = await cron('kit-form-cron-custom');
-    assert.deepEqual([custom.custom, custom.details, custom.value], [true, false, '*/15 6-20 * * 1-5'], 'cron: an expression the widget cannot show is not opened in Custom');
+    assert.deepEqual([custom.custom, custom.details, custom.value, custom.code], [true, false, '*/15 6-20 * * 1-5', '*/15 6-20 * * 1-5'], 'cron: an expression the widget cannot show is not opened in Custom, with its value shown');
 
     // List with search (combobox): the choices of the page filtered, Enter chooses (the form is not sent), Backspace
     // removes the last choice, Escape closes the list; the hidden <select> follows.
