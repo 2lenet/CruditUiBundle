@@ -80,13 +80,15 @@ Flex does not create the Stimulus configuration of a project that did not have t
             "char-count": {"enabled": true, "fetch": "eager"},
             "color-code": {"enabled": true, "fetch": "eager"},
             "combobox": {"enabled": true, "fetch": "lazy"},
+            "cron": {"enabled": true, "fetch": "lazy"},
             "dialog": {"enabled": true, "fetch": "eager"},
             "disclosure": {"enabled": true, "fetch": "eager"},
             "dropdown": {"enabled": true, "fetch": "eager"},
             "tabs": {"enabled": true, "fetch": "eager"},
             "theme": {"enabled": true, "fetch": "eager"},
             "toggletip": {"enabled": true, "fetch": "eager"},
-            "tooltip": {"enabled": true, "fetch": "eager"}
+            "tooltip": {"enabled": true, "fetch": "eager"},
+            "translatable": {"enabled": true, "fetch": "lazy"}
         }
     },
     "entrypoints": []

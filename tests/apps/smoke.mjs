@@ -268,6 +268,69 @@ try {
     });
     assert.equal(unitFocus, 'solid', 'the focus does not surround the input and its unit');
 
+    // Translated field: the tab in error shown first, the arrows go from a language to the other, " · empty" follows
+    // what is typed (the controllers tabs and translatable on the same element).
+    const titleTabs = () => page.$$eval('#kit-form-title [role="tab"]', (tabs) => tabs.map((tab) => ({
+        id: tab.id,
+        selected: tab.getAttribute('aria-selected'),
+        name: tab.innerText.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim(),
+    })));
+    let title = await titleTabs();
+    assert.deepEqual(title.map((tab) => tab.selected), ['false', 'false', 'true'], 'translated field: the tab in error is not shown first');
+    assert.deepEqual(title.map((tab) => tab.name), ['Français *', 'English · empty', 'Deutsch · error'], 'translated field: the state of the languages is not written');
+    await page.focus('#kit-form-title-tab-de');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'kit-form-title-tab-fr', 'translated field: the arrows do not go from a language to the other');
+    await page.keyboard.press('ArrowRight');
+    assert.deepEqual(await page.$$eval('#kit-form-title [role="tabpanel"]:not([hidden])', (panels) => panels.map((panel) => panel.id)), ['kit-form-title-panel-en']);
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'kit-form-title_en', 'translated field: Tab from the tab does not go to the input of its language');
+    await page.keyboard.type('Annual service');
+    await page.waitForFunction(() => document.querySelector('#kit-form-title-tab-en .crudit-ui-translatable__state').hidden, {timeout: 2000}).catch(() => null);
+    title = await titleTabs();
+    assert.equal(title[1].name, 'English', 'translated field: " · empty" stays once the language is typed');
+    await page.$eval('#kit-form-title_en', (input) => {
+        input.value = '  ';
+        input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    assert.equal((await titleTabs())[1].name, 'English · empty', 'translated field: " · empty" does not come back when the language is emptied');
+    await page.$eval('#kit-form-title_en', (input) => input.blur());
+
+    // Cron expression: the widget shown by the controller, the sentence and the expression of the state of the server;
+    // a day added writes the expression in the text input; Custom shows the text input with the expression kept.
+    const cron = (id) => page.$eval(`.crudit-ui-cron:has(#${id}_value)`, (root) => ({
+        widget: !root.querySelector('.crudit-ui-cron__frequency').hidden,
+        custom: !root.querySelector('.crudit-ui-cron__custom').hidden,
+        details: !root.querySelector('.crudit-ui-cron__details').hidden,
+        sentence: root.querySelector('.crudit-ui-cron__summary span').textContent,
+        code: root.querySelector('.crudit-ui-cron__code').textContent,
+        live: root.querySelector('.crudit-ui-cron__summary').getAttribute('aria-live'),
+        value: root.querySelector('.crudit-ui-cron__custom input').value,
+    }));
+    let weekly = await cron('kit-form-cron-weekly');
+    assert.deepEqual(weekly, {widget: true, custom: false, details: true, sentence: 'Every Monday and Thursday at 08:30', code: '30 8 * * 1,4', live: 'polite', value: '30 8 * * 1,4'}, `cron: the widget is not shown in the state of the server (${JSON.stringify(weekly)})`);
+    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-cron__day:has(input[value="0"])');
+    weekly = await cron('kit-form-cron-weekly');
+    assert.equal(weekly.value, '30 8 * * 0,1,4', 'cron: a day added is not written in the text input');
+    assert.equal(weekly.sentence, 'Every Monday, Thursday, and Sunday at 08:30');
+    for (const day of ['0', '1', '4']) {
+        await page.click(`.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-cron__day:has(input[value="${day}"])`);
+    }
+    weekly = await cron('kit-form-cron-weekly');
+    assert.equal(weekly.sentence, 'Choose at least one day.', 'cron: a week without a day is not told');
+    assert.equal(weekly.value, '30 8 * *', 'cron: a week without a day must send an expression refused by the server');
+    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-cron__day:has(input[value="2"])');
+    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-segmented__option:has(input[value="custom"])');
+    weekly = await cron('kit-form-cron-weekly');
+    assert.deepEqual([weekly.custom, weekly.details, weekly.value], [true, false, '30 8 * * 2'], 'cron: Custom does not show the text input with the expression kept');
+    await page.click('.crudit-ui-cron:has(#kit-form-cron-weekly_value) .crudit-ui-segmented__option:has(input[value="none"])');
+    weekly = await cron('kit-form-cron-weekly');
+    assert.deepEqual([weekly.custom, weekly.details, weekly.value], [false, false, ''], 'cron: None must empty the value');
+    const monthly = await cron('kit-form-cron-monthly');
+    assert.deepEqual([monthly.sentence, monthly.code], ['Every month, on the last day at 18:00', '0 18 L * *']);
+    const custom = await cron('kit-form-cron-custom');
+    assert.deepEqual([custom.custom, custom.details, custom.value], [true, false, '*/15 6-20 * * 1-5'], 'cron: an expression the widget cannot show is not opened in Custom');
+
     // List with search (combobox): the choices of the page filtered, Enter chooses (the form is not sent), Backspace
     // removes the last choice, Escape closes the list; the hidden <select> follows.
     const zonesValues = () => page.$eval('#kit-forms select[name="zones[]"]', (select) => [...select.selectedOptions].map((option) => option.value));

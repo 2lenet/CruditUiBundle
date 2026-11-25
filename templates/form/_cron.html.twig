@@ -1,0 +1,88 @@
+{#
+ # Cron expression (CruditBundle: CronExpressionType, controller cron): a recurrence chosen in a few controls, written in
+ # a sentence and as an expression, in the real text input, which is what the form sends. From plain values, so that a
+ # page without a Symfony form can show one (the kit).
+ #
+ # id: base of the ids. input: the HTML of the <input type="text"> (its name, its value, its help and error attached as
+ # for any input); input_id: its id. state: the state of the widget, read by the server from the value:
+ # {frequency: none|daily|weekly|monthly|custom, days: ['1'..'6', '0'] (Monday first, 0 Sunday), month_day: '1'..'28'
+ # or 'L' (last day), time: 'HH:MM'}; an expression the widget cannot show is custom: the text input. describedby: ids
+ # of the help and the error, attached to the choices of the frequency. disabled, invalid, class (of the root).
+ #
+ # Without JavaScript only the text input is shown and works: the controls of the widget have hidden, the controller
+ # takes it away. The controls have no name: they are not sent. Expressions written: "m h * * *" (every day),
+ # "m h * * 1,4" (days of the week), "m h D * *" or "m h L * *" (a day of the month), "" (none).
+ #}
+{%- set domain = 'LleCruditUiBundle' -%}
+{%- set controller = '2lenet--crudit-ui-bundle--cron' -%}
+{%- set disabled = disabled|default(false) -%}
+{%- set state = {frequency: 'none', days: [], month_day: '1', time: '08:00'}|merge(state|default({})) -%}
+{%- set locale = app.request.locale ?? null -%}
+{%- set frequencies = ['none', 'daily', 'weekly', 'monthly', 'custom'] -%}
+<div class="{{ ('crudit-ui-cron ' ~ (invalid|default(false) ? 'crudit-ui-cron--invalid ' : '') ~ class|default(''))|trim }}"
+    data-controller="{{ controller }}"
+    data-{{ controller }}-frequency-value="{{ state.frequency }}"
+    data-{{ controller }}-daily-text-value="{{ 'crudit_ui.cron.summary.daily'|trans({}, domain) }}"
+    data-{{ controller }}-weekly-text-value="{{ 'crudit_ui.cron.summary.weekly'|trans({}, domain) }}"
+    data-{{ controller }}-monthly-text-value="{{ 'crudit_ui.cron.summary.monthly'|trans({}, domain) }}"
+    data-{{ controller }}-first-text-value="{{ 'crudit_ui.cron.summary.monthly_first'|trans({}, domain) }}"
+    data-{{ controller }}-last-text-value="{{ 'crudit_ui.cron.summary.monthly_last'|trans({}, domain) }}"
+    data-{{ controller }}-no-day-text-value="{{ 'crudit_ui.cron.summary.no_day'|trans({}, domain) }}"
+    {%- if locale is not empty %} data-{{ controller }}-locale-value="{{ locale|replace({'_': '-'}) }}"{% endif %}
+>
+    <div class="crudit-ui-segmented crudit-ui-cron__frequency" hidden data-{{ controller }}-target="widget">
+        {%- for frequency in frequencies -%}
+            <label class="crudit-ui-segmented__option">
+                <input type="radio" class="crudit-ui-segmented__input" name="{{ id }}__frequency" value="{{ frequency }}"
+                    {%- if frequency == state.frequency %} checked{% endif %}
+                    {%- if disabled %} disabled{% endif %}
+                    {%- if describedby|default('') is not empty %} aria-describedby="{{ describedby }}"{% endif %}
+                    {%- if invalid|default(false) %} aria-invalid="true"{% endif %}
+                    data-{{ controller }}-target="frequency" data-action="{{ controller }}#change">
+                <span class="crudit-ui-segmented__label">{{ ('crudit_ui.cron.frequency.' ~ frequency)|trans({}, domain) }}</span>
+            </label>
+        {%- endfor -%}
+    </div>
+    <div class="crudit-ui-cron__details" hidden data-{{ controller }}-target="details">
+        <fieldset class="crudit-ui-cron__days" data-{{ controller }}-target="days"{% if state.frequency != 'weekly' %} hidden{% endif %}>
+            <legend class="crudit-ui-cron__hint">{{ 'crudit_ui.cron.days'|trans({}, domain) }}</legend>
+            {%- for day in ['1', '2', '3', '4', '5', '6', '0'] -%}
+                {#- 2024-01-01 is a Monday; noon, in the time zone of the application both to read and to write it -#}
+                {%- set date = '2024-01-0' ~ (day == '0' ? 7 : day) ~ ' 12:00' -%}
+                <label class="crudit-ui-cron__day">
+                    <input type="checkbox" class="crudit-ui-cron__day-input" value="{{ day }}"
+                        {%- if day in state.days %} checked{% endif %}
+                        {%- if disabled %} disabled{% endif %}
+                        data-{{ controller }}-target="day" data-action="{{ controller }}#change">
+                    <span class="crudit-ui-cron__day-label" title="{{ date|ui_date(pattern: 'EEEE') }}">
+                        <span aria-hidden="true">{{ date|ui_date(pattern: 'EEEEE') }}</span>
+                        <span class="crudit-ui-visually-hidden">{{ date|ui_date(pattern: 'EEEE') }}</span>
+                    </span>
+                </label>
+            {%- endfor -%}
+        </fieldset>
+        <div class="crudit-ui-cron__part" data-{{ controller }}-target="monthDay"{% if state.frequency != 'monthly' %} hidden{% endif %}>
+            <label for="{{ id }}_month_day" class="crudit-ui-cron__hint">{{ 'crudit_ui.cron.month_day'|trans({}, domain) }}</label>
+            <select id="{{ id }}_month_day" class="crudit-ui-select"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="monthDayInput" data-action="{{ controller }}#change">
+                {%- for day in 1..28 -%}
+                    <option value="{{ day }}"{% if (day ~ '') == state.month_day %} selected{% endif %}>{{ day == 1 ? 'crudit_ui.cron.first_day'|trans({}, domain) : day }}</option>
+                {%- endfor -%}
+                <option value="L"{% if state.month_day == 'L' %} selected{% endif %}>{{ 'crudit_ui.cron.last_day'|trans({}, domain) }}</option>
+            </select>
+        </div>
+        <div class="crudit-ui-cron__part">
+            <label for="{{ id }}_time" class="crudit-ui-cron__hint">{{ 'crudit_ui.cron.time'|trans({}, domain) }}</label>
+            <input type="time" id="{{ id }}_time" class="crudit-ui-input" value="{{ state.time }}"{% if disabled %} disabled{% endif %} data-{{ controller }}-target="time" data-action="{{ controller }}#change">
+        </div>
+        {#- The sentence, then the expression for advanced users; aria-live set by the controller once it is written -#}
+        <p class="crudit-ui-cron__summary" data-{{ controller }}-target="summary">
+            {{- ui_icon('repeat', 'crudit-ui-cron__icon') -}}
+            <span data-{{ controller }}-target="sentence"></span>
+            <code class="crudit-ui-cron__code" data-{{ controller }}-target="code"></code>
+        </p>
+    </div>
+    <div class="crudit-ui-cron__custom" data-{{ controller }}-target="custom">
+        <label for="{{ input_id }}" class="crudit-ui-cron__hint">{{ 'crudit_ui.cron.expression'|trans({}, domain) }}</label>
+        {{- input|raw -}}
+    </div>
+</div>

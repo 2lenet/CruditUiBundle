@@ -43,6 +43,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "cron": {
+                "main": "dist/controllers/cron_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
+                "enabled": true
+            },
             "dialog": {
                 "main": "dist/controllers/dialog_controller.js",
                 "webpackMode": "eager",
@@ -143,6 +149,12 @@
                 "main": "dist/controllers/tooltip_controller.js",
                 "webpackMode": "eager",
                 "fetch": "eager",
+                "enabled": true
+            },
+            "translatable": {
+                "main": "dist/controllers/translatable_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
                 "enabled": true
             }
         },

@@ -28,6 +28,26 @@ crudit_ui:
         count:
             one: "%count% Ergebnis."
             other: "%count% Ergebnisse."
+    cron:
+        frequency:
+            none: "Keine"
+            daily: "Jeden Tag"
+            weekly: "Jede Woche"
+            monthly: "Jeden Monat"
+            custom: "Benutzerdefiniert"
+        days: "Tage"
+        month_day: "Tag des Monats"
+        first_day: "1."
+        last_day: "Letzter Tag"
+        time: "Uhrzeit"
+        expression: "Cron-Ausdruck"
+        summary:
+            daily: "Jeden Tag um %time%"
+            weekly: "Jeden %days% um %time%"
+            monthly: "Jeden Monat am %day%. um %time%"
+            monthly_first: "Jeden Monat am 1. um %time%"
+            monthly_last: "Jeden Monat am letzten Tag um %time%"
+            no_day: "Wählen Sie mindestens einen Tag."
     export:
         format: "Format"
         cancel: "Abbrechen"
@@ -167,5 +187,10 @@ crudit_ui:
         loading: Wird geladen…
     toast:
         close: Meldung schließen
+    translatable:
+        languages: "Sprachen: %label%"
+        input_label: "%label% (%language%)"
+        empty: "· leer"
+        invalid: "· Fehler"
     value:
         empty: Nicht angegeben

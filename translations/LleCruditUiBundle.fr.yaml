@@ -28,6 +28,26 @@ crudit_ui:
         count:
             one: "%count% résultat."
             other: "%count% résultats."
+    cron:
+        frequency:
+            none: "Aucune"
+            daily: "Chaque jour"
+            weekly: "Chaque semaine"
+            monthly: "Chaque mois"
+            custom: "Personnalisée"
+        days: "Jours"
+        month_day: "Jour du mois"
+        first_day: "1er"
+        last_day: "Dernier jour"
+        time: "Heure"
+        expression: "Expression cron"
+        summary:
+            daily: "Chaque jour à %time%"
+            weekly: "Chaque %days% à %time%"
+            monthly: "Chaque mois, le %day% à %time%"
+            monthly_first: "Chaque mois, le 1er à %time%"
+            monthly_last: "Chaque mois, le dernier jour à %time%"
+            no_day: "Choisissez au moins un jour."
     export:
         format: "Format"
         cancel: "Annuler"
@@ -167,5 +187,10 @@ crudit_ui:
         loading: Chargement…
     toast:
         close: Fermer le message
+    translatable:
+        languages: "Langues : %label%"
+        input_label: "%label% (%language%)"
+        empty: "· vide"
+        invalid: "· erreur"
     value:
         empty: Non renseigné
