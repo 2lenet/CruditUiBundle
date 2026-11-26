@@ -11,6 +11,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Twig\Error\RuntimeError;
+use Twig\Markup;
 
 /**
  * Collapsibles and tabs: Disclosure, Tabs.
@@ -24,6 +25,29 @@ class NavigationTest extends TestCase
             <twig:block name="general">General content</twig:block>
             <twig:block name="parts">Parts content</twig:block>
             <twig:block name="history">History content</twig:block>
+        </twig:LleCruditUi:Tabs>
+        TWIG;
+
+    private const TABS_WITHOUT_BLOCKS = <<<'TWIG'
+        <twig:LleCruditUi:Tabs id="visit" label="Visit" :tabs="tabs" :urlParam="urlParam ?? null"/>
+        TWIG;
+
+    // The pattern of docs/components.md: the panels captured in a loop; and |raw straight in the hash (escaped: raw is
+    // safe only when printed at once; include() in the hash is too before Twig 3.28, a Markup since)
+    private const TABS_FROM_A_LOOP = <<<'TWIG'
+        {%- set tabs = [] -%}
+        {%- for section in sections -%}
+            {%- set content -%}{{ include('_tab_section.html.twig', {section: section}) }}{%- endset -%}
+            {%- set tabs = tabs|merge([{id: section.code, label: section.label, count: section.items|length, content: content}]) -%}
+        {%- endfor -%}
+        {%- set tabs = tabs|merge([{id: 'raw', label: 'Raw', content: '<p class="section">Raw</p>'|raw}]) -%}
+        <twig:LleCruditUi:Tabs id="visit" label="Visit" :tabs="tabs"/>
+        TWIG;
+
+    // Tabs with content and tabs with a block in the same list
+    private const TABS_MIXED = <<<'TWIG'
+        <twig:LleCruditUi:Tabs id="visit" label="Visit" :tabs="tabs">
+            <twig:block name="general">General content</twig:block>
         </twig:LleCruditUi:Tabs>
         TWIG;
 
@@ -193,6 +217,63 @@ class NavigationTest extends TestCase
         $this->tabs(['tabs' => [['id' => $id, 'label' => 'Parts']]]);
     }
 
+    public function testTabsWithTheirContentAsValues(): void
+    {
+        // Tabs known only when the page is rendered: no block, the panel given as a value; the id is free.
+        $tabs = $this->element(self::TABS_WITHOUT_BLOCKS, 'div', $this->context(['tabs' => [
+            ['id' => 'notes-1', 'label' => 'Notes', 'content' => new Markup('<p>Rendered by <b>Twig</b></p>', 'UTF-8')],
+            ['id' => '2024', 'label' => 'Year', 'content' => 'A <b>string</b>, escaped', 'count' => 2],
+        ]]));
+
+        self::assertSame('Rendered by Twig', $tabs->querySelector('#visit-panel-notes-1 p')?->textContent);
+        self::assertNotNull($tabs->querySelector('#visit-panel-notes-1 p b'));
+        self::assertSame('A <b>string</b>, escaped', $tabs->querySelector('#visit-panel-2024')?->textContent);
+        self::assertSame('Year 2', $tabs->querySelector('#visit-tab-2024')?->textContent);
+        self::assertSame(['visit-panel-notes-1'], $this->ids($tabs->querySelectorAll('[role="tabpanel"]:not([hidden])')));
+    }
+
+    public function testTheTabsOfTheDocumentationRenderedFromALoop(): void
+    {
+        $tabs = $this->element(self::TABS_FROM_A_LOOP, 'div', ['sections' => [
+            ['code' => 'parts', 'label' => 'Parts', 'items' => [1, 2]],
+            ['code' => 'notes', 'label' => 'Notes', 'items' => []],
+        ]]);
+
+        // Captured: HTML
+        self::assertSame('Parts 2', $tabs->querySelector('#visit-panel-parts p.section')?->textContent);
+        self::assertNotNull($tabs->querySelector('#visit-panel-notes p.section b'));
+        self::assertSame('Parts 2', $tabs->querySelector('#visit-tab-parts')?->textContent);
+        // |raw straight in the hash: a string, escaped, shown as text
+        self::assertNull($tabs->querySelector('#visit-panel-raw p'));
+        self::assertStringContainsString('<p class="section">', (string) $tabs->querySelector('#visit-panel-raw')?->textContent);
+    }
+
+    public function testTabsWithAndWithoutContentInTheSameList(): void
+    {
+        $tabs = $this->element(self::TABS_MIXED, 'div', ['tabs' => [
+            ['id' => 'general', 'label' => 'General'],
+            ['id' => 'notes-1', 'label' => 'Notes', 'content' => 'Notes content'],
+            // A section that gave nothing: an empty panel, not the error of a missing block
+            ['id' => 'empty-1', 'label' => 'Empty', 'content' => null],
+        ]]);
+
+        self::assertSame('General content', $tabs->querySelector('#visit-panel-general')?->textContent);
+        self::assertSame('Notes content', $tabs->querySelector('#visit-panel-notes-1')?->textContent);
+        self::assertSame('', $tabs->querySelector('#visit-panel-empty-1')?->textContent);
+    }
+
+    public function testAnIdThatIsANumberChosenByTheAddress(): void
+    {
+        // A code from the database (an integer); the address gives a string
+        $tabs = $this->tabsOfRequest('/visit?tab=2024', ['urlParam' => 'tab', 'tabs' => [
+            ['id' => 2023, 'label' => '2023', 'content' => 'Year 2023'],
+            ['id' => 2024, 'label' => '2024', 'content' => 'Year 2024'],
+        ]], self::TABS_WITHOUT_BLOCKS);
+
+        self::assertSame('true', $tabs->querySelector('#visit-tab-2024')?->getAttribute('aria-selected'));
+        self::assertSame(['visit-panel-2024'], $this->ids($tabs->querySelectorAll('[role="tabpanel"]:not([hidden])')));
+    }
+
     public function testCountOfATab(): void
     {
         $tabs = $this->tabs(['tabs' => [
@@ -244,7 +325,7 @@ class NavigationTest extends TestCase
      *
      * @param array<string, mixed> $context
      */
-    private function tabsOfRequest(string $path, array $context): \Dom\Element
+    private function tabsOfRequest(string $path, array $context, string $template = self::TABS): \Dom\Element
     {
         $kernel = new TestKernel();
         $kernel->boot();
@@ -254,7 +335,7 @@ class NavigationTest extends TestCase
         $requests = $testContainer->get('request_stack');
         $requests->push(Request::create($path));
 
-        $tabs = $this->html($this->render($kernel, self::TABS, $this->context($context)))->querySelector('body > div');
+        $tabs = $this->html($this->render($kernel, $template, $this->context($context)))->querySelector('body > div');
         self::assertNotNull($tabs);
 
         return $tabs;

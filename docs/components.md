@@ -548,9 +548,28 @@ the page; only the selected one is shown.
 |---|---|---|---|
 | `id` | string | required | base of the ids: `<id>-tab-<tab>`, `<id>-panel-<tab>` |
 | `label` | string | required | name of the list of tabs, read by screen readers |
-| `tabs` | list of `{id, label, count?}` | required | `id` names the block of the panel: letters, digits and `_`, starting with a letter or `_`, as a Twig block (`2024` or `1_general` cannot name a block). A tab without its block is an error of Twig (`Block "parts" … does not exist`). `count`: a counter after the label, read with it (`Parts 3`), like the one of a button; `0` is shown |
+| `tabs` | list of `{id, label, count?, content?}` | required | without `content`, `id` names the block of the panel: letters, digits and `_`, starting with a letter or `_`, as a Twig block (`2024` or `1_general` cannot name a block). A tab without its block is an error of Twig (`Block "parts" … does not exist`). `count`: a counter after the label, read with it (`Parts 3`), like the one of a button; `0` is shown. `content`: the panel given as a value, in place of its block (see below) |
 | `selected` | string | the first tab | id of the selected tab; an unknown id gives the first one |
 | `urlParam` | string | `null` | the address follows the tab: `?<urlParam>=<id>` |
+
+**A list of tabs known only when the page is rendered** (tabs from a configuration, one per record…): a Twig block
+cannot be declared in a loop, give the panel in `content`. **Capture it, `{% set x %}…{% endset %}`: the only HTML
+printed as it is whatever the version of Twig.** Anything else is escaped, shown as text: a string, `|raw` put
+straight in `content` (it is safe only when printed at once, not kept in a variable or a hash), and `include()` put
+straight in `content` before Twig 3.28 (it returns a `Markup` since 3.28 only; the bundle accepts Twig 3.21).
+`content: null` is an empty panel (a tab without the key `content` needs its block). The `id` is then free, as long
+as it is a valid part of an HTML id (no space) and **unique in the list** (tabs made from records: two with the same
+code would give the same ids). Tabs with `content` and tabs with a block can be mixed.
+
+```twig
+{%- set tabs = [] -%}
+{%- for section in sections -%}
+    {#- The capture is required: content: include(…) is escaped before Twig 3.28, |raw always (see above) -#}
+    {%- set content -%}{{ include('visit/_section.html.twig', {section: section}) }}{%- endset -%}
+    {%- set tabs = tabs|merge([{id: section.code, label: section.label, count: section.items|length, content: content}]) -%}
+{%- endfor -%}
+<twig:LleCruditUi:Tabs id="visit" label="{{ 'Visit'|trans }}" urlParam="tab" :tabs="tabs"/>
+```
 
 Keyboard: Tab reaches the selected tab only, then the panel (`tabindex="0"`, as the ARIA pattern advises: a panel that starts with text is reached too; in a panel that starts with a field, it is one more stop before the field). ← and → select the next or previous tab at once (they
 follow the screen: right to left, → goes to the previous tab), and loop; Home and End go to the first and the last
