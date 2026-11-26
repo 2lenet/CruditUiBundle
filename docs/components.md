@@ -553,13 +553,18 @@ the page; only the selected one is shown.
 | `urlParam` | string | `null` | the address follows the tab: `?<urlParam>=<id>` |
 
 **A list of tabs known only when the page is rendered** (tabs from a configuration, one per record…): a Twig block
-cannot be declared in a loop, give the panel in `content`. A string is escaped; HTML rendered by Twig
-(`{% set %}…{% endset %}`, `include()`) is printed as it is. The `id` is then free, as long as it is a valid part of an
-HTML id (no space).
+cannot be declared in a loop, give the panel in `content`. **Capture it, `{% set x %}…{% endset %}`: the only HTML
+printed as it is whatever the version of Twig.** Anything else is escaped, shown as text: a string, `|raw` put
+straight in `content` (it is safe only when printed at once, not kept in a variable or a hash), and `include()` put
+straight in `content` before Twig 3.28 (it returns a `Markup` since 3.28 only; the bundle accepts Twig 3.21).
+`content: null` is an empty panel (a tab without the key `content` needs its block). The `id` is then free, as long
+as it is a valid part of an HTML id (no space) and **unique in the list** (tabs made from records: two with the same
+code would give the same ids). Tabs with `content` and tabs with a block can be mixed.
 
 ```twig
 {%- set tabs = [] -%}
 {%- for section in sections -%}
+    {#- The capture is required: content: include(…) is escaped before Twig 3.28, |raw always (see above) -#}
     {%- set content -%}{{ include('visit/_section.html.twig', {section: section}) }}{%- endset -%}
     {%- set tabs = tabs|merge([{id: section.code, label: section.label, count: section.items|length, content: content}]) -%}
 {%- endfor -%}

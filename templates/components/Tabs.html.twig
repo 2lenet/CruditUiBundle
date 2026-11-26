@@ -4,10 +4,11 @@
  #
  # Props: id (base of the ids), label (name of the tablist), tabs (list of {id, label, count?, content?}; without
  # content, each id names the block of its panel: letters, digits and _, starting with a letter or _, as a Twig block;
- # content: the panel given as a value, for a list of tabs known only when the page is rendered, escaped unless it is
- # HTML from Twig ({% set %}…{% endset %}, include())), selected (the first tab if unknown), urlParam (null: the address
- # follows the tab, ?<urlParam>=<id>, and a valid value in the address wins over selected).
- # Blocks: one per tab without content, named by its id. Controller: tabs. Contract: docs/components.md.
+ # content: the panel given as a value, for a list of tabs known only when the page is rendered: printed as it is when
+ # captured by {% set x %}…{% endset %}, escaped otherwise: a string, |raw in the hash, include() before Twig 3.28;
+ # null: an empty panel; ids unique in the list), selected (the first tab if unknown), urlParam (null: the address follows the tab,
+ # ?<urlParam>=<id>, and a valid value in the address wins over selected).
+ # Blocks: one per tab without the key content, named by its id. Controller: tabs. Contract: docs/components.md.
  #}
 {% props id, label, tabs, selected = null, urlParam = null %}
 {%- set ids = tabs|map(tab => tab.id) -%}
@@ -31,8 +32,9 @@
     </div>
     {%- for tab in tabs -%}
         <div class="crudit-ui-tabs__panel" role="tabpanel" id="{{ id }}-panel-{{ tab.id }}" aria-labelledby="{{ id }}-tab-{{ tab.id }}" tabindex="0" data-2lenet--crudit-ui-bundle--tabs-target="panel"{% if tab.id != selected %} hidden{% endif %}>
-            {#- Not |raw: a string is escaped, the HTML rendered by Twig (a Markup) is printed as it is -#}
-            {{- tab.content ?? block(tab.id) -}}
+            {#- Not |raw: a string is escaped, a capture (a Markup) is printed as it is. The key, not its value: content
+             # null is an empty panel, not the error of a missing block. -#}
+            {{- tab.content is defined ? tab.content : block(tab.id) -}}
         </div>
     {%- endfor -%}
 </div>
