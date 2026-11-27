@@ -13,6 +13,10 @@
                 "enabled": true,
                 "fetch": "eager"
             },
+            "collection": {
+                "enabled": true,
+                "fetch": "lazy"
+            },
             "color-code": {
                 "enabled": true,
                 "fetch": "eager"
@@ -40,6 +44,10 @@
             "export": {
                 "enabled": true,
                 "fetch": "eager"
+            },
+            "file-drop": {
+                "enabled": true,
+                "fetch": "lazy"
             },
             "filter-field": {
                 "enabled": true,

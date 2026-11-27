@@ -25,6 +25,12 @@
                 "fetch": "eager",
                 "enabled": true
             },
+            "collection": {
+                "main": "dist/controllers/collection_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
+                "enabled": true
+            },
             "color-code": {
                 "main": "dist/controllers/color_code_controller.js",
                 "webpackMode": "eager",
@@ -65,6 +71,12 @@
                 "main": "dist/controllers/export_controller.js",
                 "webpackMode": "eager",
                 "fetch": "eager",
+                "enabled": true
+            },
+            "file-drop": {
+                "main": "dist/controllers/file_drop_controller.js",
+                "webpackMode": "lazy",
+                "fetch": "lazy",
                 "enabled": true
             },
             "filter-field": {

@@ -1,0 +1,137 @@
+@use '../tools/a11y' as *;
+@use '../tools/responsive' as *;
+
+// File (block file_widget of the form theme, controller file-drop): a drop zone covered by the true file input
+// (transparent: a click opens the picker, a file dropped on it is chosen, also without JavaScript), then the files.
+// Same as `.file-upload` of the crudit-v2 mockup (src/styles/components/_form.scss), except the input: sr-only there,
+// over the zone here.
+.crudit-ui-file {
+    min-width: 0;
+
+    &__zone {
+        position: relative;
+        display: flex;
+        min-height: var(--control-h);
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border: 1px dashed var(--c-border-strong);
+        border-radius: var(--radius-md);
+        background-color: var(--c-surface);
+        font-size: var(--font-size-sm);
+
+        &:has(.crudit-ui-file__input:focus-visible) {
+            border-color: var(--c-focus);
+            @include focus-ring(0);
+        }
+
+        &:hover .crudit-ui-file__browse {
+            text-decoration-thickness: 2px;
+        }
+    }
+
+    &--dragging &__zone {
+        border-color: var(--c-primary);
+        background-color: var(--c-primary-subtle);
+    }
+
+    &--invalid &__zone {
+        border-color: var(--c-danger-solid);
+    }
+
+    &--disabled &__zone {
+        background-color: var(--c-surface-sunken);
+        color: var(--c-text-muted);
+    }
+
+    &__icon {
+        flex: none;
+        color: var(--c-text-muted);
+    }
+
+    &__browse {
+        color: var(--c-link);
+        font-weight: var(--font-weight-semibold);
+        text-decoration: underline;
+    }
+
+    // Over the whole zone, transparent: the browser draws nothing of it, the zone shows its focus
+    &__input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+
+        &:disabled {
+            cursor: not-allowed;
+        }
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        padding: 0;
+        margin: var(--space-2) 0 0;
+        list-style: none;
+    }
+
+    &__file {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-md);
+
+        // The file already sent, to be deleted or replaced when the form is saved: struck through, its note says it
+        &--deleted .crudit-ui-file__label,
+        &--replaced .crudit-ui-file__label {
+            color: var(--c-text-muted);
+            text-decoration: line-through;
+        }
+    }
+
+    &__preview {
+        width: 2.5rem;
+        height: 2.5rem;
+        flex: none;
+        border-radius: var(--radius-sm);
+        object-fit: cover;
+    }
+
+    &__file-icon {
+        width: 1.25rem;
+        flex: none;
+        color: var(--c-text-muted);
+    }
+
+    &__name {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        font-size: var(--font-size-sm);
+        overflow-wrap: anywhere;
+    }
+
+    &__size {
+        color: var(--c-text-muted);
+        font-size: var(--font-size-xs);
+    }
+
+    &__note {
+        color: var(--c-danger-text);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    // Narrow screen: "Download" as an icon only (the name is read), the name of the file keeps the room
+    &__action-label {
+        @include media('<sm') {
+            @include sr-only;
+        }
+    }
+}

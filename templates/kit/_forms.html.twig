@@ -1,3 +1,4 @@
+{%- set kit_photo = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48"><rect width="64" height="48" fill="#dbeafe"/><rect x="10" y="18" width="44" height="26" fill="#1e40af"/><rect x="26" y="28" width="12" height="16" fill="#fff"/></svg>' -%}
 <form class="crudit-ui-kit__columns" novalidate>
     <div class="crudit-ui-kit__stack">
         <div class="crudit-ui-field">
@@ -192,11 +193,91 @@
             <label class="crudit-ui-check"><input type="checkbox" id="kit-form-terms" class="crudit-ui-check__input"><span class="crudit-ui-check__label">Send a copy to the customer</span></label>
         </div>
 
+        {#- File: a drop zone covered by the true input; the file already sent with its preview, Download and Delete -#}
         <div class="crudit-ui-field">
             <div class="crudit-ui-field__label-row">
                 <label for="kit-form-file" class="crudit-ui-label">Photo</label>
             </div>
-            <input type="file" id="kit-form-file" class="crudit-ui-input">
+            {{ include('@LleCruditUi/form/_file.html.twig', {
+                input: '<input type="file" id="kit-form-file" name="photo" class="crudit-ui-file__input" accept="image/*" aria-describedby="kit-form-file_help">',
+                current: {
+                    name: 'front-of-the-shop.svg',
+                    size: 1843,
+                    download: 'data:image/svg+xml,' ~ kit_photo|url_encode,
+                    preview: 'data:image/svg+xml,' ~ kit_photo|url_encode,
+                },
+                delete: 'photo_delete',
+            }, with_context: false) }}
+            <div id="kit-form-file_help" class="crudit-ui-help">An image, 2 MB at most.</div>
         </div>
+
+        {#- Collection with an order: the markup of the block collection_widget of the form theme (sortable) -#}
+        <fieldset class="crudit-ui-field crudit-ui-field__group">
+            <legend class="crudit-ui-label">Parts</legend>
+            {%- set kit_controller = '2lenet--crudit-ui-bundle--collection' -%}
+            {%- set kit_domain = 'LleCruditUiBundle' -%}
+            {%- set kit_parts = [{part: 'Pump', quantity: 2}, {part: 'Valve', quantity: 1}, {part: 'Seal', quantity: 4}] -%}
+            <div id="kit-form-parts" class="crudit-ui-collection" data-controller="{{ kit_controller }}"
+                data-{{ kit_controller }}-entry-value="{{ 'crudit_ui.collection.entry'|trans({}, kit_domain) }}"
+                data-{{ kit_controller }}-index-value="{{ kit_parts|length }}"
+                data-{{ kit_controller }}-prototype-name-value="__name__"
+                data-{{ kit_controller }}-sortable-value="true"
+                data-{{ kit_controller }}-move-up-text-value="{{ 'crudit_ui.collection.move_up'|trans({}, kit_domain) }}"
+                data-{{ kit_controller }}-move-down-text-value="{{ 'crudit_ui.collection.move_down'|trans({}, kit_domain) }}"
+                data-{{ kit_controller }}-remove-text-value="{{ 'crudit_ui.collection.remove'|trans({}, kit_domain) }}"
+                data-{{ kit_controller }}-added-text-value="{{ 'crudit_ui.collection.added'|trans({}, kit_domain) }}"
+                data-{{ kit_controller }}-removed-text-value="{{ 'crudit_ui.collection.removed'|trans({}, kit_domain) }}"
+                data-{{ kit_controller }}-moved-text-value="{{ 'crudit_ui.collection.moved'|trans({}, kit_domain) }}"
+            >
+                <p class="crudit-ui-collection__empty" hidden data-{{ kit_controller }}-target="empty">{{ 'crudit_ui.collection.empty'|trans({}, kit_domain) }}</p>
+                <ol class="crudit-ui-collection__rows" data-{{ kit_controller }}-target="rows">
+                    {%- for kit_part in kit_parts -%}
+                        {{- _self.part_row(kit_part, loop.index0, loop.index, loop.first, loop.last) -}}
+                    {%- endfor -%}
+                </ol>
+                <template data-{{ kit_controller }}-target="prototype">{{ _self.part_row(null, '__name__', '__name__', false, false) }}</template>
+                <button type="button" class="crudit-ui-btn crudit-ui-btn--secondary crudit-ui-btn--small crudit-ui-collection__add" aria-label="{{ 'crudit_ui.collection.add_to'|trans({'%label%': 'Parts'}, kit_domain) }}"
+                    data-{{ kit_controller }}-target="add" data-action="{{ kit_controller }}#add">
+                    {{- ui_icon('add') -}}{{ 'crudit_ui.collection.add'|trans({}, kit_domain) }}
+                </button>
+                <p class="crudit-ui-visually-hidden" role="status" aria-live="polite" data-{{ kit_controller }}-target="status"></p>
+            </div>
+        </fieldset>
     </div>
 </form>
+
+{#- A line of the collection Parts of the kit (kit_part null: the prototype, number and key __name__) -#}
+{%- macro part_row(kit_part, kit_key, kit_number, kit_first, kit_last) -%}
+    {%- set kit_controller = '2lenet--crudit-ui-bundle--collection' -%}
+    {%- set kit_domain = 'LleCruditUiBundle' -%}
+    {%- set kit_name = 'crudit_ui.collection.entry'|trans({'%index%': kit_number}, kit_domain) -%}
+    <li class="crudit-ui-collection__row" aria-label="{{ kit_name }}" data-{{ kit_controller }}-target="row">
+        <span class="crudit-ui-collection__index" aria-hidden="true" data-crudit-ui-collection-index>{{ kit_number }}</span>
+        <div class="crudit-ui-collection__fields">
+            <div class="crudit-ui-field">
+                <div class="crudit-ui-field__label-row">
+                    <label for="kit-form-parts_{{ kit_key }}_part" class="crudit-ui-label">Part<span class="crudit-ui-visually-hidden" data-crudit-ui-collection-entry-name>, {{ kit_name }}</span></label>
+                </div>
+                <input type="text" id="kit-form-parts_{{ kit_key }}_part" name="parts[{{ kit_key }}][part]" class="crudit-ui-input" value="{{ kit_part.part ?? '' }}">
+            </div>
+            <div class="crudit-ui-field">
+                <div class="crudit-ui-field__label-row">
+                    <label for="kit-form-parts_{{ kit_key }}_quantity" class="crudit-ui-label">Quantity<span class="crudit-ui-visually-hidden" data-crudit-ui-collection-entry-name>, {{ kit_name }}</span></label>
+                </div>
+                <input type="number" id="kit-form-parts_{{ kit_key }}_quantity" name="parts[{{ kit_key }}][quantity]" class="crudit-ui-input" min="1" inputmode="numeric" value="{{ kit_part.quantity ?? '' }}">
+            </div>
+            <input type="hidden" name="parts[{{ kit_key }}][position]" value="{{ kit_part is null ? '' : kit_number }}" data-crudit-ui-collection-position>
+        </div>
+        <div class="crudit-ui-collection__actions">
+            <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if kit_first %} disabled{% endif %} data-crudit-ui-collection-up data-action="{{ kit_controller }}#moveUp">
+                {{- ui_icon('arrow-up') -}}<span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="moveUp">{{ 'crudit_ui.collection.move_up'|trans({'%item%': kit_name}, kit_domain) }}</span>
+            </button>
+            <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small"{% if kit_last %} disabled{% endif %} data-crudit-ui-collection-down data-action="{{ kit_controller }}#moveDown">
+                {{- ui_icon('arrow-down') -}}<span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="moveDown">{{ 'crudit_ui.collection.move_down'|trans({'%item%': kit_name}, kit_domain) }}</span>
+            </button>
+            <button type="button" class="crudit-ui-icon-btn crudit-ui-icon-btn--small crudit-ui-collection__remove" data-crudit-ui-collection-remove data-action="{{ kit_controller }}#remove">
+                {{- ui_icon('delete') -}}<span class="crudit-ui-visually-hidden" data-crudit-ui-collection-text="remove">{{ 'crudit_ui.collection.remove'|trans({'%item%': kit_name}, kit_domain) }}</span>
+            </button>
+        </div>
+    </li>
+{%- endmacro -%}

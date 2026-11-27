@@ -56,7 +56,8 @@ CruditBundle does so (`@LleCrudit/form/theme.html.twig`, sections and grid of 4 
 | Switch | a checkbox with `attr: {role: 'switch'}`: `label.crudit-ui-switch`, a native `input[type=checkbox][role=switch]` (sent with the form) and its state written, *Yes* / *No* (hidden from assistive technologies, which read the state of the switch); its label stays above |
 | Amount, percentage | `div.crudit-ui-input-group` with the unit (`span.crudit-ui-input-group__unit#<id>_unit`, read with the input: `aria-describedby`): the focus surrounds the input and its unit |
 | Colour | `div.crudit-ui-input-group.crudit-ui-input-group--color`: the native picker and its code next to it (hidden from assistive technologies: the picker tells its value), kept up to date by the controller `color-code` |
-| File | the native `input[type=file]`, restyled |
+| File | a drop zone covered by the native `input[type=file]`: see [File](#file) |
+| Collection | a list of named lines, with the buttons Add, Remove, Move up and Move down: see [Collection](#collection) |
 
 No floating label, no `placeholder` used as a label.
 
@@ -122,6 +123,89 @@ The markup is in `@LleCruditUi/form/_combobox.html.twig`, which a page without a
 values (see its header; the kit does so). JavaScript is needed: without it the choices cannot be changed. The controller
 `combobox` is loaded when a page has one (`fetch: lazy`).
 
+## Collection
+
+The theme replaces the rendering of every `CollectionType` and every `FileType` of the application, not only those of
+CruditBundle. An application with its own JavaScript for collections or files (lines added from the prototype, buttons
+of its own) removes it, else both run on the same field.
+
+A `CollectionType` (the field `CollectionField` of the crudit-v2 mockup) is a fieldset named by its legend, holding
+`div.crudit-ui-collection#<id>` with the controller `collection`:
+
+- `ol.crudit-ui-collection__rows`, one `li.crudit-ui-collection__row` per line, named by `aria-label` ("Line 2") and
+  numbered (`span.crudit-ui-collection__index`, hidden from assistive technologies). The lines are numbered in the order
+  of the page, not by their keys. The text that names a line is the variable `collection_entry_label`, with `%index%`
+  (translated in the domain of the field: `{{ form_row(form.lines, {collection_entry_label: 'Piece %index%'}) }}`;
+  CruditBundle: the option `entry_label`), else `crudit_ui.collection.entry` ("Line %index%");
+- the fields of a line in `div.crudit-ui-collection__fields`, each one its row with its label, followed by the name of
+  its line, read but not shown ("Quantity, Line 2"). On a wide screen (`md` and more) the fields of a line are side by
+  side, in columns of the same width on every line, and their labels are shown on the first line only; on a narrow one
+  they are one under the other, each with its label. This supposes the same fields in the same order on every line (a
+  `CollectionType` of one entry type): lines with fields of their own (a listener `PRE_SET_DATA` of the entry type) would
+  have their columns under the labels of the first line. A line of one field (a `TextType` entry) has a hidden label,
+  the name of the line;
+- with `allow_delete`, a button "Remove: Line 2" on each line (`.crudit-ui-collection__remove`);
+- with the variable `collection_sortable`, the name of the field of the position of a line (a `HiddenType` of the entry
+  type: `{{ form_row(form.lines, {collection_sortable: 'position'}) }}`; CruditBundle: the option `sortable`, which
+  requires it), the buttons
+  "Move up: Line 2" and "Move down: Line 2" (the first line cannot go up, the last one cannot go down). Each time the
+  lines change, the controller writes 1, 2, 3… in this field (`input[data-crudit-ui-collection-position]`); the values of
+  the server are kept until then. **The order is kept only if the application reads the lines in this order**
+  (Doctrine: `#[ORM\OrderBy(['position' => 'ASC'])]` on the relation). The field is rendered without a label: use a
+  `HiddenType` (its errors go up, as for any hidden field: `error_bubbling`; the errors kept by the field, another type
+  or `error_bubbling: false`, are shown under it). The lines are shown in the order of their positions, those without a
+  position (or with one that is not a number) last: a form sent back with errors shows the order chosen by the user
+  (Symfony keeps the lines in the order of their keys), the order that will be saved;
+- with `allow_add`, the prototype in a `<template>` and a button "Add" (named "Add: *Lines*"); a line added takes the
+  index after the greatest one (`data-…-index-value`), so the names of the fields stay unique;
+- an empty collection says it (`p.crudit-ui-collection__empty`, "No lines yet.").
+
+A line rendered alone (`{{ form_row(form.lines[0]) }}`, to lay out the lines yourself) reads its collection: its name, its
+number and its buttons come from its place among the lines of the collection ("Line 1" for the first one), in the order
+of their positions with `collection_sortable`. Each line reads all the lines of its collection: rendering many lines one
+by one costs more than rendering the collection.
+
+**A collection inside a line** (a collection in the entry type): give it a `prototype_name` of its own (`'__part__'`),
+as Symfony asks. The prototype of the inner collection is inside the one of the outer collection: when a line is added,
+the controller writes its index in place of the name of the outer prototype everywhere in its HTML, also in the inner
+prototype (its fields have the index of their line: `form[lines][4][parts][__part__][name]`). With the same name
+(`__name__` at both levels), the inner placeholder would be replaced too and the inner button Add would no longer work:
+in debug (`kernel.debug`), rendering the inner collection throws a `LogicException` that names it.
+
+The controller moves the focus after each action (the first field of a line added; after a removal the first field of
+the line that takes its place, else the button Add; after a move the same button, or the other one at the end) and tells
+the change in a live region (`role="status"`): "Line 3 added.", "Line 2 removed.", "Moved to position 1 of 3.". The
+names of the lines, of their buttons and of their fields follow the lines. Without JavaScript the lines are shown and
+sent, the buttons do nothing. A reset of the form gives back the values of the fields, not the lines: the lines added,
+removed or moved stay as they are (their positions follow them). The controller `collection` is loaded when a page has
+one (`fetch: lazy`).
+
+## File
+
+A `FileType` (the field `FileUpload` of the crudit-v2 mockup) is `div.crudit-ui-file` with the controller `file-drop`:
+
+- `div.crudit-ui-file__zone`, "Drop a file here or browse" (hidden from assistive technologies: the input is named by the
+  label of the field), covered by the native `input[type=file].crudit-ui-file__input`, transparent: a click anywhere
+  opens the picker of the browser and a file dropped on the zone is chosen, also without JavaScript; the zone shows the
+  focus of the input. `attr` (`accept`…), the help and the error are those of the input;
+- the files chosen, listed by the controller in `ul.crudit-ui-file__list`: the name, the size ("12 KB", "1.5 MB", in the
+  locale of the request, Latin digits) and, for an image, a preview (`alt` "Preview of *name*"), with a button "Remove
+  *name*" that empties the input (several files: the others are kept) and gives the focus back to it;
+- the file already sent, given by the form theme of the application (CruditBundle: VichUploaderBundle) with the variable
+  `crudit_ui_file_current`: `{name, size, download, preview}` (size in bytes, or `null`: "Current file" without size;
+  download and preview: URLs, or `null`). Its preview, a link "Download *name*", and, with the variable
+  `crudit_ui_file_delete` (the name of a checkbox that asks the deletion), a button "Delete *name*": it checks the hidden
+  checkbox, the line is struck through and says "Will be deleted when saved", a button "Cancel the deletion" puts it
+  back. The focus goes from one button to the other.
+  For one file per field (not `multiple`), a file chosen replaces it when the form is saved (VichUploaderBundle sends it
+  even when the deletion is asked): while a file is chosen, the line is struck through and says "Will be replaced when
+  saved". The two actions exclude each other: choosing a file cancels the deletion asked, Delete removes the file chosen.
+
+Each change is told in a live region. A dragged file marks the zone (`crudit-ui-file--dragging`). The markup is in
+`@LleCruditUi/form/_file.html.twig`, with the HTML of the input (see its header; the kit and CruditBundle include it);
+`form_widget(form.file, {crudit_ui_file_input_only: true})` renders the input alone. The controller `file-drop` is
+loaded when a page has one (`fetch: lazy`).
+
 The theme does not change the `<form>` tag. Without `novalidate` on it, the browser checks the required fields itself
 before sending the form and shows its own bubbles instead of the errors of the theme. To show only the messages of the
 server, add it to the form:
@@ -140,7 +224,10 @@ server, add it to the form:
 `crudit-ui-segmented__option`, `crudit-ui-segmented__input`, `crudit-ui-segmented__label`, `crudit-ui-switch`,
 `crudit-ui-switch__input`, `crudit-ui-switch__state` (`--on`, `--off`), `crudit-ui-combobox` (`--invalid`,
 `--disabled`, `__field`, `__tokens`, `__token`, `__token-label`, `__remove`, `__input`, `__chevron`, `__listbox`,
-`__option`, `__option--active`, `__check`, `__label`, `__message`).
+`__option`, `__option--active`, `__check`, `__label`, `__message`), `crudit-ui-collection` (`__empty`, `__rows`,
+`__row`, `__row--invalid`, `__index`, `__fields`, `__actions`, `__add`, `__remove`), `crudit-ui-file` (`--dragging`,
+`--invalid`, `--disabled`, `__zone`, `__icon`, `__text`, `__browse`, `__input`, `__list`, `__file`, `__file--deleted`,
+`__preview`, `__file-icon`, `__name`, `__label`, `__size`, `__note`, `__action-label`).
 They can be used without the theme, in a form written by hand.
 
 The help opened by a button next to a label is the component [Toggletip](components.md#llecrudituitoggletip).
