@@ -816,6 +816,107 @@ class FormThemeTest extends TestCase
         self::assertSame('Part, Line 2', trim((string) $html->querySelector('label[for="form_lines_5_part"]')?->textContent));
     }
 
+    public function testASortableCollectionSentBackWithAnErrorKeepsTheOrderChosen(): void
+    {
+        $form = $this->form()
+            ->add('lines', CollectionType::class, [
+                'label' => 'Lines',
+                'entry_type' => LineType::class,
+                'allow_add' => true,
+                'allow_delete' => true,
+                'data' => [
+                    3 => ['part' => 'Pump', 'quantity' => 2, 'position' => 1],
+                    5 => ['part' => 'Valve', 'quantity' => 1, 'position' => 2],
+                    8 => ['part' => 'Seal', 'quantity' => 4, 'position' => 3],
+                    9 => ['part' => 'Hose', 'quantity' => 1, 'position' => 4],
+                ],
+            ])
+            ->getForm();
+        // Valve moved up, Hose third; a position that is not a number (sent by the browser) goes last
+        $form->submit(['lines' => [
+            3 => ['part' => 'Pump', 'quantity' => '2', 'position' => '2'],
+            5 => ['part' => 'Valve', 'quantity' => '1', 'position' => '1'],
+            8 => ['part' => 'Seal', 'quantity' => '4', 'position' => 'last'],
+            9 => ['part' => 'Hose', 'quantity' => '1', 'position' => '3'],
+        ]]);
+        $form->get('lines')->get('3')->get('part')->addError(new FormError('Unknown part.'));
+        $view = $form->createView();
+        $view['lines']->vars['collection_sortable'] = 'position';
+        /** @var Environment $twig */
+        $twig = $this->container()->get('twig');
+
+        $html = $this->html($twig->createTemplate("{% form_theme form with ['@LleCruditUi/form/theme.html.twig'] only %}{{ form_row(form.lines) }}")->render(['form' => $view]));
+        self::assertSame([
+            ['Line 1', '1', 'form_lines_5_part', '1', true, false],
+            ['Line 2', '2', 'form_lines_3_part', '2', false, false],
+            ['Line 3', '3', 'form_lines_9_part', '3', false, false],
+            ['Line 4', '4', 'form_lines_8_part', 'last', false, true],
+        ], $this->collectionRows($html), 'the lines are shown in the order of their positions, not of their keys');
+
+        $view = $form->createView();
+        $view['lines']->vars['collection_sortable'] = 'position';
+        $alone = $this->html($twig->createTemplate("{% form_theme form with ['@LleCruditUi/form/theme.html.twig'] only %}<ol>{% for key in [3, 5, 8, 9] %}{{ form_row(form.lines[key]) }}{% endfor %}</ol>")->render(['form' => $view]));
+        self::assertSame([
+            ['Line 2', '2', 'form_lines_3_part', '2', false, false],
+            ['Line 1', '1', 'form_lines_5_part', '1', true, false],
+            ['Line 4', '4', 'form_lines_8_part', 'last', false, true],
+            ['Line 3', '3', 'form_lines_9_part', '3', false, false],
+        ], $this->collectionRows($alone), 'a line rendered alone takes its place in the order of the positions');
+    }
+
+    /**
+     * Each line of a collection: its name, its number, the id of its field Part, its position, Move up and Move down
+     * disabled.
+     *
+     * @return list<array{string, string, string, string, bool, bool}>
+     */
+    private function collectionRows(\Dom\HTMLDocument $html): array
+    {
+        $rows = [];
+        foreach ($html->querySelectorAll('li.crudit-ui-collection__row') as $row) {
+            $rows[] = [
+                (string) $row->getAttribute('aria-label'),
+                trim((string) $row->querySelector('.crudit-ui-collection__index')?->textContent),
+                (string) $row->querySelector('input[type="text"]')?->getAttribute('id'),
+                (string) $row->querySelector('input[data-crudit-ui-collection-position]')?->getAttribute('value'),
+                (bool) $row->querySelector('[data-crudit-ui-collection-up]')?->hasAttribute('disabled'),
+                (bool) $row->querySelector('[data-crudit-ui-collection-down]')?->hasAttribute('disabled'),
+            ];
+        }
+
+        return $rows;
+    }
+
+    public function testACollectionInsideALineHasAPrototypeNameOfItsOwn(): void
+    {
+        $form = $this->form()
+            ->add('groups', CollectionType::class, ['label' => 'Groups', 'entry_type' => GroupType::class, 'allow_add' => true, 'data' => [['name' => 'Front', 'parts' => ['Pump']]]])
+            ->getForm();
+        $html = $this->renderForm($form);
+
+        self::assertNotNull($html->querySelector('#form_groups_0_parts[data-2lenet--crudit-ui-bundle--collection-prototype-name-value="__part__"]'), 'a prototype name of its own: rendered');
+
+        $form = $this->form()
+            ->add('groups', CollectionType::class, [
+                'label' => 'Groups',
+                'entry_type' => GroupType::class,
+                'entry_options' => ['parts_prototype_name' => '__name__'],
+                'allow_add' => true,
+                'data' => [['name' => 'Front', 'parts' => ['Pump']]],
+            ])
+            ->getForm();
+        try {
+            $this->renderForm($form);
+            self::fail('the same prototype name as the collection around it would fail without a message');
+        } catch (\Twig\Error\RuntimeError $error) {
+            self::assertInstanceOf(\LogicException::class, $error->getPrevious());
+            self::assertStringContainsString('The collection "form[groups][0][parts]" has the prototype name "__name__" of the collection "form[groups]"', $error->getPrevious()->getMessage());
+        }
+
+        // Not in production: nothing is checked
+        (new \Lle\CruditUiBundle\Twig\FormThemeExtension(false))->checkCollection($form->createView()['groups']['0']['parts']);
+    }
+
     public function testTheErrorsKeptByTheFieldOfThePositionAreShown(): void
     {
         $form = $this->form()

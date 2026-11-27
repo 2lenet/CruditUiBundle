@@ -125,6 +125,10 @@ values (see its header; the kit does so). JavaScript is needed: without it the c
 
 ## Collection
 
+The theme replaces the rendering of every `CollectionType` and every `FileType` of the application, not only those of
+CruditBundle. An application with its own JavaScript for collections or files (lines added from the prototype, buttons
+of its own) removes it, else both run on the same field.
+
 A `CollectionType` (the field `CollectionField` of the crudit-v2 mockup) is a fieldset named by its legend, holding
 `div.crudit-ui-collection#<id>` with the controller `collection`:
 
@@ -149,25 +153,32 @@ A `CollectionType` (the field `CollectionField` of the crudit-v2 mockup) is a fi
   the server are kept until then. **The order is kept only if the application reads the lines in this order**
   (Doctrine: `#[ORM\OrderBy(['position' => 'ASC'])]` on the relation). The field is rendered without a label: use a
   `HiddenType` (its errors go up, as for any hidden field: `error_bubbling`; the errors kept by the field, another type
-  or `error_bubbling: false`, are shown under it);
+  or `error_bubbling: false`, are shown under it). The lines are shown in the order of their positions, those without a
+  position (or with one that is not a number) last: a form sent back with errors shows the order chosen by the user
+  (Symfony keeps the lines in the order of their keys), the order that will be saved;
 - with `allow_add`, the prototype in a `<template>` and a button "Add" (named "Add: *Lines*"); a line added takes the
   index after the greatest one (`data-…-index-value`), so the names of the fields stay unique;
 - an empty collection says it (`p.crudit-ui-collection__empty`, "No lines yet.").
 
 A line rendered alone (`{{ form_row(form.lines[0]) }}`, to lay out the lines yourself) reads its collection: its name, its
-number and its buttons come from its place among the lines of the collection ("Line 1" for the first one).
+number and its buttons come from its place among the lines of the collection ("Line 1" for the first one), in the order
+of their positions with `collection_sortable`. Each line reads all the lines of its collection: rendering many lines one
+by one costs more than rendering the collection.
 
 **A collection inside a line** (a collection in the entry type): give it a `prototype_name` of its own (`'__part__'`),
 as Symfony asks. The prototype of the inner collection is inside the one of the outer collection: when a line is added,
 the controller writes its index in place of the name of the outer prototype everywhere in its HTML, also in the inner
 prototype (its fields have the index of their line: `form[lines][4][parts][__part__][name]`). With the same name
-(`__name__` at both levels), the inner placeholder would be replaced too and the inner button Add would no longer work.
+(`__name__` at both levels), the inner placeholder would be replaced too and the inner button Add would no longer work:
+in debug (`kernel.debug`), rendering the inner collection throws a `LogicException` that names it.
 
 The controller moves the focus after each action (the first field of a line added; after a removal the first field of
 the line that takes its place, else the button Add; after a move the same button, or the other one at the end) and tells
 the change in a live region (`role="status"`): "Line 3 added.", "Line 2 removed.", "Moved to position 1 of 3.". The
 names of the lines, of their buttons and of their fields follow the lines. Without JavaScript the lines are shown and
-sent, the buttons do nothing. The controller `collection` is loaded when a page has one (`fetch: lazy`).
+sent, the buttons do nothing. A reset of the form gives back the values of the fields, not the lines: the lines added,
+removed or moved stay as they are (their positions follow them). The controller `collection` is loaded when a page has
+one (`fetch: lazy`).
 
 ## File
 

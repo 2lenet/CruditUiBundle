@@ -579,6 +579,13 @@ try {
     assert.deepEqual(await parts(), [['Line 1', 'Filter', '1'], ['Line 2', 'Valve', '2'], ['Line 3', 'Seal', '3']]);
     assert.equal(await partsStatus('Line 2 removed.'), 'Line 2 removed.');
     assert.equal(await focused(), 'Line 2 parts[1][part]', 'the focus does not go to the line that takes the place of the one removed');
+    // A reset of the form gives back the values (the line added is empty again), not the lines: order and positions stay
+    await page.$eval('#kit-form-parts', (root) => root.closest('form').reset());
+    assert.deepEqual(
+        await page.$$eval('#kit-form-parts > ol > li', (rows) => rows.map((row) => [row.getAttribute('aria-label'), row.querySelector('input[name$="[part]"]').name, row.querySelector('[data-crudit-ui-collection-position]').value])),
+        [['Line 1', 'parts[3][part]', '1'], ['Line 2', 'parts[1][part]', '2'], ['Line 3', 'parts[2][part]', '3']],
+        'a reset of the form changes the lines or their positions',
+    );
     for (let left = 3; left > 0; left--) {
         await page.click(`#kit-form-parts > ol > li:nth-child(${left}) [data-crudit-ui-collection-remove]`);
     }

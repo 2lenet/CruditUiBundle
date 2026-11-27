@@ -111,7 +111,7 @@ crudit_ui:
         added: "Ajouté : %name%."
         removed: "Retiré : %name%."
         deleted: "%name% sera supprimé à l'enregistrement."
-        kept: "%name% est gardé."
+        kept: "%name% est conservé."
         replaced: "%name% sera remplacé à l'enregistrement."
         size_kb: "%size% ko"
         size_mb: "%size% Mo"

@@ -8,6 +8,7 @@ use Lle\CruditUiBundle\Icon\IconLibrary;
 use Lle\CruditUiBundle\Locale\RequestLocale;
 use Lle\CruditUiBundle\Twig\FilterExtension;
 use Lle\CruditUiBundle\Twig\FormatExtension;
+use Lle\CruditUiBundle\Twig\FormThemeExtension;
 use Lle\CruditUiBundle\Twig\IconExtension;
 use Lle\CruditUiBundle\Twig\LocaleExtension;
 use Lle\CruditUiBundle\Twig\PagerExtension;
@@ -50,6 +51,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set(FormatExtension::class);
 
     $services->set(FilterExtension::class);
+
+    // checks of the form theme, in debug only
+    $services->set(FormThemeExtension::class)
+        ->arg('$debug', param('kernel.debug'));
 
     $services->set(LocaleExtension::class)
         ->arg('$rtlLanguages', param('lle_crudit_ui.rtl_languages'));

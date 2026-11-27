@@ -15,7 +15,9 @@ import { Controller } from '@hotwired/stimulus';
  * - The change is told in a live region (status).
  * - A line added takes the next index (value index): the names of the fields stay unique, Symfony reads the lines in
  *   the order of the page.
- * - A reset of the form puts the positions back: they are written again if the lines were changed.
+ * - A reset of the form gives back the values of the fields, not the lines: the lines added, removed or moved stay (the
+ *   hidden positions are not put back either: writing .value of a hidden input changes its attribute value; they
+ *   follow the lines of the page).
  * - A disabled form (value disabled) never gets its buttons Move up and Move down enabled again.
  * The texts come from the theme, translated by the server (%item%, %position%, %total%).
  */
@@ -35,21 +37,6 @@ export default class extends Controller {
         removedText: String,
         movedText: String,
     };
-
-    connect() {
-        this.changed = false;
-        this.form = this.element.closest('form');
-        this.onReset = () => setTimeout(() => {
-            if (this.changed) {
-                this.renumber();
-            }
-        });
-        this.form?.addEventListener('reset', this.onReset);
-    }
-
-    disconnect() {
-        this.form?.removeEventListener('reset', this.onReset);
-    }
 
     // The lines of this collection, in the order of the page (not those of a collection inside a line)
     rows() {
@@ -121,7 +108,6 @@ export default class extends Controller {
 
     // Names, numbers, buttons and positions of the lines, after a change
     renumber() {
-        this.changed = true;
         const rows = this.rows();
         rows.forEach((row, index) => {
             const name = this.entryValue.replace('%index%', String(index + 1));

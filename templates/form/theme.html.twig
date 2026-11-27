@@ -539,11 +539,15 @@
  # - allow_delete: a button Remove on each line;
  # - variable collection_sortable (name of the field of the position of a line, a hidden input): buttons Move up and
  #   Move down; the controller writes 1, 2, 3… in this field each time the lines change. The order is kept only if the
- #   entity reads its lines in this order (#[ORM\OrderBy]).
+ #   entity reads its lines in this order (#[ORM\OrderBy]). The lines are shown in the order of their positions (a form
+ #   sent back with errors keeps the order chosen: Symfony keeps the lines in the order of their keys), those without a
+ #   position (or not a number) last.
  # The focus is moved after each action, the change is told in a live region. Without JavaScript, the lines are shown
  # and sent, the buttons do nothing.
  #}
 {%- block collection_widget -%}
+    {#- In debug, a collection inside a line with the prototype name of its collection throws -#}
+    {%- do ui_form_check_collection(form) -%}
     {%- set crudit_ui_controller = '2lenet--crudit-ui-bundle--collection' -%}
     {%- set crudit_ui_domain = 'LleCruditUiBundle' -%}
     {%- set crudit_ui_entry = block('crudit_ui_collection_entry_label') -%}
@@ -572,13 +576,23 @@
             {{- 'crudit_ui.collection.empty'|trans({}, crudit_ui_domain) -}}
         </p>
         <ol class="crudit-ui-collection__rows" data-{{ crudit_ui_controller }}-target="rows">
+            {%- set crudit_ui_children = form.children -%}
+            {%- if collection_sortable|default(null) is not empty -%}
+                {#- The rank of each line: its position, a line without position (or not a number) last; sort is stable -#}
+                {%- set crudit_ui_ranks = {} -%}
+                {%- for child in form -%}
+                    {%- set crudit_ui_position = (child.children[collection_sortable].vars.value ?? '') ~ '' -%}
+                    {%- set crudit_ui_ranks = crudit_ui_ranks|merge({('_' ~ child.vars.name): crudit_ui_position matches '/^-?\\d+$/' ? crudit_ui_position + 0 : constant('PHP_INT_MAX')}) -%}
+                {%- endfor -%}
+                {%- set crudit_ui_children = crudit_ui_children|sort((a, b) => crudit_ui_ranks['_' ~ a.vars.name] <=> crudit_ui_ranks['_' ~ b.vars.name]) -%}
+            {%- endif -%}
             {%- set crudit_ui_lines = {
                 crudit_ui_entry_template: crudit_ui_entry,
                 crudit_ui_entry_sortable: collection_sortable|default(null),
                 crudit_ui_entry_delete: allow_delete,
                 crudit_ui_entry_count: form|length,
             } -%}
-            {%- for child in form -%}
+            {%- for child in crudit_ui_children -%}
                 {{- form_row(child, crudit_ui_lines|merge({crudit_ui_entry_index: loop.index})) -}}
             {%- endfor -%}
         </ol>
@@ -623,20 +637,40 @@
     {%- set crudit_ui_domain = 'LleCruditUiBundle' -%}
     {#- Given by collection_widget; a line rendered alone reads its collection -#}
     {%- set crudit_ui_collection = form.parent -%}
-    {#- A line rendered alone (form_row(form.lines[0])): its place among the lines of its collection, from 1 -#}
+    {%- set crudit_ui_sortable = crudit_ui_entry_sortable ?? crudit_ui_collection.vars.collection_sortable|default(null) -%}
+    {#-
+     # A line rendered alone (form_row(form.lines[0])): its place among the lines of its collection, from 1, in the
+     # order of collection_widget (positions, then keys): 1 + the lines before it. Each line reads all its siblings:
+     # rendering n lines one by one costs n², nothing for a few lines.
+     #}
     {%- set crudit_ui_index = crudit_ui_entry_index ?? null -%}
     {%- set crudit_ui_placed = crudit_ui_index is not null -%}
     {%- if not crudit_ui_placed -%}
         {%- set crudit_ui_index = name -%}
+        {%- set crudit_ui_before = 0 -%}
+        {%- set crudit_ui_rank = 0 -%}
+        {%- if crudit_ui_sortable is not empty -%}
+            {%- set crudit_ui_position = (form.children[crudit_ui_sortable].vars.value ?? '') ~ '' -%}
+            {%- set crudit_ui_rank = crudit_ui_position matches '/^-?\\d+$/' ? crudit_ui_position + 0 : constant('PHP_INT_MAX') -%}
+        {%- endif -%}
         {%- for crudit_ui_sibling in crudit_ui_collection -%}
-            {%- if crudit_ui_sibling.vars.name == name %}{% set crudit_ui_index = loop.index %}{% set crudit_ui_placed = true %}{% endif -%}
+            {%- if crudit_ui_sibling.vars.name == name -%}
+                {%- set crudit_ui_placed = true -%}
+            {%- else -%}
+                {%- set crudit_ui_sibling_rank = 0 -%}
+                {%- if crudit_ui_sortable is not empty -%}
+                    {%- set crudit_ui_position = (crudit_ui_sibling.children[crudit_ui_sortable].vars.value ?? '') ~ '' -%}
+                    {%- set crudit_ui_sibling_rank = crudit_ui_position matches '/^-?\\d+$/' ? crudit_ui_position + 0 : constant('PHP_INT_MAX') -%}
+                {%- endif -%}
+                {%- if crudit_ui_sibling_rank < crudit_ui_rank or (crudit_ui_sibling_rank == crudit_ui_rank and not crudit_ui_placed) %}{% set crudit_ui_before = crudit_ui_before + 1 %}{% endif -%}
+            {%- endif -%}
         {%- endfor -%}
+        {%- if crudit_ui_placed %}{% set crudit_ui_index = crudit_ui_before + 1 %}{% endif -%}
     {%- endif -%}
     {%- set crudit_ui_template = crudit_ui_entry_template ?? (crudit_ui_collection.vars.collection_entry_label|default(null) is not empty
         ? (crudit_ui_collection.vars.translation_domain is same as(false) ? crudit_ui_collection.vars.collection_entry_label : crudit_ui_collection.vars.collection_entry_label|trans({}, crudit_ui_collection.vars.translation_domain))
         : 'crudit_ui.collection.entry'|trans({}, crudit_ui_domain)) -%}
     {%- set crudit_ui_entry = crudit_ui_template|replace({'%index%': crudit_ui_index}) -%}
-    {%- set crudit_ui_sortable = crudit_ui_entry_sortable ?? crudit_ui_collection.vars.collection_sortable|default(null) -%}
     {%- set crudit_ui_delete = crudit_ui_entry_delete ?? crudit_ui_collection.vars.allow_delete|default(false) -%}
     {%- set crudit_ui_count = crudit_ui_entry_count ?? crudit_ui_collection.children|length -%}
     <li class="{{ ('crudit-ui-collection__row' ~ (errors|length > 0 ? ' crudit-ui-collection__row--invalid' : ''))|trim }}" aria-label="{{ crudit_ui_entry }}" data-{{ crudit_ui_controller }}-target="row">
